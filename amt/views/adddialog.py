@@ -25,68 +25,81 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFormLayout,
     QDialogButtonBox,
-    QMessageBox
+    QMessageBox,
+    QWidget
 )
 from PySide6.QtGui import *
 import urllib.request
 
 from amt.parser.parser import parseArxiv
+import amt.views.build.addDialog_ui as addDialog_ui
+import amt.views.build.articleForm_ui as articleForm_ui
+import amt.views.build.bookForm_ui as bookForm_ui
+import amt.views.build.lecturesForm_ui as lecturesForm_ui
 
 class AddDialog(QDialog):
     """add dialog."""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.setWindowTitle("Add article")
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        self.data = None
-        self.titleField = QLineEdit()
-        self.authorsField = QLineEdit()
-        self.arxivIdField = QLineEdit()
-        self.versionField = QLineEdit()
-        self.datePublishedField = QLineEdit()
-        self.dateUpdatedField = QLineEdit()
-        self.linkField = QLineEdit()
-        self.arxivButton = QPushButton("Get metadata")
-        self.arxivButton.clicked.connect(self.getMetadataFromArxiv)
-        self.setupUI()
-
-    def setupUI(self):
-        """setup the add window UI"""
-        # fields to enter arxiv id
-
-        self.titleField.setObjectName("title")
-        self.authorsField.setObjectName("authors")
-        self.arxivIdField.setObjectName("arxiv_id")
-        self.versionField.setObjectName("version")
-        self.datePublishedField.setObjectName("date_published")
-        self.dateUpdatedField.setObjectName("date_updated")
-        self.linkField.setObjectName("link")
+        self.ui = addDialog_ui.Ui_Dialog()
+        self.ui.setupUi(self)
+        # list of forms in one-to-one correspondence to options of self.ui.entryTypeComboBox
+        self.forms = [ArticleForm(self), BookForm(self), LecturesForm(self)]
+        self.ui.entryTypeComboBox.setCurrentIndex(0)
+        self.currentForm = self.forms[0]
+        for form in self.forms:
+            self.ui.formWidget.layout().addWidget(form)
+            form.hide()
+        self.currentForm.show()
+        self.ui.entryTypeComboBox.currentIndexChanged.connect(self.changeForm)
+        # buttons behaviour
+        self.ui.buttonBox.accepted.connect(self.accept)
+        self.ui.buttonBox.rejected.connect(self.reject)
+        # data
+        self.data = {}
         
-        # Lay out the data fields
-        layout = QFormLayout()
-        layout.addRow("Title:", self.titleField)
-        layout.addRow("Authors:", self.authorsField)
-        layout.addRow("arXiv id:", self.arxivIdField)
-        layout.addRow("Version:", self.versionField)
-        layout.addRow("Date published:", self.datePublishedField)
-        layout.addRow("Date updated:", self.dateUpdatedField)
-        layout.addRow("Link:", self.linkField)
-        self.layout.addLayout(layout)
-        # Add button to parse data from arxiv
-        self.layout.addWidget(self.arxivButton)
-        # Add standard buttons to the dialog and connect them
-        self.buttonsBox = QDialogButtonBox(self)
-        self.buttonsBox.setOrientation(Qt.Horizontal)
-        self.buttonsBox.setStandardButtons(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
-        self.buttonsBox.accepted.connect(self.accept)
-        self.buttonsBox.rejected.connect(self.reject)
-        self.layout.addWidget(self.buttonsBox)
+    def changeForm(self, index):
+        self.currentForm.hide()
+        self.currentForm = self.forms[index]
+        self.currentForm.show()
+        
+    
+    def accept(self):
+        """Accept the data provided through the dialog."""
+        # self.data = {}
+        # if not self.titleField.text():
+        #     QMessageBox.critical(
+        #         self,
+        #         "Error!",
+        #         f"You must provide article's title",
+        #     )
+        #     self.data = None  # Reset .data
+        #     return
+        # for field in (self.titleField,
+        # self.authorsField,
+        # self.arxivIdField,
+        # self.versionField,
+        # self.datePublishedField,
+        # self.dateUpdatedField,
+        # self.linkField):
+        #     self.data[field.objectName()] = field.text()
 
+        # if not self.data:
+        #     return
+        print("add accepted")
+        super().accept()
+        
+
+class ArticleForm(QWidget):
+    """add article form"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.ui = articleForm_ui.Ui_Form()
+        self.ui.setupUi(self)
+        self.ui.getMetaButton.clicked.connect(self.getMetadataFromArxiv)
+        
     def getMetadataFromArxiv(self):
-        if not self.arxivIdField.text():
+        if not self.ui.arXivIDLineEdit.text():
             QMessageBox.critical(
                 self,
                 "Error!",
@@ -94,7 +107,7 @@ class AddDialog(QDialog):
             )
             return
         try:
-            data = parseArxiv(self.arxivIdField.text())
+            data = parseArxiv(self.ui.arXivIDLineEdit.text())
         except urllib.error.URLError:
             QMessageBox.critical(
                 self,
@@ -109,38 +122,27 @@ class AddDialog(QDialog):
                 f"Article not found! Check the arXiv id",
             )
             return
-        self.titleField.setText(data['title'])
-        self.authorsField.setText(', '.join(data['authors']))
-        self.arxivIdField.setText(data['arxiv_id'])
-        self.versionField.setText(data['version'])
-        self.datePublishedField.setText(data['date_published'])
-        self.dateUpdatedField.setText(data['date_updated'])
-        self.linkField.setText(data['link'])
+        self.ui.titleLineEdit.setText(data['title'])
+        self.ui.authorLineEdit.setText(', '.join(data['authors']))
+        self.ui.arXivIDLineEdit.setText(data['arxiv_id'])
+        self.ui.versionLineEdit.setText(data['version'])
+        self.ui.datePublishedLineEdit.setText(data['date_published'])
+        self.ui.dateUpdatedLineEdit.setText(data['date_updated'])
+        self.ui.linkLineEdit.setText(data['link'])
+        
+class BookForm(QWidget):
+    """add article form"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.ui = bookForm_ui.Ui_Form()
+        self.ui.setupUi(self)
+        
+class LecturesForm(QWidget):
+    """add article form"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.ui = lecturesForm_ui.Ui_Form()
+        self.ui.setupUi(self)
 
-
-    def accept(self):
-        """Accept the data provided through the dialog."""
-        self.data = {}
-        if not self.titleField.text():
-            QMessageBox.critical(
-                self,
-                "Error!",
-                f"You must provide article's title",
-            )
-            self.data = None  # Reset .data
-            return
-        for field in (self.titleField,
-        self.authorsField,
-        self.arxivIdField,
-        self.versionField,
-        self.datePublishedField,
-        self.dateUpdatedField,
-        self.linkField):
-            self.data[field.objectName()] = field.text()
-
-        if not self.data:
-            return
-
-        super().accept()
 
     
