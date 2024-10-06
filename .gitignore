@@ -1,0 +1,6 @@
+# ignore
+*.sqlite
+__pycache__
+/todo.txt
+/amt/views/build/
+/run

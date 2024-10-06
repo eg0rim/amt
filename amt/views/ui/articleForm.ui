@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>565</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="verticalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>50</y>
+     <width>315</width>
+     <height>301</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="titleLabel">
+        <property name="text">
+         <string>Title:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="titleLineEdit"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="authorsLabel">
+        <property name="text">
+         <string>Authors:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="authorsLineEdit"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="arXivIDLabel">
+        <property name="text">
+         <string>arXiv ID:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="arXivIDLineEdit"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="versionLabel">
+        <property name="text">
+         <string>Version:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="versionLineEdit"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="datePublishedLabel">
+        <property name="text">
+         <string>Date published:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QDateTimeEdit" name="datePublishedDateTimeEdit"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="linkLabel">
+        <property name="text">
+         <string>Link:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLineEdit" name="linkLineEdit"/>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="dateUpdatedLabel">
+        <property name="text">
+         <string>Date updated:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QDateTimeEdit" name="dateUpdatedDateTimeEdit"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QPushButton" name="getMetaButton">
+      <property name="text">
+       <string>Get Metadata</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
