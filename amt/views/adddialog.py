@@ -41,6 +41,11 @@ import amt.views.build.bookForm_ui as bookForm_ui
 import amt.views.build.lecturesForm_ui as lecturesForm_ui
 
 from amt.logger import getLogger
+from amt.db.datamodel import (
+    ArticleData,
+    BookData,
+    LecturesData
+)
 
 logger = getLogger(__name__)
 
@@ -111,8 +116,17 @@ class AddDialog(QDialog):
         logger.debug("add accepted")
         self.data["type"] = self.ui.entryTypeComboBox.currentText()
         super().accept()
+        
+class AbstractForm(QWidget):
+    """abstract add form"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+    
+    @abstract
+    def getData(self):
+        pass
 
-class ArticleForm(QWidget):
+class ArticleForm(AbstractForm):
     """add article form"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -153,14 +167,14 @@ class ArticleForm(QWidget):
         # self.ui.dateUpdatedLineEdit.setText(data['date_updated'])
         # self.ui.linkLineEdit.setText(data['link'])
         
-class BookForm(QWidget):
+class BookForm(AbstractForm):
     """add article form"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.ui = bookForm_ui.Ui_Form()
         self.ui.setupUi(self)
         
-class LecturesForm(QWidget):
+class LecturesForm(AbstractForm):
     """add article form"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
