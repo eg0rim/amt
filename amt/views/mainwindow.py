@@ -146,6 +146,7 @@ class MainWindow(QMainWindow):
         logger.debug("open db library")
         
     def saveLibrary(self):
+        # NOTE: currently changes saved right away
         logger.debug("save db library")
         
     def saveAsLibrary(self):
