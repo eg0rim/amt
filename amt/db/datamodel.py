@@ -27,11 +27,9 @@ class AbstractData(object):
     def __init__(self):
         super().__init__()
     
-    @abstract
     def toString(self):
         pass
     
-    @abstract
     def toShortString(self):
         pass
 
@@ -322,6 +320,15 @@ class LecturesData(EntryData):
         super().__init__(title, authors)
         self._school = None
         self._date = None
+        self._course = None
+
+    @property
+    def course(self) -> str:
+        return self._course
+
+    @course.setter
+    def course(self, value : str):
+        self._course = value
 
     @property
     def school(self) -> str:

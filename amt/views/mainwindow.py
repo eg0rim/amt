@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
         # if accepted add article to database and update table
         if dialog.exec() == QDialog.Accepted:
             #self.model.addArticle(dialog.data)
-            logger.debug(f"add entry of type {dialog.data["type"]} with data {dialog.data["data"]}")
+            logger.debug(f"add entry of type {type(dialog.data)}")
             self.updateTable()
     
     def deleteSelectedRows(self):

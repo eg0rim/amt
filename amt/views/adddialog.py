@@ -44,7 +44,8 @@ from amt.logger import getLogger
 from amt.db.datamodel import (
     ArticleData,
     BookData,
-    LecturesData
+    LecturesData,
+    AuthorData
 )
 
 logger = getLogger(__name__)
@@ -68,53 +69,16 @@ class AddDialog(QDialog):
         self.ui.buttonBox.accepted.connect(self.accept)
         self.ui.buttonBox.rejected.connect(self.reject)
         # data
-        self.data = {"type": "Article", "data": None}
+        self.data = None
         
     def changeForm(self, text):
         self.currentForm.hide()
         self.currentForm = self.forms[text]
         self.currentForm.show()
-        
-    def getCurrentFormData(self):
-        data = {}
-        rcount = self.currentForm.ui.formLayout.rowCount()
-        for i in range(rcount):
-            label = self.currentForm.ui.formLayout.itemAt(i, QFormLayout.LabelRole).widget()
-            field = self.currentForm.ui.formLayout.itemAt(i, QFormLayout.FieldRole).widget()
-            # expect that label is always QLabel
-            if not isinstance(label, QLabel):
-                logger.error(f"unexpected label encountered: {label}; skipping")
-                continue
-            labelText = label.text()
-            # expected fields: QLineEdit, QDateEdit, QDateTimeEdit
-            data[labelText] = field
-        return data
-    
+          
     def accept(self):
         """Accept the data provided through the dialog."""
-        # self.data = {}
-        # if not self.titleField.text():
-        #     QMessageBox.critical(
-        #         self,
-        #         "Error!",
-        #         f"You must provide article's title",
-        #     )
-        #     self.data = None  # Reset .data
-        #     return
-        # for field in (self.titleField,
-        # self.authorsField,
-        # self.arxivIdField,
-        # self.versionField,
-        # self.datePublishedField,
-        # self.dateUpdatedField,
-        # self.linkField):
-        #     self.data[field.objectName()] = field.text()
-
-        # if not self.data:
-        #     return
-        logger.debug(f"current fields: {self.getCurrentFormData()}")
-        logger.debug("add accepted")
-        self.data["type"] = self.ui.entryTypeComboBox.currentText()
+        self.data = self.currentForm.getData()
         super().accept()
         
 class AbstractForm(QWidget):
@@ -122,7 +86,6 @@ class AbstractForm(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
     
-    @abstract
     def getData(self):
         pass
 
@@ -133,6 +96,22 @@ class ArticleForm(AbstractForm):
         self.ui = articleForm_ui.Ui_Form()
         self.ui.setupUi(self)
         self.ui.getMetaButton.clicked.connect(self.getMetadataFromArxiv)
+        
+    def getData(self) -> ArticleData:
+        ui = self.ui
+        authorsStr = ui.authorLineEdit.text()
+        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')]
+        title = ui.titleLineEdit.text()     
+        data = ArticleData(title, authors)
+        data.arxivid = ui.arXivIDLineEdit.text()
+        data.version = ui.versionLineEdit.text()
+        data.journal = ui.journalLineEdit.text()
+        data.doi = ui.dOILineEdit.text()
+        data.link = ui.linkLineEdit.text()
+        data.datePublished = ui.publishedDateEdit.date()
+        data.dateArxivUploaded = ui.arXivUploadDateTimeEdit.dateTime()
+        data.dateArxivUpdated = ui.arXivUploadDateTimeEdit.dateTime()
+        return data
         
     def getMetadataFromArxiv(self):
         logger.debug("metadata requested")    
@@ -174,9 +153,31 @@ class BookForm(AbstractForm):
         self.ui = bookForm_ui.Ui_Form()
         self.ui.setupUi(self)
         
+    def getData(self) -> BookData:
+        ui = self.ui
+        authorsStr = ui.authorLineEdit.text()
+        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')]
+        title = ui.titleLineEdit.text()     
+        data = BookData(title, authors)
+        data.isbn = ui.iSBNLineEdit.text()
+        data.publisher = ui.publisherLineEdit.text()
+        data.datePublished = ui.datePublishedDateEdit.date()
+        return data
+        
 class LecturesForm(AbstractForm):
     """add article form"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.ui = lecturesForm_ui.Ui_Form()
         self.ui.setupUi(self)
+        
+    def getData(self) -> LecturesData:
+        ui = self.ui
+        authorsStr = ui.authorLineEdit.text()
+        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')]
+        title = ui.titleLineEdit.text()     
+        data = LecturesData(title, authors)
+        data.course = ui.courseLineEdit.text()
+        data.school = ui.uniLineEdit.text()
+        data.date = ui.dateDateEdit.date()
+        return data

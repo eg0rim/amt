@@ -57,7 +57,7 @@
    <item row="4" column="0">
     <widget class="QLabel" name="datePublishedLabel">
      <property name="text">
-      <string>Date published:</string>
+      <string>Published:</string>
      </property>
     </widget>
    </item>
