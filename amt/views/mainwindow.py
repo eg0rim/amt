@@ -75,8 +75,10 @@ class MainWindow(QMainWindow):
         # actions in menu
         self.ui.actionQuit.triggered.connect(self.close)
         self.ui.actionAbout.triggered.connect(self.openAboutDialog)
-        
-        
+        self.ui.actionNew_library.triggered.connect(self.newLibrary)
+        self.ui.actionOpen_library.triggered.connect(self.openLibrary)
+        self.ui.actionSave_library.triggered.connect(self.saveLibrary)
+        self.ui.actionSave_as.triggered.connect(self.saveAsLibrary)
         # update table
         self.updateTable()
         
@@ -136,4 +138,16 @@ class MainWindow(QMainWindow):
         
     def debug(self):
         logger.debug("Debug button pressed")
+        
+    def newLibrary(self):
+        logger.debug("create new db library")
+        
+    def openLibrary(self):
+        logger.debug("open db library")
+        
+    def saveLibrary(self):
+        logger.debug("save db library")
+        
+    def saveAsLibrary(self):
+        logger.debug("save as other file db library")
         
