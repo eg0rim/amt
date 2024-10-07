@@ -16,9 +16,6 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QComboBox" name="entryTypeComboBox">
-     <property name="placeholderText">
-      <string>Type of entry</string>
-     </property>
      <item>
       <property name="text">
        <string>Article</string>
@@ -31,7 +28,7 @@
      </item>
      <item>
       <property name="text">
-       <string>Lecture Notes</string>
+       <string>Lecture notes</string>
       </property>
      </item>
     </widget>

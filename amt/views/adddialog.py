@@ -26,7 +26,10 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QDialogButtonBox,
     QMessageBox,
-    QWidget
+    QWidget,
+    QLabel,
+    QDateEdit,
+    QDateTimeEdit
 )
 from PySide6.QtGui import *
 import urllib.request
@@ -37,6 +40,10 @@ import amt.views.build.articleForm_ui as articleForm_ui
 import amt.views.build.bookForm_ui as bookForm_ui
 import amt.views.build.lecturesForm_ui as lecturesForm_ui
 
+from amt.logger import getLogger
+
+logger = getLogger(__name__)
+
 class AddDialog(QDialog):
     """add dialog."""
     def __init__(self, parent=None):
@@ -44,25 +51,39 @@ class AddDialog(QDialog):
         self.ui = addDialog_ui.Ui_Dialog()
         self.ui.setupUi(self)
         # list of forms in one-to-one correspondence to options of self.ui.entryTypeComboBox
-        self.forms = [ArticleForm(self), BookForm(self), LecturesForm(self)]
-        self.ui.entryTypeComboBox.setCurrentIndex(0)
-        self.currentForm = self.forms[0]
-        for form in self.forms:
+        self.forms = {"Article":ArticleForm(self), "Book": BookForm(self), "Lecture notes": LecturesForm(self)}
+        self.ui.entryTypeComboBox.setCurrentText("Article")
+        self.currentForm = self.forms[self.ui.entryTypeComboBox.currentText()]
+        for form in self.forms.values():
             self.ui.formWidget.layout().addWidget(form)
             form.hide()
         self.currentForm.show()
-        self.ui.entryTypeComboBox.currentIndexChanged.connect(self.changeForm)
+        self.ui.entryTypeComboBox.currentTextChanged.connect(self.changeForm)
         # buttons behaviour
         self.ui.buttonBox.accepted.connect(self.accept)
         self.ui.buttonBox.rejected.connect(self.reject)
         # data
-        self.data = {}
+        self.data = {"type": "Article", "data": None}
         
-    def changeForm(self, index):
+    def changeForm(self, text):
         self.currentForm.hide()
-        self.currentForm = self.forms[index]
+        self.currentForm = self.forms[text]
         self.currentForm.show()
         
+    def getCurrentFormData(self):
+        data = {}
+        rcount = self.currentForm.ui.formLayout.rowCount()
+        for i in range(rcount):
+            label = self.currentForm.ui.formLayout.itemAt(i, QFormLayout.LabelRole).widget()
+            field = self.currentForm.ui.formLayout.itemAt(i, QFormLayout.FieldRole).widget()
+            # expect that label is always QLabel
+            if not isinstance(label, QLabel):
+                logger.error(f"unexpected label encountered: {label}; skipping")
+                continue
+            labelText = label.text()
+            # expected fields: QLineEdit, QDateEdit, QDateTimeEdit
+            data[labelText] = field
+        return data
     
     def accept(self):
         """Accept the data provided through the dialog."""
@@ -86,9 +107,10 @@ class AddDialog(QDialog):
 
         # if not self.data:
         #     return
-        print("add accepted")
+        logger.debug(f"current fields: {self.getCurrentFormData()}")
+        logger.debug("add accepted")
+        self.data["type"] = self.ui.entryTypeComboBox.currentText()
         super().accept()
-        
 
 class ArticleForm(QWidget):
     """add article form"""
@@ -99,36 +121,37 @@ class ArticleForm(QWidget):
         self.ui.getMetaButton.clicked.connect(self.getMetadataFromArxiv)
         
     def getMetadataFromArxiv(self):
-        if not self.ui.arXivIDLineEdit.text():
-            QMessageBox.critical(
-                self,
-                "Error!",
-                f"You must provide arxiv id",
-            )
-            return
-        try:
-            data = parseArxiv(self.ui.arXivIDLineEdit.text())
-        except urllib.error.URLError:
-            QMessageBox.critical(
-                self,
-                "Error!",
-                f"Check your internet connection",
-            )
-            return
-        if not data:
-            QMessageBox.critical(
-                self,
-                "Error!",
-                f"Article not found! Check the arXiv id",
-            )
-            return
-        self.ui.titleLineEdit.setText(data['title'])
-        self.ui.authorLineEdit.setText(', '.join(data['authors']))
-        self.ui.arXivIDLineEdit.setText(data['arxiv_id'])
-        self.ui.versionLineEdit.setText(data['version'])
-        self.ui.datePublishedLineEdit.setText(data['date_published'])
-        self.ui.dateUpdatedLineEdit.setText(data['date_updated'])
-        self.ui.linkLineEdit.setText(data['link'])
+        logger.debug("metadata requested")    
+        # if not self.ui.arXivIDLineEdit.text():
+        #     QMessageBox.critical(
+        #         self,
+        #         "Error!",
+        #         f"You must provide arxiv id",
+        #     )
+        #     return
+        # try:
+        #     data = parseArxiv(self.ui.arXivIDLineEdit.text())
+        # except urllib.error.URLError:
+        #     QMessageBox.critical(
+        #         self,
+        #         "Error!",
+        #         f"Check your internet connection",
+        #     )
+        #     return
+        # if not data:
+        #     QMessageBox.critical(
+        #         self,
+        #         "Error!",
+        #         f"Article not found! Check the arXiv id",
+        #     )
+        #     return
+        # self.ui.titleLineEdit.setText(data['title'])
+        # self.ui.authorLineEdit.setText(', '.join(data['authors']))
+        # self.ui.arXivIDLineEdit.setText(data['arxiv_id'])
+        # self.ui.versionLineEdit.setText(data['version'])
+        # self.ui.datePublishedLineEdit.setText(data['date_published'])
+        # self.ui.dateUpdatedLineEdit.setText(data['date_updated'])
+        # self.ui.linkLineEdit.setText(data['link'])
         
 class BookForm(QWidget):
     """add article form"""
@@ -143,6 +166,3 @@ class LecturesForm(QWidget):
         super().__init__(parent=parent)
         self.ui = lecturesForm_ui.Ui_Form()
         self.ui.setupUi(self)
-
-
-    

@@ -29,13 +29,13 @@ class LibTableWidget(QTableWidget):
         super().__init__(parent)
         self.horizontalHeader().sortIndicatorChanged.connect(self.sortItems)
 
-    def contextMenuEvent(self, event):    
-        menu = QMenu(self)
+    #def contextMenuEvent(self, event):    
+        #menu = QMenu(self)
         #quitAction = menu.addAction("Quit")
         #action = menu.exec_(self.mapToGlobal(event.pos()))
         #if action == quitAction:
         #    qApp.quit()
-        editMetaAction = menu.addAction("Edit metadata")
+        #editMetaAction = menu.addAction("Edit metadata")
         #action =  menu.exec_(self.mapToGlobal(event.pos()))
     
     def resizeColumns(self):
@@ -47,15 +47,3 @@ class LibTableWidget(QTableWidget):
             else:
                 self.setColumnWidth(i, int(tWidth * 0.4 / float((tColNum - 2))))
         
-    def deleteSelected(self):
-        rows = [r.row() for r in self.selectionModel().selectedRows()]
-        if len(rows)<1:
-            return QMessageBox.Cancel, rows
-        messageBox = QMessageBox.warning(
-            self,
-            "Warning!",
-            f"Do you want to remove the selected articles ({len(rows)})?",
-            QMessageBox.Ok | QMessageBox.Cancel,
-        )
-        return messageBox, rows
-    

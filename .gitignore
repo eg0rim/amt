@@ -4,3 +4,4 @@ __pycache__
 /todo.txt
 /amt/views/build/
 /run
+*.log

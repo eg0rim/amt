@@ -18,7 +18,7 @@
 
 """main window for the app"""
 
-import sys, logging
+import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -39,6 +39,10 @@ from .build.mainwindow_ui import (
 from .aboutdialog import AboutDialog
 from .adddialog import AddDialog
 
+from amt.logger import getLogger
+
+logger = getLogger(__name__)
+
 class MainWindow(QMainWindow):
     """main window"""
     def __init__(self, parent=None):
@@ -46,8 +50,9 @@ class MainWindow(QMainWindow):
         # connect a model to the UI
         try:
             self.model = AmtModel()
+            logger.info(f"Model is connected")
         except DatabaseError:
-            logging.critical(f"Database Error: {self.model.db.connection.lastError().text()}")
+            logger.critical(f"Database Error: {self.model.db.connection.lastError().text()}")
             QMessageBox.critical(
             None,
             "AMT",
@@ -79,7 +84,7 @@ class MainWindow(QMainWindow):
         data = self.model.extractArticles()
         numrows = len(data)
         if numrows < 1: 
-            logging.info(msg="database is empty")
+            logger.info(msg="database is empty")
             return 
         numcols = 3
         self.ui.tableWidget.setRowCount(numrows)
@@ -97,15 +102,32 @@ class MainWindow(QMainWindow):
         dialog = AddDialog(self)
         # if accepted add article to database and update table
         if dialog.exec() == QDialog.Accepted:
-            self.model.addArticle(dialog.data)
+            #self.model.addArticle(dialog.data)
+            logger.debug(f"add entry of type {dialog.data["type"]} with data {dialog.data["data"]}")
             self.updateTable()
     
     def deleteSelectedRows(self):
-        deleteMessage, rows = self.ui.tableWidget.deleteSelected()
-        if deleteMessage == QMessageBox.Ok:
+        rows = [r.row() for r in self.ui.tableWidget.selectionModel().selectedRows()]
+        if len(rows)<1:
+            # QMessageBox.warning(
+            #     self,
+            #     "Warning!",
+            #     f"No rows selected.",
+            # )
+            return False
+        messageBox = QMessageBox.warning(
+            self,
+            "Warning!",
+            f"Do you want to remove the selected articles ({len(rows)})?",
+            QMessageBox.Ok | QMessageBox.Cancel,
+        )
+        if messageBox == QMessageBox.Ok:
             for row in rows:
                 self.model.deleteArticle(self.ui.tableWidget.item(row,0).text())
             self.updateTable()
+            return True
+        else:
+            return False
             
     def resizeEvent(self, event):
         """resize columns when window size is changed"""
@@ -113,5 +135,5 @@ class MainWindow(QMainWindow):
         return super(MainWindow, self).resizeEvent(event)
         
     def debug(self):
-        print(self.model.extractArticles())
+        logger.debug("Debug button pressed")
         
