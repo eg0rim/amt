@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from amt.db.model import AMTModel
 from amt.db.database import AMTDatabaseError, AMTQuery
+from amt.db.datamodel import ArticleData, AuthorData
 
 from  .build.resources_qrc import *
 from .build.mainwindow_ui import (
@@ -124,17 +125,15 @@ class MainWindow(QMainWindow):
     #     else:
     #         return False
             
-    def resizeEvent(self, event):
-        """resize columns when window size is changed"""
-        #self.ui.tableWidget.resizeColumns()
-        return super(MainWindow, self).resizeEvent(event)
-        
     def debug(self):
         logger.debug("Debug button pressed")
         w = self.ui.tableView.width()
         logger.debug(f"width of table = {w}")
         self.model.removeRows(1,2)
         logger.debug(f"rows removed from 1 to 2")
+        entry = ArticleData("Test", [AuthorData("John", "Doe")])
+        logger.debug(f"new entry: {entry.toString()}")
+        logger.debug(f"variables: {entry.__dict__().keys()}")
         
         
     def newLibrary(self):
