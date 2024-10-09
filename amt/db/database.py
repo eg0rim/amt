@@ -18,211 +18,380 @@
 
 """initialize and create connection to the database"""
 
-import json, logging
+from PySide6.QtSql import (
+    QSqlDatabase, 
+    QSqlQuery,
+)
+from .datamodel import (
+    AbstractData,
+    AuthorData,
+    ArticleData,
+    LecturesData,
+    BookData
+)
+from amt.logger import getLogger
 
-from PySide6.QtSql import QSqlDatabase, QSqlQuery
+logger = getLogger(__name__)
 
-class DatabaseError(Exception):
+class AMTDatabaseError(Exception):
     def __init__(self, *args: object) -> None:
         """Class of database errors"""
         super().__init__(*args)
 
-class DB:
-    def __init__(self, databaseFile: str) -> None:
-        """Class of database objects that provides an interface for SQLite queries.
+class AMTDatabase(QSqlDatabase):
+    def __init__(self, databaseFile : str, *args : object) -> None:
+        """Inherits QSqlDatabase. Creates database for AMT.
         
         :param str databaseFile: path to the database file
         :raises DatabaseEroor: if the connection to the database can not be established
         """
-        self.connection = QSqlDatabase.addDatabase("QSQLITE")
-        self.connection.setDatabaseName(databaseFile)
-        self.query = QSqlQuery()
-        if not self.connection.open():
-            raise DatabaseError(self.connection.lastError().text())
-        self._createTables()
+        super().__init__("QSQLITE", *args)
+        self.setDatabaseName(databaseFile)
+        # if not self.open():
+        #     errormsg=self.lastError().text()
+        #     logger.error(errormsg)
+        #     raise AMTDatabaseError(errormsg)
+        # self._createTables()
 
-    def _createTables(self) -> None:
+    def open(self):
+        if not super().open():
+            errormsg=self.lastError().text()
+            logger.critical(f"db open error: {errormsg}")
+            raise AMTDatabaseError(errormsg)
+        self._createDefaultTables()
+
+    def _createDefaultTables(self) -> None:
         """Create all necessary tables in the database."""
-        self.query.exec(
+        query = QSqlQuery(self)
+        query.exec(
             """
             CREATE TABLE IF NOT EXISTS author (
                 author_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                first_name VARCHAR,
-                second_name VARCHAR,
-                third_name VARCHAR,
-                UNIQUE(first_name, second_name, third_name)
+                first_name VARCHAR NOT NULL,
+                last_name VARCHAR,
+                middle_name VARCHAR,
+                UNIQUE(first_name, last_name, middle_name)
             )
             """
         )
-        self.query.exec(
+        query.exec(
             """
             CREATE TABLE IF NOT EXISTS article (
                 article_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title VARCHAR,
+                title VARCHAR NOT NULL,
                 arxiv_id VARCHAR,
                 version INTEGER,
-                date_published VARCHAR,
+                date_uploaded VARCHAR,
                 date_updated VARCHAR,
                 comment VARCHAR,
                 link VARCHAR,
-                link_pdf VARCHAR,
-                p_category VARCAHR,
+                p_category VARCHAR,
                 doi VARCHAR,
                 journal VARCHAR,
+                date_published VARCHAR,
                 summary VARCHAR,
-                local_link VARCHAR,
-                UNIQUE(title, version, date_published)
+                filename VARCHAR,
+                UNIQUE(title, version)
             )
             """
         )
-        self.query.exec(
+        query.exec(
+            """
+            CREATE TABLE IF NOT EXISTS book (
+                book_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                title VARCHAR NOT NULL,
+                edition INTEGER,
+                comment VARCHAR,
+                link VARCHAR,
+                doi VARCHAR,
+                publisher VARCHAR,
+                date_published VARCHAR,
+                summary VARCHAR,
+                filename VARCHAR,
+                UNIQUE(title, edition)
+            )
+            """
+        )
+        query.exec(
+            """
+            CREATE TABLE IF NOT EXISTS lectures (
+                lectures_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                title VARCHAR NOT NULL,
+                course VARCHAR,
+                school INTEGER,
+                comment VARCHAR,
+                link VARCHAR,
+                doi VARCHAR,
+                date_published VARCHAR,
+                summary VARCHAR,
+                filename VARCHAR,
+                UNIQUE(title, course, school)
+            )
+            """
+        )
+        query.exec(
             """
             CREATE TABLE IF NOT EXISTS article_author (
-                author_id INTEGER REFERENCES author,
-                article_id INTEGER REFERENCES article
+                author_id INTEGER,
+                article_id INTEGER,
+                FOREIGN KEY (author_id) REFERENCES author(author_id),
+                FOREIGN KEY (article_id) REFERENCES article(article_id)
             )
             """
         )
-
-        self.query.exec(
+        query.exec(
             """
-            CREATE TABLE IF NOT EXISTS category (
-                category_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                category VARCAHR UNIQUE
+            CREATE TABLE IF NOT EXISTS book_author (
+                author_id INTEGER,
+                book_id INTEGER,
+                FOREIGN KEY (author_id) REFERENCES author(author_id),
+                FOREIGN KEY (book_id) REFERENCES book(book_id)
             )
             """
         )
-
-        self.query.exec(
+        query.exec(
             """
-            CREATE TABLE IF NOT EXISTS article_category (
-                category_id INTEGER REFERENCES category,
-                article_id INTEGER REFERENCES article
+            CREATE TABLE IF NOT EXISTS lectures_author (
+                author_id INTEGER,
+                lectures_id INTEGER,
+                FOREIGN KEY (author_id) REFERENCES author(author_id),
+                FOREIGN KEY (lectures_id) REFERENCES lectures(lectures_id)
             )
             """
         )
-
-    def select(self, table: str, columns : list = [], conds : dict = {}) -> bool:
-        """selects from table columns according to conds
+        query.exec(
+            """
+            CREATE TABLE IF NOT EXISTS arxivcategory (
+                category VARCHAR UNIQUE NOT NULL
+            )
+            """
+        )
+        query.exec(
+            """
+            CREATE TABLE IF NOT EXISTS article_arxivcategory (
+                category VARCHAR,
+                article_id INTEGER,
+                FOREIGN KEY (category) REFERENCES arxivcategory(category),
+                FOREIGN KEY (article_id) REFERENCES article(article_id)
+            )
+            """
+        )      
+         
+class AMTQuery(QSqlQuery):
+    def __init__(self, db : AMTDatabase):
+        super().__init__(db)
+        self.db = db
         
-        :param list table: name of the table from which select data
-        :param list columns: list of string containing column names to select, if list is empty * is assumed
-        :param dist conds: dictionary of the form {col1 : [val1_1, val1_2, ...], col2 : [val2_1, val2_2, ...], ...} results in WHERE col1 IN (val1_1, val2_2, ...) AND col2 IN (val2_1, val2_2, ...) AND ...
-        :return: True if the selection is sucessful
-        :rtype: bool
+    def select(self, table : str, columns : list[str] = [], filter : str = "") -> bool:
         """
-        queryString = "SELECT arg1 FROM arg2"
-        if conds:
-            queryString = queryString + " WHERE arg3"
-        queryString = queryString.replace("arg2", table)
+        Implements query:
+            SELECT table.columns FROM table WHERE filter
+
+        Args:
+            table (str): table to select from
+            columns (list[str], optional): list of columns to select. Defaults to []: select all
+            filter (str, optional): Defaults to "".
+
+        Returns:
+            bool: _description_
+        """
+        queryString = "SELECT "
         if columns:
-            queryString = queryString.replace("arg1", ", ".join(columns))
+            for col in columns[:-1]:
+                queryString += f"{table}.{col}, "
+            queryString += f"{table}.{col} "
         else:
-            queryString = queryString.replace("arg1", "*")
-        if conds:
-            condsString = ""
-            for key in conds.keys():
-                condsString += str(key) +" IN " + str(conds[key]).replace("[","(").replace("]",") AND ")
-            condsString = condsString[0:-4]
-            queryString = queryString.replace("arg3", condsString)
-        if self.query.exec(queryString): 
+            queryString += "* "
+        queryString += f"FROM {table}"
+        if filter:
+            queryString += f" WHERE {filter}"
+        logger.info(f"select {table} from db")
+        if self.exec(queryString):
+            logger.info(f"selection successful")
             return True
-        else: 
-            logging.error("selection failed: " + self.query.lastError().text())
+        else:
+            logger.error("selection failed: " + self.query.lastError().text())
             return False
-
-    def extract(self) -> list:
-        """extracts data from db after query
-        
-        :returns: data from db
-        :rtype: list
+    
+    def selectByReference(self, table : str, refTable : str, id : str, refid : str, columns : list[str] = [], filter : str = "") -> bool:
         """
-        table = []
-        row = []
-        while self.query.next():
-            row = []
-            for i in range(self.query.record().count()):
-                row.append(self.query.value(i))
-            table.append(row)
-        return table
+        Implements query:
+            SELECT table.columns FROM table JOIN refTable ON table.id = refTable.refid WHERE filter
 
+        Args:
+            table (str): table to select from
+            refTable (str): reference table
+            id (str): identifier column in table
+            refid (str): corresponding reference column in ref table
+            columns (list[str], optional): columns to select. Defaults to []: select all columns
+            filter (str, optional): Defaults to "".
 
-
-    def insert(self, table: str, data: dict) -> bool:
-        """inserts rows into a table
-        
-        :param str table: name of the table where insert rows to
-        :param dist data: dictionary of the form {col1 : [val1_1, val1_2, ...], col2 : [val2_1, val2_2, ...], ...} results in WHERE col1 IN (val1_1, val2_2, ...) AND col2 IN (val2_1, val2_2, ...) AND ...
-        :return: True if the insertion is sucessful
-        :rtype: bool
+        Returns:
+            bool: returns True if selection is successful
         """
-        dataValues = list(data.values())
-        dataColumns = list(data.keys())
-        #print(dataValues)
-        if not DB._isRectangular(dataValues):
-            logging.error("the data passed into insert is not consistent")
-            return False
-        queryString = "INSERT OR IGNORE INTO arg1 arg2 VALUES arg3"
-        queryString = queryString.replace("arg1", table)
-        queryString = queryString.replace("arg2", str(dataColumns).replace("[","(").replace("]",")") )
-        arg3 = str(self._transpose(dataValues))[1:-1].replace("[","(").replace("]",")")
-        queryString = queryString.replace("arg3", arg3)
-        #print(queryString)
-        if self.query.exec(queryString): 
+        queryString = "SELECT "
+        if columns:
+            for col in columns[:-1]:
+                queryString += f"{table}.{col}, "
+            queryString += f"{table}.{col} "
+        else:
+            queryString += "* "
+        queryString += f"FROM {table} JOIN {refTable} ON {table}.{id} = {refTable}.{refid}"
+        if filter:
+            queryString += f" WHERE {filter}"
+        if self.exec(queryString):
             return True
-        else: 
-            logging.error("insertion failed: " + self.query.lastError().text())
+        else:
+            logger.error("selection failed: " + self.query.lastError().text())
             return False
-
-    def delete(self, table: str, data: dict) -> bool:
-        """removes row(s) from a table
         
-        :param str table: table to modify
-        :param dict data: dictionary that has column names as keys and values corresponding to the row(s) to remove
-        :return: True if the removal is succesful
-        :rtype: bool
+    def amtData(self, typ : str) -> AbstractData:
         """
-        queryString = "DELETE FROM arg1 WHERE arg2"
-        queryString = queryString.replace("arg1", table)
-        condsString = ""
-        for key in data.keys():
-            condsString += str(key) +" IN " + str(data[key]).replace("[","(").replace("]",") AND ")
-        condsString = condsString[0:-4]
-        queryString = queryString.replace("arg2", condsString)
-        print(queryString)
-        if self.query.exec(queryString): 
-            return True
-        else: 
-            logging.error("deletion failed: " + self.query.lastError().text())
-            return False
+        returns a child of AbstractData (depending on typ) for the current record. If conversion is not possible, returns None
+        
+        Args:
+            typ (str): type of data to return. Allowed values: author, article, lectures, book
+
+        Returns:
+            AbstractData: a child of AbstractData or None
+        """
+        logger.info(f"getting {typ} data")
+        if not typ in ("article", "book", "lectures", "author"):
+            logger.critical("amtData conversion error: encountered unexpected type")
+            return None
+        if typ == "author":
+            fname = self.value("first_name")
+            if fname is None:
+                logger.error("first_name field was not found or Null")
+                return None
+            lname = self.value("last_name")
+            if lname is None:
+                lname = ""
+            mnames = self.value("middle_name")
+            if mnames is None:
+                mnames = ""
+            author = AuthorData(' '.join([fname, mnames, lname]))
+            # TODO: fill other fields
+            return author
+        else:
+            idstr = typ + "_id"
+            reftab = typ + "_author"
+            id = self.value(idstr)
+            title = self.value("title")
+            if title is None:
+                logger.error("title field was not found or Null")
+                return None
+            newQuery = self.__class__(self.db)
+            newQuery.selectByReference("author", reftab, "author_id", "author_id", filter=f"{idstr} = {id}")
+            authors = []
+            while newQuery.next():
+                author = newQuery.amtData("author")
+                if author:
+                    authors.append(author)
+                else:
+                    logger.warning(f"invalid author encountered in row {newQuery.value(0)}")
+            if typ == "article":
+                entry =  ArticleData(title, authors)
+            if typ == "book":
+                entry =  BookData(title, authors)
+            if typ == "lectures":
+                entry =  LecturesData(title, authors)
+            # TODO: fill other fields
+            return entry
+            
+
+    
+    # TODO: fix below
+    # def extract(self) -> list:
+    #     """extracts data from db after query
+        
+    #     :returns: data from db
+    #     :rtype: list
+    #     """
+    #     table = []
+    #     row = []
+    #     while self.query.next():
+    #         row = []
+    #         for i in range(self.query.record().count()):
+    #             row.append(self.query.value(i))
+    #         table.append(row)
+    #     return table
+
+
+
+    # def insert(self, table: str, data: dict) -> bool:
+    #     """inserts rows into a table
+        
+    #     :param str table: name of the table where insert rows to
+    #     :param dist data: dictionary of the form {col1 : [val1_1, val1_2, ...], col2 : [val2_1, val2_2, ...], ...} results in WHERE col1 IN (val1_1, val2_2, ...) AND col2 IN (val2_1, val2_2, ...) AND ...
+    #     :return: True if the insertion is sucessful
+    #     :rtype: bool
+    #     """
+    #     dataValues = list(data.values())
+    #     dataColumns = list(data.keys())
+    #     #print(dataValues)
+    #     if not DB._isRectangular(dataValues):
+    #         logging.error("the data passed into insert is not consistent")
+    #         return False
+    #     queryString = "INSERT OR IGNORE INTO arg1 arg2 VALUES arg3"
+    #     queryString = queryString.replace("arg1", table)
+    #     queryString = queryString.replace("arg2", str(dataColumns).replace("[","(").replace("]",")") )
+    #     arg3 = str(self._transpose(dataValues))[1:-1].replace("[","(").replace("]",")")
+    #     queryString = queryString.replace("arg3", arg3)
+    #     #print(queryString)
+    #     if self.query.exec(queryString): 
+    #         return True
+    #     else: 
+    #         logging.error("insertion failed: " + self.query.lastError().text())
+    #         return False
+
+    # def delete(self, table: str, data: dict) -> bool:
+    #     """removes row(s) from a table
+        
+    #     :param str table: table to modify
+    #     :param dict data: dictionary that has column names as keys and values corresponding to the row(s) to remove
+    #     :return: True if the removal is succesful
+    #     :rtype: bool
+    #     """
+    #     queryString = "DELETE FROM arg1 WHERE arg2"
+    #     queryString = queryString.replace("arg1", table)
+    #     condsString = ""
+    #     for key in data.keys():
+    #         condsString += str(key) +" IN " + str(data[key]).replace("[","(").replace("]",") AND ")
+    #     condsString = condsString[0:-4]
+    #     queryString = queryString.replace("arg2", condsString)
+    #     print(queryString)
+    #     if self.query.exec(queryString): 
+    #         return True
+    #     else: 
+    #         logging.error("deletion failed: " + self.query.lastError().text())
+    #         return False
     
 
 
-    @staticmethod
-    def _transpose(l: list) -> list:
-        """transopose a list of lists
+    # @staticmethod
+    # def _transpose(l: list) -> list:
+    #     """transopose a list of lists
         
-        :param list l: list to be transposed
-        :return: transposed list
-        :rtype: list
-        """
-        if type(l[0]) == list:
-            return list(map(list, zip(*l )))  
-        else: 
-            return [l]
+    #     :param list l: list to be transposed
+    #     :return: transposed list
+    #     :rtype: list
+    #     """
+    #     if type(l[0]) == list:
+    #         return list(map(list, zip(*l )))  
+    #     else: 
+    #         return [l]
 
-    @staticmethod    
-    def _isRectangular(n: list) -> bool:
-        """check whether a list of list is rectangular
+    # @staticmethod    
+    # def _isRectangular(n: list) -> bool:
+    #     """check whether a list of list is rectangular
         
-        :param list n: list of lists
-        :return: True if the list of list rectangular
-        :rtype: bool
-        """
-        if type(n[0]) == list: 
-            return all(len(i) == len(n[0]) for i in n)
-        else:
-            return True
-
+    #     :param list n: list of lists
+    #     :return: True if the list of list rectangular
+    #     :rtype: bool
+    #     """
+    #     if type(n[0]) == list: 
+    #         return all(len(i) == len(n[0]) for i in n)
+    #     else:
+    #         return True
         
-         

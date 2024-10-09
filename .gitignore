@@ -5,3 +5,4 @@ __pycache__
 /amt/views/build/
 /run
 *.log
+*.amtdb

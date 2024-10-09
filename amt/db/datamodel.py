@@ -26,6 +26,7 @@ from PySide6.QtCore import (
 class AbstractData(object):
     def __init__(self):
         super().__init__()
+        self.id = 0
     
     def toString(self):
         pass
@@ -195,6 +196,21 @@ class EntryData(AbstractData):
     
     def toShortString(self):
         return self.title
+    
+    def getAuthorsString(self):
+        s = ""
+        for author in self.authors[:-1]:
+            s += author + ", "
+        s += self.authors[-1]
+        return s
+            
+    def getColumn(self, i : int) -> str:
+        if i == 0:
+            return self.toShortString()
+        elif i == 1:
+            return self.getAuthorsString()
+        else:
+            return ""
         
 class ArticleData(EntryData):
     """article data"""
@@ -283,7 +299,7 @@ class ArticleData(EntryData):
         self._fileName = value
         
 class BookData(EntryData):
-    """article data"""
+    """books data"""
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._isbn = None
@@ -315,7 +331,7 @@ class BookData(EntryData):
         self._datePublished = value
         
 class LecturesData(EntryData):
-    """article data"""
+    """lecture notes data"""
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._school = None
