@@ -308,11 +308,11 @@ class AMTQuery(QSqlQuery):
     def insert(self, table : str, entry : object) -> bool:
         """
         Implements query:
-            INSERT INTO table (columns) VALUES (values)
+            INSERT OR IGNORE INTO table (columns) VALUES (values)
 
         Args:
             table (str): table to insert into
-            entry (AbstractData): data to insert
+            entry (object): data to insert
 
         Returns:
             bool: returns True if insertion is successful
@@ -359,6 +359,9 @@ class AMTQuery(QSqlQuery):
                 return False
             fieldsToInsert = ["author_id", f"{table.split('_')[0]}_id"]
             valuesToInsert = [entry["author_id"], entry[f"{table.split('_')[0]}_id"]]
+        else:
+            logger.error(f"insertion failed: invalid table {table}")
+            return False
         queryStringFields = ""
         queryStringValues = ""
         for i in range(len(valuesToInsert)):

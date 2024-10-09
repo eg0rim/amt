@@ -134,6 +134,7 @@ class MainWindow(QMainWindow):
         query.insert("arxivcategory", {"category": "math"})
         
         query.insert("article_author", {"article_id": 2, "author_id": 1})
+        query.insert("sdfsd", {"article_id": 2, "author_id": 1})
         
         
         
