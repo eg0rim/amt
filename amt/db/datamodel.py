@@ -26,13 +26,27 @@ from PySide6.QtCore import (
 class AbstractData(object):
     def __init__(self):
         super().__init__()
-        self.id = 0
+        self._id = 0
+    
+    @property
+    def id(self) -> int:
+        return self._id
+    
+    @id.setter
+    def id(self, value : int):
+        self._id = value
     
     def toString(self):
         pass
     
     def toShortString(self):
         pass
+    
+    def getDisplayData(self, field : str) -> str:
+        if field == "id":
+            return str(self.id)
+        else:
+            return ""
 
 class OrganizationData(AbstractData):
     """institute, university, company, etc data"""
@@ -80,6 +94,7 @@ class OrganizationData(AbstractData):
     
     def toShortString(self):
         return self.shortName
+    
 
 class AuthorData(AbstractData):
     """author data"""
@@ -160,6 +175,7 @@ class AuthorData(AbstractData):
     
     def toShortString(self):
         return ' '.join([self.firstName] + [self.lastName])
+    
 
 class EntryData(AbstractData):
     """entry data"""
@@ -199,18 +215,18 @@ class EntryData(AbstractData):
     
     def getAuthorsString(self):
         s = ""
-        for author in self.authors[:-1]:
-            s += author + ", "
-        s += self.authors[-1]
+        if len(self.authors) > 0:
+            for author in self.authors[:-1]:
+                s += author.toShortString() + ", "
+            s += self.authors[-1].toShortString()
         return s
-            
-    def getColumn(self, i : int) -> str:
-        if i == 0:
+    
+    def getDisplayData(self, field : str) -> str:
+        if field == "title":
             return self.toShortString()
-        elif i == 1:
+        if field == "authors":
             return self.getAuthorsString()
-        else:
-            return ""
+        return super().getDisplayData(field)
         
 class ArticleData(EntryData):
     """article data"""
@@ -297,6 +313,11 @@ class ArticleData(EntryData):
     @fileName.setter
     def fileName(self, value : str):
         self._fileName = value
+        
+    def getDisplayData(self, field: str) -> str:
+        if field == "arxivid":
+            return self.arxivid
+        return super().getDisplayData(field)
         
 class BookData(EntryData):
     """books data"""

@@ -271,6 +271,7 @@ class AMTQuery(QSqlQuery):
             if mnames is None:
                 mnames = ""
             author = AuthorData(' '.join([fname, mnames, lname]))
+            author.id = self.value("author_id")
             # TODO: fill other fields
             return author
         else:
@@ -292,33 +293,43 @@ class AMTQuery(QSqlQuery):
                     logger.warning(f"invalid author encountered in row {newQuery.value(0)}")
             if typ == "article":
                 entry =  ArticleData(title, authors)
+                entry.id = self.value("article_id")
+                entry.arxivid = self.value("arxiv_id")
             if typ == "book":
                 entry =  BookData(title, authors)
+                entry.id = self.value("book_id")
             if typ == "lectures":
                 entry =  LecturesData(title, authors)
+                entry.id = self.value("lectures_id")
             # TODO: fill other fields
             return entry
-            
-
-    
-    # TODO: fix below
-    # def extract(self) -> list:
-    #     """extracts data from db after query
         
-    #     :returns: data from db
-    #     :rtype: list
+    # def insert(self, table : str, entry : AbstractData) -> bool:
     #     """
-    #     table = []
-    #     row = []
-    #     while self.query.next():
-    #         row = []
-    #         for i in range(self.query.record().count()):
-    #             row.append(self.query.value(i))
-    #         table.append(row)
-    #     return table
+    #     Implements query:
+    #         INSERT INTO table (columns) VALUES (values)
 
+    #     Args:
+    #         table (str): table to insert into
+    #         entry (AbstractData): data to insert
 
-
+    #     Returns:
+    #         bool: returns True if insertion is successful
+    #     """
+    #     columns = []
+    #     values = []
+    #     for key in entry.__dict__.keys():
+    #         if key == "id":
+    #             continue
+    #         columns.append(key)
+    #         values.append(entry.__dict__[key])
+    #     queryString = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(values)})"
+    #     if self.exec(queryString):
+    #         return True
+    #     else:
+    #         logger.error("insertion failed: " + self.lastError().text())
+    #         return False
+            
     # def insert(self, table: str, data: dict) -> bool:
     #     """inserts rows into a table
         

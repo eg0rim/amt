@@ -78,29 +78,15 @@ class MainWindow(QMainWindow):
         self.ui.actionOpen_library.triggered.connect(self.openLibrary)
         self.ui.actionSave_library.triggered.connect(self.saveLibrary)
         self.ui.actionSave_as.triggered.connect(self.saveAsLibrary)
+        # main table 
+        self.ui.tableView.setModel(self.model)
+        self.ui.tableView.resizeColumnsToContents()
         # update table
         self.updateTable()
         
     def updateTable(self):
-        logger.info(f"update table")
-        logger.info(f"init data retrieval")
-        entries = self.model.extractEntries()
-        numrows = len(entries)
-        if numrows < 1: 
-            logger.info(msg="database is empty")
-            return 
-        numcols = 3
-        logger.debug(f"retrieve {numrows} articles")
-        for entry in entries:
-            logger.debug(entry.toString())
-        # self.ui.tableWidget.setRowCount(numrows)
-        # #print(numcols, numrows)
-        # #print(data)
-        # for row in range(numrows):
-        #     for col in range(numcols):
-        #         self.ui.tableWidget.setItem(row, col,QTableWidgetItem(str(data[row][col])))
-        # #self.resizeColumns()
-        logger.info(f"update table completed")
+        logger.info(f"update table button clicked")
+        self.model.update()
         
     def openAboutDialog(self):
         AboutDialog(self).exec()
@@ -114,28 +100,29 @@ class MainWindow(QMainWindow):
             self.updateTable()
     
     def deleteSelectedRows(self):
-        rows = [r.row() for r in self.ui.tableWidget.selectionModel().selectedRows()]
-        if len(rows)<1:
-            # QMessageBox.warning(
-            #     self,
-            #     "Warning!",
-            #     f"No rows selected.",
-            # )
-            return False
-        messageBox = QMessageBox.warning(
-            self,
-            "Warning!",
-            f"Do you want to remove the selected articles ({len(rows)})?",
-            QMessageBox.Ok | QMessageBox.Cancel,
-        )
-        if messageBox == QMessageBox.Ok:
-            for row in rows:
-                #self.model.deleteArticle(self.ui.tableWidget.item(row,0).text())
-                logger.debug(f"delete row {row}")
-            #self.updateTable()
-            return True
-        else:
-            return False
+        logger.debug(f"delete selected rows")
+    #     rows = [r.row() for r in self.ui.tableWidget.selectionModel().selectedRows()]
+    #     if len(rows)<1:
+    #         # QMessageBox.warning(
+    #         #     self,
+    #         #     "Warning!",
+    #         #     f"No rows selected.",
+    #         # )
+    #         return False
+    #     messageBox = QMessageBox.warning(
+    #         self,
+    #         "Warning!",
+    #         f"Do you want to remove the selected articles ({len(rows)})?",
+    #         QMessageBox.Ok | QMessageBox.Cancel,
+    #     )
+    #     if messageBox == QMessageBox.Ok:
+    #         for row in rows:
+    #             #self.model.deleteArticle(self.ui.tableWidget.item(row,0).text())
+    #             logger.debug(f"delete row {row}")
+    #         #self.updateTable()
+    #         return True
+    #     else:
+    #         return False
             
     def resizeEvent(self, event):
         """resize columns when window size is changed"""
@@ -144,11 +131,11 @@ class MainWindow(QMainWindow):
         
     def debug(self):
         logger.debug("Debug button pressed")
-        query = AMTQuery(self.model.db)
-        query.select("article")
-        logger.debug(f"value of first query record {query.value("article_id")}")
-        query.next()
-        logger.debug(f"value of second query record {query.value("article_id")}")
+        w = self.ui.tableView.width()
+        logger.debug(f"width of table = {w}")
+        self.model.removeRows(1,2)
+        logger.debug(f"rows removed from 1 to 2")
+        
         
     def newLibrary(self):
         logger.debug("create new db library")

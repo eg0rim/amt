@@ -33,15 +33,21 @@ from amt.logger import getLogger
 
 logger = getLogger(__name__) 
 
-# TODO: promote it to inherit QAbstractTableModel
 class AMTModel(QAbstractTableModel):
     def __init__(self, dbfile : str, *args : object):
         """Provides model to interact with db"""
         super().__init__(*args)
         self.db = AMTDatabase(dbfile)
         self.db.open()       
-        self._columnCount= 2
-        self._data : list[EntryData] = []
+        self._columnCount= 3
+        self._columnNames = ["Title", "Author(s)", "ArXiv ID"]
+        self._columnToField = {0: "title", 1: "authors", 2: "arxivid"}
+        self._dataCache : list[EntryData] = []
+        self._dataDeleteCache : list[EntryData] = []
+        self._dataEditCache : list[EntryData] = []
+        
+    def entryToDisplayData(self, entry : EntryData, column : int) -> str:
+        return entry.getDisplayData(self._columnToField[column])
         
     def columnCount(self, parent : QModelIndex = None) -> int:
         """
@@ -64,24 +70,104 @@ class AMTModel(QAbstractTableModel):
             parent (QModelIndex, optional): parent index. Defaults to None.
 
         Returns:
-            int: _description_
+            int: number of rows
         """
-        return len(self._data)
+        return len(self._dataCache)
     
     def data(self, index : QModelIndex, role : int = Qt.DisplayRole):
+        if not index.isValid():
+            return None
         if role == Qt.DisplayRole:
-            entry = self._data[index.row()]
-            return entry.getColumn(index.column())
+            return self.entryToDisplayData(self._dataCache[index.row()], index.column())
         return None
-                                   
-    def extractEntries(self) -> list[EntryData]:
+                                      
+    def headerData(self, section : int, orientation : Qt.Orientation, role : int = Qt.DisplayRole) -> object:
+        if orientation == Qt.Horizontal and  role == Qt.DisplayRole:
+            return self._columnNames[section]
+        return None
+         
+    def sort(self, column : int, order : Qt.SortOrder = Qt.AscendingOrder):
+        logger.debug(f"sorting by column {column} order")
+        self.beginResetModel()
+        self._dataCache.sort(key=lambda x: self.entryToDisplayData(x, column))
+        if order == Qt.DescendingOrder:
+            self._dataCache.reverse()
+        self.endResetModel()
+    
+    # the code is not needed as we do not allow editing from QTableView        
+    # def removeRows(self, row : int, count : int, parent : QModelIndex = QModelIndex()) -> bool:
+    #     self.beginRemoveRows(QModelIndex(), row, row + count - 1)
+    #     self._dataCache = self._dataCache[:row] + self._dataCache[row + count:]
+    #     logger.debug("TODO: add removing from db")
+    #     self.endRemoveRows()
+    #     return True
+    
+    # def setData(self, index : QModelIndex, value : object, role : int = Qt.EditRole) -> bool:
+    #     logger.debug(f"set data {value} at {index.row()} {index.column()}")
+    #     if not index.isValid() or role != Qt.EditRole:
+    #         return False
+    #     #if index.column() == 0:
+    #     #    #self._dataCache[index.row()].title = value
+    #     #elif index.column() == 1:
+    #     #    #self._dataCache[index.row()].authors = value
+    #     #else:
+    #     #    return False
+    #     self.dataChanged.emit(index, index)
+    #     return True
+    
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        if not index.isValid():
+            return Qt.NoItemFlags
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled 
+    
+    def removeEntryAt(self, row : int) -> bool:
         """
-        Returns all entries from article, book and lecture tables
+        removes entry at given row
+
+        Args:
+            row (int): row number
 
         Returns:
-            list[EntryData]: list of EntryData objects
+            bool: True if successful
         """
-        entries = []
+        if row < 0 or row >= len(self._dataCache):
+            return False
+        self.beginRemoveRows(QModelIndex(), row, row)
+        entry = self._dataCache.pop(row)
+        self._dataDeleteCache.append(entry)
+        logger.info(f"remove entry {entry}")
+        self.endRemoveRows()
+        return True
+    
+    
+    def editEntryAt(self, row : int, newEntry : EntryData) -> bool:
+        """
+        edits entry at given row
+
+        Args:
+            row (int): row number
+            newEntry (EntryData): new entry
+
+        Returns:
+            bool: True if successful
+        """
+        if row < 0 or row >= len(self._dataCache):
+            return False
+        self.beginResetModel()
+        self._dataCache[row] = newEntry
+        self._dataEditCache.append(newEntry)
+        logger.info(f"edit entry {newEntry}")
+        self.endResetModel()
+        return True
+    
+    def extractEntries(self) -> list[EntryData]:
+        """
+        extracts all entries from article, book and lecture tables
+
+        Returns:
+            tuple of lists containing EntryData objects and lists of its str representation
+        """
+        data = []
         query = AMTQuery(self.db)
         for table in ("article", "book", "lectures"):
             query.select(table)
@@ -89,10 +175,22 @@ class AMTModel(QAbstractTableModel):
                 entry = query.amtData(table)
                 # return only valid entries
                 if entry:
-                    entries.append(entry)
+                    data.append(entry)
                 else:
                     logger.warning(f"invalid entry encountered in table {table} row {query.value(0)}")
-        return entries
+        return data
+        
+    def update(self) -> bool:
+        logger.info(f"update started")
+        self.beginResetModel()
+        logger.info(f"remove all rows")
+        self._dataCache = []
+        logger.info(f"extract all entries from db")
+        data = self.extractEntries()
+        logger.info(f"insert all rows")
+        self._dataCache = data
+        self.endResetModel()
+        return True
     
     # TODO: fix below            
     # def addArticle(self, data):
