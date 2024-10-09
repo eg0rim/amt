@@ -22,6 +22,7 @@ from PySide6.QtSql import (
     QSqlDatabase, 
     QSqlQuery,
 )
+from PySide6.QtCore import Qt, QDateTime, QDate
 from .datamodel import (
     AbstractData,
     AuthorData,
@@ -304,31 +305,77 @@ class AMTQuery(QSqlQuery):
             # TODO: fill other fields
             return entry
         
-    # def insert(self, table : str, entry : AbstractData) -> bool:
-    #     """
-    #     Implements query:
-    #         INSERT INTO table (columns) VALUES (values)
+    def insert(self, table : str, entry : object) -> bool:
+        """
+        Implements query:
+            INSERT INTO table (columns) VALUES (values)
 
-    #     Args:
-    #         table (str): table to insert into
-    #         entry (AbstractData): data to insert
+        Args:
+            table (str): table to insert into
+            entry (AbstractData): data to insert
 
-    #     Returns:
-    #         bool: returns True if insertion is successful
-    #     """
-    #     columns = []
-    #     values = []
-    #     for key in entry.__dict__.keys():
-    #         if key == "id":
-    #             continue
-    #         columns.append(key)
-    #         values.append(entry.__dict__[key])
-    #     queryString = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(values)})"
-    #     if self.exec(queryString):
-    #         return True
-    #     else:
-    #         logger.error("insertion failed: " + self.lastError().text())
-    #         return False
+        Returns:
+            bool: returns True if insertion is successful
+        """
+        if table == "author":
+            if not isinstance(entry, AuthorData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["first_name", "last_name", "middle_name"]
+            valuesToInsert = [entry.firstName, entry.lastName, ' '.join(entry.middleNames)]
+        elif table == "article":
+            if not isinstance(entry, ArticleData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["title", "arxiv_id", "version", "date_uploaded", "date_updated", "comment", "link", "p_category", "doi", "journal", "date_published", "summary", "filename"]
+            valuesToInsert = [entry.title, entry.arxivid, entry.version, entry.dateArxivUploaded, entry.dateArxivUpdated, entry.comment, entry.link, entry.primeCategory, entry.doi, entry.journal, entry.datePublished, entry.summary, entry.fileName]
+        elif table == "book":
+            if not isinstance(entry, BookData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["title", "edition", "comment", "link", "doi", "publisher", "date_published", "summary", "filename"]
+            valuesToInsert = [entry.title, entry.edition, entry.comment, entry.link, entry.doi, entry.publisher, entry.datePublished, entry.summary, entry.fileName]
+        elif table == "lectures":
+            if not isinstance(entry, LecturesData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["title", "course", "school", "comment", "link", "doi", "date_published", "summary", "filename"]
+            valuesToInsert = [entry.title, entry.course, entry.school, entry.comment, entry.link, entry.doi, entry.datePublished, entry.summary, entry.fileName]
+        elif table == "arxivcategory":
+            if not isinstance(entry, dict):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["category"]
+            valuesToInsert = [entry["category"]]
+        elif table == "article_arxivcategory":
+            if not isinstance(entry, dict):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["category", "article_id"]
+            valuesToInsert = [entry["category"], entry["article_id"]]
+        elif table in ("article_author", "book_author", "lectures_author"):
+            if not isinstance(entry, dict):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToInsert = ["author_id", f"{table.split('_')[0]}_id"]
+            valuesToInsert = [entry["author_id"], entry[f"{table.split('_')[0]}_id"]]
+        queryStringFields = ""
+        queryStringValues = ""
+        for i in range(len(valuesToInsert)):
+            if valuesToInsert[i] is None:
+                continue
+            if isinstance(valuesToInsert[i], QDate):
+                valuesToInsert[i] = valuesToInsert[i].toString(Qt.ISODate)
+            if isinstance(valuesToInsert[i], QDateTime):
+                valuesToInsert[i] = valuesToInsert[i].toString(Qt.ISODateTime)
+            queryStringFields += fieldsToInsert[i] + ", "
+            queryStringValues += f"'{valuesToInsert[i]}', "
+        queryStringFields = queryStringFields[:-2]
+        queryStringValues = queryStringValues[:-2]
+        queryString = f"INSERT OR IGNORE INTO {table} ({queryStringFields}) VALUES ({queryStringValues})"
+        logger.debug(f"query to be executed: {queryString}")
+        if True: #self.exec(queryString):
+            return True
             
     # def insert(self, table: str, data: dict) -> bool:
     #     """inserts rows into a table

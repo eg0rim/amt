@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from amt.db.model import AMTModel
 from amt.db.database import AMTDatabaseError, AMTQuery
-from amt.db.datamodel import ArticleData, AuthorData
+from amt.db.datamodel import ArticleData, AuthorData, BookData, LecturesData
 
 from  .build.resources_qrc import *
 from .build.mainwindow_ui import (
@@ -127,13 +127,14 @@ class MainWindow(QMainWindow):
             
     def debug(self):
         logger.debug("Debug button pressed")
-        w = self.ui.tableView.width()
-        logger.debug(f"width of table = {w}")
-        self.model.removeRows(1,2)
-        logger.debug(f"rows removed from 1 to 2")
-        entry = ArticleData("Test", [AuthorData("John", "Doe")])
-        logger.debug(f"new entry: {entry.toString()}")
-        logger.debug(f"variables: {entry.__dict__().keys()}")
+        entry = LecturesData("Test", [AuthorData("John Doe")])
+        db = self.model.db
+        query = AMTQuery(db)
+        query.insert("lectures", entry)
+        query.insert("arxivcategory", {"category": "math"})
+        
+        query.insert("article_author", {"article_id": 2, "author_id": 1})
+        
         
         
     def newLibrary(self):

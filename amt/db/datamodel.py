@@ -26,7 +26,8 @@ from PySide6.QtCore import (
 class AbstractData(object):
     def __init__(self):
         super().__init__()
-        self._id = 0
+        self._id: int = None
+        self._comment: str = None
     
     @property
     def id(self) -> int:
@@ -35,6 +36,14 @@ class AbstractData(object):
     @id.setter
     def id(self, value : int):
         self._id = value
+        
+    @property
+    def comment(self) -> str:
+        return self._comment
+    
+    @comment.setter
+    def comment(self, value : str):
+        self._comment = value
     
     def toString(self):
         pass
@@ -52,10 +61,10 @@ class OrganizationData(AbstractData):
     """institute, university, company, etc data"""
     def __init__(self, orgName : str):
         super().__init__()
-        self._name = orgName
-        self._shortName = orgName
-        self._address = None
-        self._info = None
+        self._name: str = orgName
+        self._shortName: str = orgName
+        self._address: str = None
+        self._info: str = None
         
     @property
     def name(self) -> str:
@@ -102,17 +111,17 @@ class AuthorData(AbstractData):
         # name is space separated string
         super().__init__()
         nameList = name.split(" ")
-        self.firstName = nameList[0]
+        self._firstName: str = nameList[0]
         if len(nameList) > 1:
-            self.lastName = nameList[-1]
-            self.middleNames = nameList[1:-1]
+            self._lastName: str = nameList[-1]
+            self._middleNames: list[str] = nameList[1:-1]
         else:
-            self.lastName = ""
-            self.middleNames = []
-        self.affiliation = None
-        self.bio = None
-        self.birthDate = None
-        self.deathDate = None
+            self._lastName: str = None
+            self._middleNames: list[str] = None
+        self._affiliation: OrganizationData = None
+        self._bio: str = None
+        self._birthDate: QDate = None
+        self._deathDate: QDate = None
         
     @property
     def firstName(self) -> str:
@@ -181,8 +190,26 @@ class EntryData(AbstractData):
     """entry data"""
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__()
-        self._title = title
-        self._authors = authors
+        self._title: str = title
+        self._authors: list[AuthorData] = authors
+        self._fileName: str = None
+        self._summary: str = None
+        
+    @property
+    def summary(self) -> str:
+        return self._summary
+    
+    @summary.setter
+    def summary(self, value : str):
+        self._summary = value
+        
+    @property
+    def fileName(self) -> str:
+        return self._fileName
+    
+    @fileName.setter
+    def fileName(self, value : str):
+        self._fileName = value
         
     @property
     def title(self) -> str:
@@ -227,20 +254,57 @@ class EntryData(AbstractData):
         if field == "authors":
             return self.getAuthorsString()
         return super().getDisplayData(field)
+    
+class PublishableData(EntryData):
+    """publishable data"""
+    def __init__(self, title : str, authors : list[AuthorData]):
+        super().__init__(title, authors)
+        self._doi: str = None
+        self._link: str = None
+        self._datePublished: QDate = None
         
-class ArticleData(EntryData):
+    @property
+    def doi(self) -> str:
+        return self._doi
+    
+    @doi.setter
+    def doi(self, value : str):
+        self._doi = value
+
+    @property
+    def link(self) -> str:
+        return self._link
+    
+    @link.setter
+    def link(self, value : str):
+        self._link = value
+
+    @property
+    def datePublished(self) -> QDate:
+        return self._datePublished
+    
+    @datePublished.setter
+    def datePublished(self, value : QDate):
+        self._datePublished = value
+        
+class ArticleData(PublishableData):
     """article data"""
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
-        self._arxivid = None
-        self._version = None
-        self._journal = None
-        self._doi = None
-        self._link = None
-        self._dateArxivUploaded = None
-        self._dateArxivUpdated = None
-        self._datePublished = None
-        self._fileName = None
+        self._arxivid : str = None
+        self._version : str = None
+        self._journal: str = None
+        self._dateArxivUploaded: QDateTime = None
+        self._dateArxivUpdated: QDateTime = None
+        self._primeCategory: str = None
+               
+    @property
+    def primeCategory(self) -> str:
+        return self._primeCategory
+    
+    @primeCategory.setter
+    def primeCategory(self, value : str):
+        self._primeCategory = value
 
     @property
     def arxivid(self) -> str:
@@ -265,22 +329,6 @@ class ArticleData(EntryData):
     @journal.setter
     def journal(self, value : str):
         self._journal = value
-        
-    @property
-    def doi(self) -> str:
-        return self._doi
-    
-    @doi.setter
-    def doi(self, value : str):
-        self._doi = value
-
-    @property
-    def link(self) -> str:
-        return self._link
-    
-    @link.setter
-    def link(self, value : str):
-        self._link = value
 
     @property
     def dateArxivUploaded(self) -> QDateTime:
@@ -297,67 +345,50 @@ class ArticleData(EntryData):
     @dateArxivUpdated.setter
     def dateArxivUpdated(self, value : QDateTime):
         self._dateArxivUpdated = value
-
-    @property
-    def datePublished(self) -> QDate:
-        return self._datePublished
-    
-    @datePublished.setter
-    def datePublished(self, value : QDate):
-        self._datePublished = value
-
-    @property
-    def fileName(self) -> str:
-        return self._fileName
-    
-    @fileName.setter
-    def fileName(self, value : str):
-        self._fileName = value
         
     def getDisplayData(self, field: str) -> str:
         if field == "arxivid":
             return self.arxivid
         return super().getDisplayData(field)
         
-class BookData(EntryData):
+class BookData(PublishableData):
     """books data"""
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
-        self._isbn = None
-        self._publisher = None
-        self._datePublished = None
+        self._isbn: str = None
+        self._publisher: str = None
+        self._edition: str = None
 
-    @property
-    def isbn(self) -> str:
-        return self._isbn
+        @property
+        def isbn(self) -> str:
+            return self._isbn
 
-    @isbn.setter
-    def isbn(self, value: str):
-        self._isbn = value
+        @isbn.setter
+        def isbn(self, value: str):
+            self._isbn = value
 
-    @property
-    def publisher(self) -> str:
-        return self._publisher
+        @property
+        def publisher(self) -> str:
+            return self._publisher
 
-    @publisher.setter
-    def publisher(self, value: str):
-        self._publisher = value
+        @publisher.setter
+        def publisher(self, value: str):
+            self._publisher = value
 
-    @property
-    def datePublished(self) -> QDate:
-        return self._datePublished
+        @property
+        def edition(self) -> str:
+            return self._edition
 
-    @datePublished.setter
-    def datePublished(self, value: QDate):
-        self._datePublished = value
+        @edition.setter
+        def edition(self, value: str):
+            self._edition = value
         
-class LecturesData(EntryData):
+class LecturesData(PublishableData):
     """lecture notes data"""
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
-        self._school = None
-        self._date = None
-        self._course = None
+        self._school: str = None
+        self._course: str = None
 
     @property
     def course(self) -> str:
@@ -374,12 +405,3 @@ class LecturesData(EntryData):
     @school.setter
     def school(self, value : str):
         self._school = value
-
-    @property
-    def date(self) -> QDate:
-        return self._date
-
-    @date.setter
-    def date(self, value: QDate):
-        self._date = value
-        
