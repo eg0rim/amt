@@ -359,29 +359,29 @@ class BookData(PublishableData):
         self._publisher: str = None
         self._edition: str = None
 
-        @property
-        def isbn(self) -> str:
-            return self._isbn
+    @property
+    def isbn(self) -> str:
+        return self._isbn
 
-        @isbn.setter
-        def isbn(self, value: str):
-            self._isbn = value
+    @isbn.setter
+    def isbn(self, value: str):
+        self._isbn = value
 
-        @property
-        def publisher(self) -> str:
-            return self._publisher
+    @property
+    def publisher(self) -> str:
+        return self._publisher
 
-        @publisher.setter
-        def publisher(self, value: str):
-            self._publisher = value
+    @publisher.setter
+    def publisher(self, value: str):
+        self._publisher = value
 
-        @property
-        def edition(self) -> str:
-            return self._edition
+    @property
+    def edition(self) -> str:
+        return self._edition
 
-        @edition.setter
-        def edition(self, value: str):
-            self._edition = value
+    @edition.setter
+    def edition(self, value: str):
+        self._edition = value
         
 class LecturesData(PublishableData):
     """lecture notes data"""

@@ -64,10 +64,12 @@ class AMTDatabase(QSqlDatabase):
     def _createDefaultTables(self) -> None:
         """Create all necessary tables in the database."""
         query = QSqlQuery(self)
+        # allow foreign keys
+        query.exec("PRAGMA foreign_keys = ON")
         query.exec(
             """
             CREATE TABLE IF NOT EXISTS author (
-                author_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 first_name VARCHAR NOT NULL,
                 last_name VARCHAR,
                 middle_name VARCHAR,
@@ -78,7 +80,7 @@ class AMTDatabase(QSqlDatabase):
         query.exec(
             """
             CREATE TABLE IF NOT EXISTS article (
-                article_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 title VARCHAR NOT NULL,
                 arxiv_id VARCHAR,
                 version INTEGER,
@@ -99,7 +101,7 @@ class AMTDatabase(QSqlDatabase):
         query.exec(
             """
             CREATE TABLE IF NOT EXISTS book (
-                book_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 title VARCHAR NOT NULL,
                 edition INTEGER,
                 comment VARCHAR,
@@ -116,7 +118,7 @@ class AMTDatabase(QSqlDatabase):
         query.exec(
             """
             CREATE TABLE IF NOT EXISTS lectures (
-                lectures_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 title VARCHAR NOT NULL,
                 course VARCHAR,
                 school INTEGER,
@@ -135,8 +137,8 @@ class AMTDatabase(QSqlDatabase):
             CREATE TABLE IF NOT EXISTS article_author (
                 author_id INTEGER,
                 article_id INTEGER,
-                FOREIGN KEY (author_id) REFERENCES author(author_id),
-                FOREIGN KEY (article_id) REFERENCES article(article_id)
+                FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE,
+                FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
             )
             """
         )
@@ -145,8 +147,8 @@ class AMTDatabase(QSqlDatabase):
             CREATE TABLE IF NOT EXISTS book_author (
                 author_id INTEGER,
                 book_id INTEGER,
-                FOREIGN KEY (author_id) REFERENCES author(author_id),
-                FOREIGN KEY (book_id) REFERENCES book(book_id)
+                FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE,
+                FOREIGN KEY (book_id) REFERENCES book(id) ON DELETE CASCADE
             )
             """
         )
@@ -155,14 +157,15 @@ class AMTDatabase(QSqlDatabase):
             CREATE TABLE IF NOT EXISTS lectures_author (
                 author_id INTEGER,
                 lectures_id INTEGER,
-                FOREIGN KEY (author_id) REFERENCES author(author_id),
-                FOREIGN KEY (lectures_id) REFERENCES lectures(lectures_id)
+                FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE,
+                FOREIGN KEY (lectures_id) REFERENCES lectures(id) ON DELETE CASCADE
             )
             """
         )
         query.exec(
             """
             CREATE TABLE IF NOT EXISTS arxivcategory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 category VARCHAR UNIQUE NOT NULL
             )
             """
@@ -170,10 +173,10 @@ class AMTDatabase(QSqlDatabase):
         query.exec(
             """
             CREATE TABLE IF NOT EXISTS article_arxivcategory (
-                category VARCHAR,
+                category_id VARCHAR,
                 article_id INTEGER,
-                FOREIGN KEY (category) REFERENCES arxivcategory(category),
-                FOREIGN KEY (article_id) REFERENCES article(article_id)
+                FOREIGN KEY (category_id) REFERENCES arxivcategory(id) ON DELETE CASCADE,
+                FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
             )
             """
         )      
@@ -211,7 +214,7 @@ class AMTQuery(QSqlQuery):
             logger.info(f"selection successful")
             return True
         else:
-            logger.error("selection failed: " + self.query.lastError().text())
+            logger.error("selection failed: " + self.lastError().text())
             return False
     
     def selectByReference(self, table : str, refTable : str, id : str, refid : str, columns : list[str] = [], filter : str = "") -> bool:
@@ -243,7 +246,7 @@ class AMTQuery(QSqlQuery):
         if self.exec(queryString):
             return True
         else:
-            logger.error("selection failed: " + self.query.lastError().text())
+            logger.error("selection failed: " + self.lastError().text())
             return False
         
     def amtData(self, typ : str) -> AbstractData:
@@ -272,19 +275,18 @@ class AMTQuery(QSqlQuery):
             if mnames is None:
                 mnames = ""
             author = AuthorData(' '.join([fname, mnames, lname]))
-            author.id = self.value("author_id")
+            author.id = self.value("id")
             # TODO: fill other fields
             return author
         else:
-            idstr = typ + "_id"
             reftab = typ + "_author"
-            id = self.value(idstr)
+            id = self.value("id")
             title = self.value("title")
             if title is None:
                 logger.error("title field was not found or Null")
                 return None
             newQuery = self.__class__(self.db)
-            newQuery.selectByReference("author", reftab, "author_id", "author_id", filter=f"{idstr} = {id}")
+            newQuery.selectByReference("author", reftab, "id", "author_id", filter=f"{reftab}.{typ}_id = {id}")
             authors = []
             while newQuery.next():
                 author = newQuery.amtData("author")
@@ -294,14 +296,14 @@ class AMTQuery(QSqlQuery):
                     logger.warning(f"invalid author encountered in row {newQuery.value(0)}")
             if typ == "article":
                 entry =  ArticleData(title, authors)
-                entry.id = self.value("article_id")
+                entry.id = self.value("id")
                 entry.arxivid = self.value("arxiv_id")
             if typ == "book":
                 entry =  BookData(title, authors)
-                entry.id = self.value("book_id")
+                entry.id = self.value("id")
             if typ == "lectures":
                 entry =  LecturesData(title, authors)
-                entry.id = self.value("lectures_id")
+                entry.id = self.value("id")
             # TODO: fill other fields
             return entry
         
@@ -322,7 +324,7 @@ class AMTQuery(QSqlQuery):
                 logger.error("insertion failed: invalid data type")
                 return False
             fieldsToInsert = ["first_name", "last_name", "middle_name"]
-            valuesToInsert = [entry.firstName, entry.lastName, ' '.join(entry.middleNames)]
+            valuesToInsert = [entry.firstName, entry.lastName, entry.middleNames]
         elif table == "article":
             if not isinstance(entry, ArticleData):
                 logger.error("insertion failed: invalid data type")
@@ -351,8 +353,8 @@ class AMTQuery(QSqlQuery):
             if not isinstance(entry, dict):
                 logger.error("insertion failed: invalid data type")
                 return False
-            fieldsToInsert = ["category", "article_id"]
-            valuesToInsert = [entry["category"], entry["article_id"]]
+            fieldsToInsert = ["category_id", "article_id"]
+            valuesToInsert = [entry["category_id"], entry["article_id"]]
         elif table in ("article_author", "book_author", "lectures_author"):
             if not isinstance(entry, dict):
                 logger.error("insertion failed: invalid data type")
@@ -368,91 +370,131 @@ class AMTQuery(QSqlQuery):
             if valuesToInsert[i] is None:
                 continue
             if isinstance(valuesToInsert[i], QDate):
+                # convert QDate to string
                 valuesToInsert[i] = valuesToInsert[i].toString(Qt.ISODate)
             if isinstance(valuesToInsert[i], QDateTime):
+                # convert QDateTime to string
                 valuesToInsert[i] = valuesToInsert[i].toString(Qt.ISODateTime)
+            if isinstance(valuesToInsert[i], list):
+                # convert list of strings to string (separated by space) for authors field
+                valuesToInsert[i] = ' '.join(valuesToInsert[i])
             queryStringFields += fieldsToInsert[i] + ", "
             queryStringValues += f"'{valuesToInsert[i]}', "
         queryStringFields = queryStringFields[:-2]
         queryStringValues = queryStringValues[:-2]
         queryString = f"INSERT OR IGNORE INTO {table} ({queryStringFields}) VALUES ({queryStringValues})"
         logger.debug(f"query to be executed: {queryString}")
-        if True: #self.exec(queryString):
+        if False: #self.exec(queryString):
             return True
-            
-    # def insert(self, table: str, data: dict) -> bool:
-    #     """inserts rows into a table
+        else:
+            logger.error("insertion failed: " + self.lastError().text())
+            return False
         
-    #     :param str table: name of the table where insert rows to
-    #     :param dist data: dictionary of the form {col1 : [val1_1, val1_2, ...], col2 : [val2_1, val2_2, ...], ...} results in WHERE col1 IN (val1_1, val2_2, ...) AND col2 IN (val2_1, val2_2, ...) AND ...
-    #     :return: True if the insertion is sucessful
-    #     :rtype: bool
-    #     """
-    #     dataValues = list(data.values())
-    #     dataColumns = list(data.keys())
-    #     #print(dataValues)
-    #     if not DB._isRectangular(dataValues):
-    #         logging.error("the data passed into insert is not consistent")
-    #         return False
-    #     queryString = "INSERT OR IGNORE INTO arg1 arg2 VALUES arg3"
-    #     queryString = queryString.replace("arg1", table)
-    #     queryString = queryString.replace("arg2", str(dataColumns).replace("[","(").replace("]",")") )
-    #     arg3 = str(self._transpose(dataValues))[1:-1].replace("[","(").replace("]",")")
-    #     queryString = queryString.replace("arg3", arg3)
-    #     #print(queryString)
-    #     if self.query.exec(queryString): 
-    #         return True
-    #     else: 
-    #         logging.error("insertion failed: " + self.query.lastError().text())
-    #         return False
+    def delete(self, table : str, id : int | list[int]) -> bool:
+        """
+        Implements query:
+            DELETE FROM table WHERE id = id
 
-    # def delete(self, table: str, data: dict) -> bool:
-    #     """removes row(s) from a table
-        
-    #     :param str table: table to modify
-    #     :param dict data: dictionary that has column names as keys and values corresponding to the row(s) to remove
-    #     :return: True if the removal is succesful
-    #     :rtype: bool
-    #     """
-    #     queryString = "DELETE FROM arg1 WHERE arg2"
-    #     queryString = queryString.replace("arg1", table)
-    #     condsString = ""
-    #     for key in data.keys():
-    #         condsString += str(key) +" IN " + str(data[key]).replace("[","(").replace("]",") AND ")
-    #     condsString = condsString[0:-4]
-    #     queryString = queryString.replace("arg2", condsString)
-    #     print(queryString)
-    #     if self.query.exec(queryString): 
-    #         return True
-    #     else: 
-    #         logging.error("deletion failed: " + self.query.lastError().text())
-    #         return False
+        Args:
+            table (str): table to delete from
+            id (int): id of the row to delete
+
+        Returns:
+            bool: returns True if deletion is successful
+        """
+        if not table in ("author", "article", "book", "lectures"):
+            logger.error("deletion failed: invalid table, expected author, article, book or lectures")
+            return False
+        if isinstance(id, list):
+            queryString = f"DELETE FROM {table} WHERE id IN ({', '.join(map(str, id))})"
+        else:
+            queryString = f"DELETE FROM {table} WHERE id = {id}"
+        logger.debug(f"query to be executed: {queryString}")
+        if False: #self.exec(queryString):
+            return True
+        else:
+            logger.error("deletion failed: " + self.lastError().text())
+            return False
     
+    def update(self, table : str, id : int, newEntry : object) -> bool:
+        """
+        Implements query:
+            UPDATE table SET columns = values WHERE id = id
 
+        Args:
+            table (str): table to update
+            id (int): id of the row to update
+            newEntry (object): new data to update
 
-    # @staticmethod
-    # def _transpose(l: list) -> list:
-    #     """transopose a list of lists
-        
-    #     :param list l: list to be transposed
-    #     :return: transposed list
-    #     :rtype: list
-    #     """
-    #     if type(l[0]) == list:
-    #         return list(map(list, zip(*l )))  
-    #     else: 
-    #         return [l]
-
-    # @staticmethod    
-    # def _isRectangular(n: list) -> bool:
-    #     """check whether a list of list is rectangular
-        
-    #     :param list n: list of lists
-    #     :return: True if the list of list rectangular
-    #     :rtype: bool
-    #     """
-    #     if type(n[0]) == list: 
-    #         return all(len(i) == len(n[0]) for i in n)
-    #     else:
-    #         return True
+        Returns:
+            bool: returns True if update is successful
+        """
+        if table == "author":
+            if not isinstance(newEntry, AuthorData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["first_name", "last_name", "middle_name"]
+            valuesToUpdate = [newEntry.firstName, newEntry.lastName, newEntry.middleNames]
+        elif table == "article":
+            if not isinstance(newEntry, ArticleData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["title", "arxiv_id", "version", "date_uploaded", "date_updated", "comment", "link", "p_category", "doi", "journal", "date_published", "summary", "filename"]
+            valuesToUpdate = [newEntry.title, newEntry.arxivid, newEntry.version, newEntry.dateArxivUploaded, newEntry.dateArxivUpdated, newEntry.comment, newEntry.link, newEntry.primeCategory, newEntry.doi, newEntry.journal, newEntry.datePublished, newEntry.summary, newEntry.fileName]
+        elif table == "book":
+            if not isinstance(newEntry, BookData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["title", "edition", "comment", "link", "doi", "publisher", "date_published", "summary", "filename"]
+            valuesToUpdate = [newEntry.title, newEntry.edition, newEntry.comment, newEntry.link, newEntry.doi, newEntry.publisher, newEntry.datePublished, newEntry.summary, newEntry.fileName]
+        elif table == "lectures":
+            if not isinstance(newEntry, LecturesData):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["title", "course", "school", "comment", "link", "doi", "date_published", "summary", "filename"]
+            valuesToUpdate = [newEntry.title, newEntry.course, newEntry.school, newEntry.comment, newEntry.link, newEntry.doi, newEntry.datePublished, newEntry.summary, newEntry.fileName]
+        elif table == "arxivcategory":
+            if not isinstance(newEntry, dict):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["category"]
+            valuesToUpdate = [newEntry["category"]]
+        elif table == "article_arxivcategory":
+            if not isinstance(newEntry, dict):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["category", "article_id"]
+            valuesToUpdate = [newEntry["category"], newEntry["article_id"]]
+        elif table in ("article_author", "book_author", "lectures_author"):
+            if not isinstance(newEntry, dict):
+                logger.error("insertion failed: invalid data type")
+                return False
+            fieldsToUpdate = ["author_id", f"{table.split('_')[0]}_id"]
+            valuesToUpdate = [newEntry["author_id"], newEntry[f"{table.split('_')[0]}_id"]]
+        else:
+            logger.error(f"insertion failed: invalid table {table}")
+            return False
+        queryStringSet = ""
+        for i in range(len(valuesToUpdate)):
+            if valuesToUpdate[i] is None:
+                queryStringSet += f"{fieldsToUpdate[i]} = NULL, "
+            else:
+                if isinstance(valuesToUpdate[i], QDate):
+                    # convert QDate to string
+                    valuesToUpdate[i] = valuesToUpdate[i].toString(Qt.ISODate)
+                if isinstance(valuesToUpdate[i], QDateTime):
+                    # convert QDateTime to string
+                    valuesToUpdate[i] = valuesToUpdate[i].toString(Qt.ISODateTime)
+                if isinstance(valuesToUpdate[i], list):
+                    # convert list of strings to string (separated by space) for authors field
+                    valuesToUpdate[i] = ' '.join(valuesToUpdate[i])
+                queryStringSet += f"{fieldsToUpdate[i]} = '{valuesToUpdate[i]}', "
+        queryStringSet = queryStringSet[:-2]  # Remove the trailing comma and space
+        queryString = f"UPDATE {table} SET {queryStringSet} WHERE id = {id}"
+        logger.debug(f"query to be executed: {queryString}")
+        if False: #self.exec(queryString):
+            return True
+        else:
+            logger.error("update failed: " + self.lastError().text())
+            return False
         
