@@ -65,13 +65,16 @@ class AbstractData(object):
         pass
     
     @classmethod 
-    def extractData(cls, query : AMTQuery, filter : str) -> list['AbstractData']:
+    def extractData(cls, query : AMTQuery, filter : str = "") -> list['AbstractData']:
         return []
     
     def insert(self, query : AMTQuery) -> bool:
-        if self.id is not None:
-            logger.error("Cannot insert data with existing id")
-            return False
+        logger.debug(f"Inserting data abstract data")
+        # this is handeled by database
+        # if self.id is not None:
+        #     logger.error("Cannot insert data with existing id")
+        #     return False
+        return True
     
     def delete(self, query : AMTQuery) -> bool:
         if not self.id:
@@ -257,6 +260,7 @@ class AuthorData(AbstractData):
                 UNIQUE(first_name, last_name, birth_date)
             )
             """
+        logger.debug(f"Executing query: {queryString}")
         if not query.exec(queryString):
             logger.error(f"Failed to create table {cls.tableName}")
             return False
@@ -273,7 +277,7 @@ class AuthorData(AbstractData):
         return author
         
     @classmethod
-    def extractData(cls, query : AMTQuery, filter : str) -> list['AuthorData']:
+    def extractData(cls, query : AMTQuery, filter : str = "") -> list['AuthorData']:
         if not query.select(cls.tableName, cls.tableColumns, filter):
             return []
         authors = []
@@ -332,11 +336,11 @@ class AuthorData(AbstractData):
     #         return False
     #     return True
             
-    # def toString(self):
-    #     return ' '.join([self.firstName] + self.middleNames + [self.lastName])
+    def toString(self):
+        return ' '.join([self.firstName] + self.middleNames + [self.lastName])
     
-    # def toShortString(self):
-    #     return ' '.join([self.firstName] + [self.lastName])
+    def toShortString(self):
+        return ' '.join([self.firstName] + [self.lastName])
     
     def getDisplayData(self, field: str) -> str:
         if field == "firstName":
@@ -411,7 +415,7 @@ class EntryData(AbstractData):
     
     def getAuthorsString(self):
         s = ""
-        if len(self.authors) > 0:
+        if isinstance(self.authors, list):
             s = ", ".join([auth.toShortString() for auth in self.authors])
         return s
     
@@ -546,10 +550,11 @@ class ArticleData(PublishableData):
                 prime_category TEXT,
                 summary TEXT,
                 file_name TEXT,
-                comment TEXT
+                comment TEXT,
                 UNIQUE(title, version, doi)
             )
             """
+        logger.debug(f"Executing query: {queryString}")
         if not query.exec(queryString):
             logger.error(f"Failed to create table {cls.tableName}")
             return False
@@ -585,7 +590,7 @@ class ArticleData(PublishableData):
         return article
     
     @classmethod   
-    def extractData(cls, query : AMTQuery, filter : str) -> list['ArticleData']:
+    def extractData(cls, query : AMTQuery, filter : str = "") -> list['ArticleData']:
         if not query.select(cls.tableName, cls.tableColumns, filter):
             return []
         articles = []
@@ -715,6 +720,7 @@ class BookData(PublishableData):
                 UNIQUE(title, edition, doi)
             )
             """
+        logger.debug(f"Executing query: {queryString}")
         if not query.exec(queryString):
             logger.error(f"Failed to create table {cls.tableName}")
             return False
@@ -748,7 +754,7 @@ class BookData(PublishableData):
         return book
     
     @classmethod
-    def extractData(cls, query : AMTQuery, filter : str) -> list['BookData']:
+    def extractData(cls, query : AMTQuery, filter : str = "") -> list['BookData']:
         if not query.select(cls.tableName, cls.tableColumns, filter):
             return []
         books = []
@@ -769,6 +775,7 @@ class BookData(PublishableData):
         return books
     
     def insert(self, query : AMTQuery) -> bool:
+        logger.debug(f"Inserting book data")
         if not super().insert(query):
             return False
         dataToInsert = {
@@ -821,6 +828,8 @@ class BookData(PublishableData):
         
 class LecturesData(PublishableData):
     """lecture notes data"""
+    tableName = "lectures"
+    tableColumns = ["id", "title", "doi", "link", "date_published", "school", "course", "summary", "file_name", "comment"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._school: str = None
@@ -859,6 +868,7 @@ class LecturesData(PublishableData):
                 UNIQUE(title, course, school)
             )
             """
+        logger.debug(f"Executing query: {queryString}")
         if not query.exec(queryString):
             logger.error(f"Failed to create table {cls.tableName}")
             return False
@@ -891,7 +901,7 @@ class LecturesData(PublishableData):
         return lecture
     
     @classmethod
-    def extractData(cls, query : AMTQuery, filter : str) -> list['LecturesData']:
+    def extractData(cls, query : AMTQuery, filter : str = "") -> list['LecturesData']:
         if not query.select(cls.tableName, cls.tableColumns, filter):
             return []
         lectures = []

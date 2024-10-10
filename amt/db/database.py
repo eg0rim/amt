@@ -23,13 +23,6 @@ from PySide6.QtSql import (
     QSqlQuery,
 )
 from PySide6.QtCore import Qt, QDateTime, QDate
-from .datamodel import (
-    AbstractData,
-    AuthorData,
-    ArticleData,
-    LecturesData,
-    BookData
-)
 from amt.logger import getLogger
 
 logger = getLogger(__name__)
@@ -59,127 +52,10 @@ class AMTDatabase(QSqlDatabase):
             errormsg=self.lastError().text()
             logger.critical(f"db open error: {errormsg}")
             raise AMTDatabaseError(errormsg)
-        self._createDefaultTables()
-
-    def _createDefaultTables(self) -> None:
-        """Create all necessary tables in the database."""
         query = QSqlQuery(self)
         # allow foreign keys
         query.exec("PRAGMA foreign_keys = ON")
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS author (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                first_name VARCHAR NOT NULL,
-                last_name VARCHAR,
-                middle_name VARCHAR,
-                UNIQUE(first_name, last_name, middle_name)
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS article (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title VARCHAR NOT NULL,
-                arxiv_id VARCHAR,
-                version INTEGER,
-                date_uploaded VARCHAR,
-                date_updated VARCHAR,
-                comment VARCHAR,
-                link VARCHAR,
-                p_category VARCHAR,
-                doi VARCHAR,
-                journal VARCHAR,
-                date_published VARCHAR,
-                summary VARCHAR,
-                filename VARCHAR,
-                UNIQUE(title, version)
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS book (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title VARCHAR NOT NULL,
-                edition INTEGER,
-                comment VARCHAR,
-                link VARCHAR,
-                doi VARCHAR,
-                publisher VARCHAR,
-                date_published VARCHAR,
-                summary VARCHAR,
-                filename VARCHAR,
-                UNIQUE(title, edition)
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS lectures (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title VARCHAR NOT NULL,
-                course VARCHAR,
-                school INTEGER,
-                comment VARCHAR,
-                link VARCHAR,
-                doi VARCHAR,
-                date_published VARCHAR,
-                summary VARCHAR,
-                filename VARCHAR,
-                UNIQUE(title, course, school)
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS article_author (
-                author_id INTEGER,
-                article_id INTEGER,
-                FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE,
-                FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS book_author (
-                author_id INTEGER,
-                book_id INTEGER,
-                FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE,
-                FOREIGN KEY (book_id) REFERENCES book(id) ON DELETE CASCADE
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS lectures_author (
-                author_id INTEGER,
-                lectures_id INTEGER,
-                FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE,
-                FOREIGN KEY (lectures_id) REFERENCES lectures(id) ON DELETE CASCADE
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS arxivcategory (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                category VARCHAR UNIQUE NOT NULL
-            )
-            """
-        )
-        query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS article_arxivcategory (
-                category_id VARCHAR,
-                article_id INTEGER,
-                FOREIGN KEY (category_id) REFERENCES arxivcategory(id) ON DELETE CASCADE,
-                FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
-            )
-            """
-        )      
+
          
 class AMTQuery(QSqlQuery):
     def __init__(self, db : AMTDatabase):

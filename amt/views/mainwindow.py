@@ -127,20 +127,13 @@ class MainWindow(QMainWindow):
             
     def debug(self):
         logger.debug("Debug button pressed")
-        entry = BookData("Test", [AuthorData("John Doe")])
-        entry._edition = 1
-        db = self.model.db
-        query = AMTQuery(db)
-        query.insert("book", entry)
-        query.insert("arxivcategory", {"category": "math"})
-        
-        query.insert("article_author", {"article_id": 2, "author_id": 1})
-        query.insert("sdfsd", {"article_id": 2, "author_id": 1})
-        query.delete("article", 1)
-        
-        query.delete("book", [2,3])
-        nEntry = ArticleData("Test2", [])
-        query.update("article", 3, nEntry)
+        author = AuthorData("John Doe")
+        author.id = 1
+        entry = BookData("Test 2", [author])
+        entry.id = 3
+        entry.edition = 5
+        self.model.addEntry(entry)
+
         
         
         

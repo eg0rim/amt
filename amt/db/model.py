@@ -45,6 +45,14 @@ class AMTModel(QAbstractTableModel):
         self._dataCache : list[EntryData] = []
         self._dataDeleteCache : list[EntryData] = []
         self._dataEditCache : list[EntryData] = []
+        self._supportedDataTypes: dict[str,EntryData] = {
+            "articles": ArticleData,
+            "books": BookData,
+            "lectures": LecturesData,
+            "authors": AuthorData
+        }
+        for cls in self._supportedDataTypes.values():
+            cls.createTable(AMTQuery(self.db))
         
     def entryToDisplayData(self, entry : EntryData, column : int) -> str:
         return entry.getDisplayData(self._columnToField[column])
@@ -169,15 +177,9 @@ class AMTModel(QAbstractTableModel):
         """
         data = []
         query = AMTQuery(self.db)
-        for table in ("article", "book", "lectures"):
-            query.select(table)
-            while query.next():
-                entry = query.amtData(table)
-                # return only valid entries
-                if entry:
-                    data.append(entry)
-                else:
-                    logger.warning(f"invalid entry encountered in table {table} row {query.value(0)}")
+        for table in ("articles", "books", "lectures"):
+            cls = self._supportedDataTypes[table]
+            data += cls.extractData(query)
         return data
         
     def update(self) -> bool:
@@ -192,40 +194,20 @@ class AMTModel(QAbstractTableModel):
         self.endResetModel()
         return True
     
-    # TODO: fix below            
-    # def addArticle(self, data):
+    def addEntry(self, entry : EntryData) -> bool:
+        """
+        adds entry to the model
 
-    #     self.db.insert("article", {k: [data[k]] for k in ("title", "arxiv_id", "version", "date_published", "date_updated", "link")})
-    #     self.db.select("article", ["article_id"], {"title": [data["title"]]})
-    #     #print(self.db.extract())
-    #     articleId = self.db.extract()[0][0]
-    #     authors = data["authors"]         
-    #     authorIds = []
-    #     for author in authors.split(", "):
-    #         #print(author)
-    #         authorSplited = author.split(" ")
-    #         #print(authorSplited)
-    #         if len(authorSplited) == 2:
-    #             self.db.insert("author", {"first_name": [authorSplited[0]], "second_name": [authorSplited[1]]})
-    #             self.db.select("author", ["author_id"],{"first_name": [authorSplited[0]], "second_name": [authorSplited[1]]})
-    #         elif len(authorSplited) == 3:
-    #             self.db.insert("author", {"first_name": [authorSplited[0]], "second_name": [authorSplited[1]], "third_name": [authorSplited[2]]})
-    #             self.db.select("author", ["author_id"],{"first_name": [authorSplited[0]], "second_name": [authorSplited[1]], "third_name": [authorSplited[2]]})
-    #         else:
-    #             return False
-            
-    #         authorIds.append(self.db.extract()[0][0])
-    #         #print(query.lastInsertId())
-    #     #print(authorIds)
-    #     for authorId in authorIds:
-    #         self.db.insert("article_author", {"article_id": articleId, "author_id": authorId})
-    #     return True
-        
+        Args:
+            entry (EntryData): entry to add
 
-    # def deleteArticle(self, articleId):
-    #     """Remove an entry from the database."""
-    #     if not self.db.delete("article", {"article_id": [articleId]}):
-    #         logging.error(msg="oops")
-    #     #todo get rid of useless authors
-    #     return True
+        Returns:
+            bool: True if successful
+        """
+        logger.info(f"add entry {entry}")
+        self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
+        self._dataCache.append(entry)
+        entry.insert(AMTQuery(self.db))
+        self.endInsertRows()
+        return True
 
