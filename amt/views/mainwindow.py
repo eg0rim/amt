@@ -132,10 +132,7 @@ class MainWindow(QMainWindow):
         entry = BookData("Test 3", [author])
         entry.id = 3
         entry.edition = 5
-        self.model.addEntry(entry)
-
-        
-        
+        self.model.addEntry(entry)     
         
     def newLibrary(self):
         logger.debug("create new db library")
