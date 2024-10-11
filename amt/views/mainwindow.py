@@ -127,9 +127,9 @@ class MainWindow(QMainWindow):
             
     def debug(self):
         logger.debug("Debug button pressed")
-        author = AuthorData("John Doe")
-        author.id = 1
-        entry = BookData("Test 2", [author])
+        author = AuthorData("John James Jacob Doe")
+        author.id = 4
+        entry = BookData("Test 3", [author])
         entry.id = 3
         entry.edition = 5
         self.model.addEntry(entry)

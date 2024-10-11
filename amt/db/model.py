@@ -51,6 +51,7 @@ class AMTModel(QAbstractTableModel):
             "lectures": LecturesData,
             "authors": AuthorData
         }
+        self._entryTypes = ["articles", "books", "lectures"]
         for cls in self._supportedDataTypes.values():
             cls.createTable(AMTQuery(self.db))
         
@@ -177,7 +178,7 @@ class AMTModel(QAbstractTableModel):
         """
         data = []
         query = AMTQuery(self.db)
-        for table in ("articles", "books", "lectures"):
+        for table in self._entryTypes:
             cls = self._supportedDataTypes[table]
             data += cls.extractData(query)
         return data
@@ -206,8 +207,8 @@ class AMTModel(QAbstractTableModel):
         """
         logger.info(f"add entry {entry}")
         self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
+        entry.insert(self.db)
         self._dataCache.append(entry)
-        entry.insert(AMTQuery(self.db))
         self.endInsertRows()
         return True
 

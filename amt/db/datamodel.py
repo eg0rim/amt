@@ -23,15 +23,22 @@ from PySide6.QtCore import (
     QDateTime,
     Qt
 )
-from amt.db.database import AMTQuery
+from amt.db.database import AMTDatabase, AMTQuery
 from amt.logger import getLogger
 
 logger = getLogger(__name__)
 
 
 class AbstractData(object):
+    """
+    Implements data storage and its insertion, deletion, update, etc. to database via query
+    """
+    # table name corresponding to the data class
     tableName: str = None
-    tableColumns: list[str] = None
+    # table columns must be specified in the order of their appearance in the table
+    # with type and constraints
+    # for example: {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "name": "TEXT NOT NULL"}
+    tableColumns: dict[str, str] = None
     
     def __init__(self):
         super().__init__()
@@ -39,7 +46,6 @@ class AbstractData(object):
         # for new data it is must be None
         # insertion must assign id
         self._id: int = None
-        self._comment: str = None
     
     @property
     def id(self) -> int:
@@ -48,65 +54,101 @@ class AbstractData(object):
     @id.setter
     def id(self, value : int):
         self._id = value
-        
-    @property
-    def comment(self) -> str:
-        return self._comment
-    
-    @comment.setter
-    def comment(self, value : str):
-        self._comment = value
+           
+    @classmethod
+    def createTable(cls, db : AMTDatabase) -> bool:
+        query = AMTQuery(db)
+        if not query.createTable(cls.tableName, cls.tableColumns):
+            return False
+        return query.exec()
     
     @classmethod
-    def createTable(cls, query : AMTQuery) -> bool:
-        return False
+    def select(cls, db : AMTDatabase, filter : str = "") -> bool:
+        query = AMTQuery(db)
+        if not query.select(cls.tableName, cls.tableColumns.keys(), filter):
+            return False
+        return query.exec()
     
-    def fromRow(self, row : list[str]) -> 'AbstractData':
-        pass
-    
-    @classmethod 
-    def extractData(cls, query : AMTQuery, filter : str = "") -> list['AbstractData']:
-        return []
-    
-    def insert(self, query : AMTQuery) -> bool:
-        logger.debug(f"Inserting data abstract data")
-        # this is handeled by database
-        # if self.id is not None:
-        #     logger.error("Cannot insert data with existing id")
-        #     return False
+    def getDataToInsert(self) -> dict[str, str]:
+        """
+        Get data to insert into the table.
+        Baseclass implementation returns only id.
+        Returns:
+            dict[str, str]: dictionary of column names and values. values can be None.
+        """
+        data = {}
+        if self.id:
+            data["id"] = str(self.id)
+        return data
+        
+    def insert(self, db : AMTDatabase) -> bool:
+        query = AMTQuery(db)
+        if not query.insert(self.tableName, self.getDataToInsert()):
+            return False
+        if not query.exec():
+            return False
+        # get id of the inserted data
+        self.id = query.lastInsertId()
         return True
     
-    def delete(self, query : AMTQuery) -> bool:
+    def delete(self, db : AMTDatabase) -> bool:
         if not self.id:
             logger.error("Cannot delete data without id")
             return False
-        queryString = f"DELETE FROM {self.tableName} WHERE {self.tableColumns[0]} = {self.id}"
-        logger.debug(f"Deleting data: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to delete data")
+        query = AMTQuery(db)
+        if not query.delete(self.tableName, f"id = {self.id}"):
+            return False
+        if not query.exec():
             return False
         self.id = None
         return True
     
-    def update(self, query : AMTQuery) -> bool:
+    def update(self, db : AMTDatabase) -> bool:
         if not self.id:
             logger.error("Cannot update data without id")
             return False
-        self.delete(query)
-        self.insert(query)
-        return True  
+        query = AMTQuery(db)
+        if not self.delete(query):
+            return False
+        return self.insert(query)       
+    
+    @classmethod
+    def fromRow(cls, row : list[str]) -> 'AbstractData':
+        """
+        Create data object from row returned by select query.
+        Must be implemented in subclasses.
+
+        Args:
+            row (list[str]): row returned by select query
+
+        Returns:
+            AbstractData: data object
+        """
+        pass
+    
+    @classmethod 
+    def extractData(cls, db : AMTDatabase, filter : str = "") -> list['AbstractData']:
+        query = AMTQuery(db)
+        query.select(cls.tableName, cls.tableColumns.keys(), filter)
+        query.exec()
+        if not query.execStatus or not query.getState("select"):
+            logger.error("Invalid query state")
+            return None    
+        data = []
+        while query.next():
+            row = [query.value(i) for i in range(len(cls.tableColumns))]
+            data.append(cls.fromRow(row))
+        return data
     
     def toString(self) -> str:
-        pass
+        return ""
     
     def toShortString(self) -> str:
-        pass
+        return ""
     
     def getDisplayData(self, field : str) -> str:
         if field == "id":
             return str(self.id) if self.id else ""
-        elif field == "comment":
-            return self.comment or ""
         elif field == "name":
             return self.toString() 
         elif field == "shortName":
@@ -115,10 +157,12 @@ class AbstractData(object):
 
 class OrganizationData(AbstractData):
     """institute, university, company, etc data"""
+    tableName = "organizations"
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "name": "TEXT NOT NULL", "short_name": "TEXT", "address": "TEXT", "info": "TEXT"}
     def __init__(self, orgName : str):
         super().__init__()
         self._name: str = orgName
-        self._shortName: str = orgName
+        self._shortName: str = None
         self._address: str = None
         self._info: str = None
         
@@ -154,6 +198,23 @@ class OrganizationData(AbstractData):
     def info(self, value : str):
         self._info = value
         
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["name"] = self.name
+        data["short_name"] = self.shortName
+        data["address"] = self.address
+        data["info"] = self.info
+        return data
+    
+    @classmethod
+    def fromRow(cls, row: list[str]) -> 'OrganizationData':
+        org = OrganizationData(row[1])
+        org.id = row[0]
+        org.shortName = row[2]
+        org.address = row[3]
+        org.info = row[4]
+        return org
+        
     def toString(self):
         return self.name or ""
     
@@ -170,10 +231,9 @@ class OrganizationData(AbstractData):
 
 class AuthorData(AbstractData):
     """author data"""
-    
     tableName = "authors"
-    tableColumns = ["id", "first_name", "middle_name", "last_name", "birth_date", "death_date", "bio"]
-    
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "first_name": "TEXT NOT NULL", "middle_name": "TEXT NOT NULL", "last_name": "TEXT NOT NULL", "birth_date": "TEXT", "death_date": "TEXT", "bio": "TEXT"}
+    tableAddLines = ["UNIQUE(first_name, middle_name, last_name, birth_date)"]
     def __init__(self, name : str):
         # name is space separated string
         super().__init__()
@@ -183,12 +243,13 @@ class AuthorData(AbstractData):
             self._lastName: str = nameList[-1]
             self._middleNames: list[str] = nameList[1:-1]
         else:
-            self._lastName: str = None
-            self._middleNames: list[str] = None
+            self._lastName: str = ""
+            self._middleNames: list[str] = []
         self._affiliation: OrganizationData = None
         self._bio: str = None
         self._birthDate: QDate = None
         self._deathDate: QDate = None
+        self._comment: str = None
         
     @property
     def firstName(self) -> str:
@@ -246,26 +307,23 @@ class AuthorData(AbstractData):
     def deathDate(self, value : QDate):
         self._deathDate = value
     
-    @classmethod
-    def createTable(cls, query : AMTQuery) -> bool:
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                first_name TEXT NOT NULL,
-                last_name TEXT,
-                middle_name TEXT,
-                birth_date TEXT,
-                death_date TEXT,
-                bio TEXT,
-                UNIQUE(first_name, last_name, birth_date)
-            )
-            """
-        logger.debug(f"Executing query: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}")
-            return False
-        else:
-            return True
+    @property
+    def comment(self) -> str:
+        return self._comment
+    
+    @comment.setter
+    def comment(self, value : str):
+        self._comment = value
+        
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["first_name"] = self.firstName
+        data["last_name"] = self.lastName
+        data["middle_name"] = ' '.join(self.middleNames)
+        data["birth_date"] = self.birthDate.toString(Qt.ISODate) if self.birthDate else None
+        data["death_date"] = self.deathDate.toString(Qt.ISODate) if self.deathDate else None
+        data["bio"] = self.bio
+        return data
     
     @classmethod
     def fromRow(cls, row: list[str]) -> 'AuthorData':
@@ -275,67 +333,7 @@ class AuthorData(AbstractData):
         author.deathDate = QDate.fromString(row[5], Qt.ISODate) if row[5] else None
         author.bio = row[6] 
         return author
-        
-    @classmethod
-    def extractData(cls, query : AMTQuery, filter : str = "") -> list['AuthorData']:
-        if not query.select(cls.tableName, cls.tableColumns, filter):
-            return []
-        authors = []
-        while query.next():
-            row = [query.value(i) for i in range(len(cls.tableColumns))]
-            authors.append(cls.fromRow(row))
-        return authors
     
-    def insert(self, query : AMTQuery) -> bool:
-        if not super().insert(query):
-            return False
-        dataToInsert = {
-            "first_name": self.firstName, 
-            "last_name": self.lastName,
-            "middle_name": ' '.join(self.middleNames) if self.middleNames else None,
-            "birth_date": self.birthDate.toString(Qt.ISODate) if self.birthDate else None,
-            "death_date": self.deathDate.toString(Qt.ISODate) if self.deathDate else None,
-            "bio": self.bio
-        }
-        queryStringFields = ", ".join(dataToInsert.keys())
-        queryStringValues = ", ".join([f"'{value}'" if value is not None else "NULL" for value in dataToInsert.values()])
-        queryString = f"INSERT INTO {self.tableName} ({queryStringFields}) VALUES ({queryStringValues})"
-        logger.debug(f"Inserting author data: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to insert author data")
-            return False
-        # get id of the inserted author
-        if not query.exec("SELECT last_insert_rowid()"):
-            logger.error(f"Failed to get id of the inserted author")
-            return False
-        if not query.next():
-            logger.error(f"Failed to get id of the inserted author")
-            return False
-        self.id = query.value(0)
-        return True
-    
-    
-    
-    # update is implemented as delete and insert
-    # def update(self, query : AMTQuery) -> bool:
-    #     if not super().update(query):
-    #         return False
-    #     dataToUpdate = {
-    #         "first_name": self.firstName, 
-    #         "last_name": self.lastName,
-    #         "middle_name": ' '.join(self.middleNames) if self.middleNames else None,
-    #         "birth_date": self.birthDate.toString(Qt.ISODate) if self.birthDate else None,
-    #         "death_date": self.deathDate.toString(Qt.ISODate) if self.deathDate else None,
-    #         "bio": self.bio
-    #     }
-    #     queryStringFields = ", ".join([f"{key} = '{value}'" if value is not None else f"{key} = NULL" for key, value in dataToUpdate.items()])
-    #     queryString = f"UPDATE {self.tableName} SET {queryStringFields} WHERE id = {self.id}"
-    #     logger.debug(f"Updating author data: {queryString}")
-    #     if not query.exec(queryString):
-    #         logger.error(f"Failed to update author data")
-    #         return False
-    #     return True
-            
     def toString(self):
         return ' '.join([self.firstName] + self.middleNames + [self.lastName])
     
@@ -344,11 +342,11 @@ class AuthorData(AbstractData):
     
     def getDisplayData(self, field: str) -> str:
         if field == "firstName":
-            return self.firstName or ""
+            return self.firstName
         elif field == "lastName":
-            return self.lastName or ""
+            return self.lastName
         elif field == "middleNames":
-            return ' '.join(self.middleNames) if self.middleNames else ""
+            return ' '.join(self.middleNames)
         elif field == "affiliation":
             return self.affiliation.toString() or ""
         elif field == "bio":
@@ -356,7 +354,9 @@ class AuthorData(AbstractData):
         elif field == "birthDate":
             return self.birthDate.toString(Qt.ISODate) if self.birthDate else ""
         elif field == "deathDate":
-            return self.deathDate.toString(Qt.ISODate) if self.deathDate else ""      
+            return self.deathDate.toString(Qt.ISODate) if self.deathDate else ""   
+        elif field == "comment":
+            return self.comment or ""   
         return super().getDisplayData(field)
 
 class EntryData(AbstractData):
@@ -367,6 +367,7 @@ class EntryData(AbstractData):
         self._authors: list[AuthorData] = authors
         self._fileName: str = None
         self._summary: str = None
+        self._comment: str = None
         
     @property
     def summary(self) -> str:
@@ -400,6 +401,74 @@ class EntryData(AbstractData):
     def authors(self, value : list[AuthorData]):
         self._authors = value
         
+    @property
+    def comment(self) -> str:
+        return self._comment
+    
+    @comment.setter
+    def comment(self, value : str):
+        self._comment = value
+        
+    @classmethod
+    def createTable(cls, db : AMTDatabase) -> bool:
+        if not super().createTable(db):
+            return False
+        query = AMTQuery(db)
+        # create ref table to authors 
+        if not query.createTable(f"{cls.tableName}_{AuthorData.tableName}", { f"{AuthorData.tableName}_id": "INTEGER NOT NULL", f"{cls.tableName}_id": "INTEGER NOT NULL"}):
+            return False
+        if not query.createTableAddLines([f"FOREIGN KEY ({AuthorData.tableName}_id) REFERENCES {AuthorData.tableName}(id) ON DELETE CASCADE", f"FOREIGN KEY ({cls.tableName}_id) REFERENCES {cls.tableName}(id) ON DELETE CASCADE"]):
+            return False
+        return query.exec()
+        
+    @classmethod
+    def extractData(cls, db: AMTDatabase, filter: str = "") -> list[AbstractData]:
+        entries = super().extractData(db, filter)
+        logger.debug(f"extracted {len(entries)} entries")
+        query = AMTQuery(db)
+        for entry in entries:
+            refTable = f"{cls.tableName}_{AuthorData.tableName}"
+            refId = f"{AuthorData.tableName}_id"
+            query.selectByReference(AuthorData.tableName, refTable, "id", refId, columns=AuthorData.tableColumns.keys(), filter=f"{refTable}.{cls.tableName}_id = {entry.id}")
+            query.exec()
+            authors = []
+            while query.next():
+                authorRow = [query.value(i) for i in range(len(AuthorData.tableColumns))]
+                author = AuthorData.fromRow(authorRow)
+                authors.append(author)
+                logger.debug(f"extracted author {[author.firstName, author.lastName, author.middleNames]}")
+            entry.authors = authors
+        return entries
+        
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["title"] = self.title
+        data["summary"] = self.summary
+        data["file_name"] = self.fileName
+        data["comment"] = self.comment
+        return data
+    
+    def insert(self, db: AMTDatabase) -> bool:
+        state = True
+        if not super().insert(db):
+            state = False
+        # insert authors and reference
+        query = AMTQuery(db)
+        refTable = f"{self.tableName}_{AuthorData.tableName}"
+        refId = f"{self.tableName}_id"
+        refAuthorId = f"{AuthorData.tableName}_id"
+        for author in self.authors:
+            if not author.insert(db):
+                logger.error(f"Failed to insert author")
+                state = False
+                # do not insert reference if author insertion failed
+                continue
+            query.insert(refTable, {refAuthorId: str(author.id), refId: str(self.id)})
+            if not query.exec():
+                logger.error(f"Failed to insert author-entry reference")
+                state = False
+        return state
+        
     def toString(self):
         s = ""
         for auth in self.authors[:-1]:
@@ -421,13 +490,15 @@ class EntryData(AbstractData):
     
     def getDisplayData(self, field : str) -> str:
         if field == "title":
-            return self.toShortString()
+            return self.title
         elif field == "authors":
             return self.getAuthorsString()
         elif field == "fileName":
             return self.fileName or ""
         elif field == "summary":
             return self.summary or ""
+        elif field == "comment":
+            return self.comment or ""
         return super().getDisplayData(field)
     
 class PublishableData(EntryData):
@@ -462,11 +533,18 @@ class PublishableData(EntryData):
     def datePublished(self, value : QDate):
         self._datePublished = value
         
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["doi"] = self.doi
+        data["link"] = self.link
+        data["date_published"] = self.datePublished.toString(Qt.ISODate) if self.datePublished else None
+        return data
+        
     def getDisplayData(self, field: str) -> str:
         if field == "doi":
-            return self.doi
+            return self.doi or ""
         elif field == "link":
-            return self.link
+            return self.link or ""
         elif field == "datePublished":
             return self.datePublished.toString(Qt.ISODate) if self.datePublished else ""
         return super().getDisplayData(field)
@@ -474,8 +552,8 @@ class PublishableData(EntryData):
 class ArticleData(PublishableData):
     """article data"""
     tableName = "articles"
-    tableColumns = ["id", "title", "doi", "link", "date_published", "arxivid", "version", "journal", "date_arxiv_uploaded", "date_arxiv_updated", "prime_category", "summary", "file_name", "comment"]
-    
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}    
+    tableAddLines = ["UNIQUE(title, doi)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._arxivid : str = None
@@ -534,44 +612,6 @@ class ArticleData(PublishableData):
         self._dateArxivUpdated = value
     
     @classmethod
-    def createTable(cls, query : AMTQuery) -> bool:
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title TEXT NOT NULL,
-                doi TEXT UNIQUE,
-                link TEXT,
-                date_published TEXT,
-                arxivid TEXT UNIQUE,
-                version INTEGER,
-                journal TEXT,
-                date_arxiv_uploaded TEXT,
-                date_arxiv_updated TEXT,
-                prime_category TEXT,
-                summary TEXT,
-                file_name TEXT,
-                comment TEXT,
-                UNIQUE(title, version, doi)
-            )
-            """
-        logger.debug(f"Executing query: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}")
-            return False
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName}_{AuthorData.tableName} (
-                author_id INTEGER NOT NULL,
-                article_id INTEGER NOT NULL,
-                FOREIGN KEY (author_id) REFERENCES {AuthorData.tableName}(id) ON DELETE CASCADE,
-                FOREIGN KEY (article_id) REFERENCES {cls.tableName}(id) ON DELETE CASCADE
-                )
-                """  
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}_{AuthorData.tableName}")
-            return False
-        return True
-    
-    @classmethod
     def fromRow(cls, row: list[str]) -> 'ArticleData':
         article = ArticleData(row[1], [])
         article.id = row[0]
@@ -588,72 +628,18 @@ class ArticleData(PublishableData):
         article.fileName = row[12]
         article.comment = row[13]
         return article
-    
-    @classmethod   
-    def extractData(cls, query : AMTQuery, filter : str = "") -> list['ArticleData']:
-        if not query.select(cls.tableName, cls.tableColumns, filter):
-            return []
-        articles = []
-        while query.next():
-            row = [query.value(i) for i in range(len(cls.tableColumns))]
-            article = cls.fromRow(row)
-            # get authors
-            refTable = f"{cls.tableName}_{AuthorData.tableName}"
-            authorQuery = AMTQuery(query.db)
-            authorQuery.selectByReference(AuthorData.tableName, refTable, "id", "author_id", filter=f"{refTable}.article_id = {article.id}")
-            authors = []
-            while authorQuery.next():
-                authorRow = [authorQuery.value(i) for i in range(len(AuthorData.tableColumns))]
-                author = AuthorData.fromRow(authorRow)
-                authors.append(author)  
-            article.authors = authors          
-            articles.append(article)
-        return articles
         
-    def insert(self, query: AMTQuery) -> bool:
-        if not super().insert(query):
-            return False
-        dataToInsert = {
-            "title": self.title,
-            "doi": self.doi,
-            "link": self.link,
-            "date_published": self.datePublished.toString(Qt.ISODate) if self.datePublished else None,
-            "arxivid": self.arxivid,
-            "version": self.version,
-            "journal": self.journal,
-            "date_arxiv_uploaded": self.dateArxivUploaded.toString(Qt.ISODate) if self.dateArxivUploaded else None,
-            "date_arxiv_updated": self.dateArxivUpdated.toString(Qt.ISODate) if self.dateArxivUpdated else None,
-            "prime_category": self.primeCategory,
-            "summary": self.summary,
-            "file_name": self.fileName,
-            "comment": self.comment
-        }
-        queryStringFields = ", ".join(dataToInsert.keys())
-        queryStringValues = ", ".join([f"'{value}'" if value is not None else "NULL" for value in dataToInsert.values()])
-        queryString = f"INSERT INTO {self.tableName} ({queryStringFields}) VALUES ({queryStringValues})"
-        logger.debug(f"Inserting article data: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to insert article data")
-            return False
-        # get id of the inserted article
-        if not query.exec("SELECT last_insert_rowid()"):
-            logger.error(f"Failed to get id of the inserted article")
-            return False
-        if not query.next():
-            logger.error(f"Failed to get id of the inserted article")
-            return False
-        self.id = query.value(0)
-        # insert authors
-        refTable = f"{self.tableName}_{AuthorData.tableName}"
-        for author in self.authors:
-            author.insert(query)
-            queryString = f"INSERT INTO {refTable} (author_id, article_id) VALUES ({author.id}, {self.id})"
-            logger.debug(f"Inserting author-article reference: {queryString}")
-            if not query.exec(queryString):
-                logger.error(f"Failed to insert author-article reference")
-                return False
-        return True
-                
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["arxivid"] = self.arxivid
+        data["version"] = str(self.version) if self.version else None
+        data["journal"] = self.journal
+        data["date_arxiv_uploaded"] = self.dateArxivUploaded.toString(Qt.ISODate) if self.dateArxivUploaded else None
+        data["date_arxiv_updated"] = self.dateArxivUpdated.toString(Qt.ISODate) if self.dateArxivUpdated else None
+        data["prime_category"] = self.primeCategory
+        data["summary"] = self.summary
+        return data
+                        
     def getDisplayData(self, field: str) -> str:
         if field == "arxivid":
             return self.arxivid  or ""
@@ -672,7 +658,8 @@ class ArticleData(PublishableData):
 class BookData(PublishableData):
     """books data"""
     tableName = "books"
-    tableColumns = ["id", "title", "doi", "link", "date_published", "isbn", "publisher", "edition", "summary", "file_name", "comment"]
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}
+    tableAddLines = ["UNIQUE(title, doi. edition)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._isbn: str = None
@@ -702,49 +689,14 @@ class BookData(PublishableData):
     @edition.setter
     def edition(self, value: str):
         self._edition = value
-    @classmethod
-    def createTable(cls, query : AMTQuery) -> bool:
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title TEXT NOT NULL,
-                doi TEXT UNIQUE,
-                link TEXT,
-                date_published TEXT,
-                isbn TEXT UNIQUE,
-                publisher TEXT,
-                edition TEXT,
-                summary TEXT,
-                file_name TEXT,
-                comment TEXT,
-                UNIQUE(title, edition, doi)
-            )
-            """
-        logger.debug(f"Executing query: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}")
-            return False
-        # reference table
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName}_{AuthorData.tableName} (
-                author_id INTEGER NOT NULL,
-                book_id INTEGER NOT NULL,
-                FOREIGN KEY (author_id) REFERENCES {AuthorData.tableName}(id) ON DELETE CASCADE,
-                FOREIGN KEY (book_id) REFERENCES {cls.tableName}(id) ON DELETE CASCADE
-                )
-                """
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}_{AuthorData.tableName}")
-            return False
-        return True
-        
+    
     @classmethod
     def fromRow(cls, row: list[str]) -> 'BookData':
         book = BookData(row[1], [])
         book.id = row[0]
         book.doi = row[2]
         book.link = row[3]
-        book.datePublished = QDate.fromString(row[4], Qt.ISODate)  if row[4] else None
+        book.datePublished = QDate.fromString(row[4], Qt.ISODate) if row[4] else None
         book.isbn = row[5]
         book.publisher = row[6]
         book.edition = row[7]
@@ -753,68 +705,12 @@ class BookData(PublishableData):
         book.comment = row[10]
         return book
     
-    @classmethod
-    def extractData(cls, query : AMTQuery, filter : str = "") -> list['BookData']:
-        if not query.select(cls.tableName, cls.tableColumns, filter):
-            return []
-        books = []
-        while query.next():
-            row = [query.value(i) for i in range(len(cls.tableColumns))]
-            book = cls.fromRow(row)
-            # get authors
-            refTable = f"{cls.tableName}_{AuthorData.tableName}"
-            authorQuery = AMTQuery(query.db)
-            authorQuery.selectByReference(AuthorData.tableName, refTable, "id", "author_id", filter=f"{refTable}.book_id = {book.id}")
-            authors = []
-            while authorQuery.next():
-                authorRow = [authorQuery.value(i) for i in range(len(AuthorData.tableColumns))]
-                author = AuthorData.fromRow(authorRow)
-                authors.append(author)  
-            book.authors = authors          
-            books.append(book)
-        return books
-    
-    def insert(self, query : AMTQuery) -> bool:
-        logger.debug(f"Inserting book data")
-        if not super().insert(query):
-            return False
-        dataToInsert = {
-            "title": self.title,
-            "doi": self.doi,
-            "link": self.link,
-            "date_published": self.datePublished.toString(Qt.ISODate) if self.datePublished else None,
-            "isbn": self.isbn,
-            "publisher": self.publisher,
-            "edition": self.edition,
-            "summary": self.summary,
-            "file_name": self.fileName,
-            "comment": self.comment
-        }
-        queryStringFields = ", ".join(dataToInsert.keys())
-        queryStringValues = ", ".join([f"'{value}'" if value is not None else "NULL" for value in dataToInsert.values()])
-        queryString = f"INSERT INTO {self.tableName} ({queryStringFields}) VALUES ({queryStringValues})"
-        logger.debug(f"Inserting book data: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to insert book data")
-            return False
-        # get id of the inserted book
-        if not query.exec("SELECT last_insert_rowid()"):
-            logger.error(f"Failed to get id of the inserted book")
-            return False
-        if not query.next():
-            logger.error(f"Failed to get id of the inserted book")
-            return False
-        self.id = query.value(0)
-        # insert authors
-        refTable = f"{self.tableName}_{AuthorData.tableName}"
-        for author in self.authors:
-            author.insert(query)
-            queryString = f"INSERT INTO {refTable} (author_id, book_id) VALUES ({author.id}, {self.id})"
-            logger.debug(f"Inserting author-book reference: {queryString}")
-            if not query.exec(queryString):
-                logger.error(f"Failed to insert author-book reference")
-                return False
-        return True
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["isbn"] = self.isbn
+        data["publisher"] = self.publisher
+        data["edition"] = self.edition
+        return data
     
     def getDisplayData(self, field: str) -> str:
         if field == "isbn":
@@ -824,12 +720,12 @@ class BookData(PublishableData):
         elif field == "edition":
             return self.edition or ""
         return super().getDisplayData(field)
- 
-        
+
 class LecturesData(PublishableData):
     """lecture notes data"""
     tableName = "lectures"
-    tableColumns = ["id", "title", "doi", "link", "date_published", "school", "course", "summary", "file_name", "comment"]
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "school": "TEXT", "course": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}
+    tableAddLines = ["UNIQUE(title, course, school)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._school: str = None
@@ -852,41 +748,6 @@ class LecturesData(PublishableData):
         self._school = value
 
     @classmethod
-    def createTable(cls, query : AMTQuery) -> bool:
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                title TEXT NOT NULL,
-                doi TEXT UNIQUE,
-                link TEXT,
-                date_published TEXT,
-                school TEXT,
-                course TEXT,
-                summary TEXT,
-                file_name TEXT,
-                comment TEXT,
-                UNIQUE(title, course, school)
-            )
-            """
-        logger.debug(f"Executing query: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}")
-            return False
-        # reference table
-        queryString = f"""
-            CREATE TABLE IF NOT EXISTS {cls.tableName}_{AuthorData.tableName} (
-                author_id INTEGER NOT NULL,
-                lecture_id INTEGER NOT NULL,
-                FOREIGN KEY (author_id) REFERENCES {AuthorData.tableName}(id) ON DELETE CASCADE,
-                FOREIGN KEY (lecture_id) REFERENCES {cls.tableName}(id) ON DELETE CASCADE
-                )
-                """
-        if not query.exec(queryString):
-            logger.error(f"Failed to create table {cls.tableName}_{AuthorData.tableName}")
-            return False
-        return True
-    
-    @classmethod
     def fromRow(cls, row: list[str]) -> 'LecturesData':
         lecture = LecturesData(row[1], [])
         lecture.id = row[0]
@@ -900,66 +761,11 @@ class LecturesData(PublishableData):
         lecture.comment = row[9]
         return lecture
     
-    @classmethod
-    def extractData(cls, query : AMTQuery, filter : str = "") -> list['LecturesData']:
-        if not query.select(cls.tableName, cls.tableColumns, filter):
-            return []
-        lectures = []
-        while query.next():
-            row = [query.value(i) for i in range(len(cls.tableColumns))]
-            lecture = cls.fromRow(row)
-            # get authors
-            refTable = f"{cls.tableName}_{AuthorData.tableName}"
-            authorQuery = AMTQuery(query.db)
-            authorQuery.selectByReference(AuthorData.tableName, refTable, "id", "author_id", filter=f"{refTable}.lecture_id = {lecture.id}")
-            authors = []
-            while authorQuery.next():
-                authorRow = [authorQuery.value(i) for i in range(len(AuthorData.tableColumns))]
-                author = AuthorData.fromRow(authorRow)
-                authors.append(author)  
-            lecture.authors = authors          
-            lectures.append(lecture)
-        return lectures
-
-    def insert(self, query : AMTQuery) -> bool:
-        if not super().insert(query):
-            return False
-        dataToInsert = {
-            "title": self.title,
-            "doi": self.doi,
-            "link": self.link,
-            "date_published": self.datePublished.toString(Qt.ISODate) if self.datePublished else None,
-            "school": self.school,
-            "course": self.course,
-            "summary": self.summary,
-            "file_name": self.fileName,
-            "comment": self.comment
-        }
-        queryStringFields = ", ".join(dataToInsert.keys())
-        queryStringValues = ", ".join([f"'{value}'" if value is not None else "NULL" for value in dataToInsert.values()])
-        queryString = f"INSERT INTO {self.tableName} ({queryStringFields}) VALUES ({queryStringValues})"
-        logger.debug(f"Inserting lecture data: {queryString}")
-        if not query.exec(queryString):
-            logger.error(f"Failed to insert lecture data")
-            return False
-        # get id of the inserted lecture
-        if not query.exec("SELECT last_insert_rowid()"):
-            logger.error(f"Failed to get id of the inserted lecture")
-            return False
-        if not query.next():
-            logger.error(f"Failed to get id of the inserted lecture")
-            return False
-        self.id = query.value(0)
-        # insert authors
-        refTable = f"{self.tableName}_{AuthorData.tableName}"
-        for author in self.authors:
-            author.insert(query)
-            queryString = f"INSERT INTO {refTable} (author_id, lecture_id) VALUES ({author.id}, {self.id})"
-            logger.debug(f"Inserting author-lecture reference: {queryString}")
-            if not query.exec(queryString):
-                logger.error(f"Failed to insert author-lecture reference")
-                return False
-        return True
+    def getDataToInsert(self) -> dict[str, str]:
+        data = super().getDataToInsert()
+        data["school"] = self.school
+        data["course"] = self.course
+        return data    
     
     def getDisplayData(self, field: str) -> str:
         if field == "school":

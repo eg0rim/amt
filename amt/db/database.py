@@ -56,13 +56,50 @@ class AMTDatabase(QSqlDatabase):
         # allow foreign keys
         query.exec("PRAGMA foreign_keys = ON")
 
+class AMTQueryError(Exception):
+    def __init__(self, *args: object) -> None:
+        """Class of query errors"""
+        super().__init__(*args)
+
+class AMTUniqueConstraintError(AMTQueryError):
+    def __init__(self, *args: object) -> None:
+        """Class of unique constraint violation errors"""
+        super().__init__(*args)
          
 class AMTQuery(QSqlQuery):
     def __init__(self, db : AMTDatabase):
         super().__init__(db)
-        self.db = db
+        self._db: AMTDatabase = db
+        self._queryString: str = None
+        self._states: dict[str, bool] = {
+            "createTable": False,
+            "select": False,
+            "insert": False,
+            "delete": False
+        }
+        # TODO: perhaps add drop, alter, update
+        self._execStatus: bool = False
+    
+    @property  
+    def queryString(self) -> str:
+        return self._queryString
+    
+    @property
+    def execStatus(self) -> bool:
+        return self._execStatus
+                    
+    def _resetStates(self) -> None:
+        for key in self._states:
+            self._states[key] = False
+    
+    def _setState(self, state : str, value : bool) -> None:
+        self._resetStates()
+        self._states[state] = value
         
-    def exec(self, queryString : str) -> bool:
+    def getState(self, state : str) -> bool:
+        return self._states[state]
+        
+    def exec(self, query: str = None) -> bool:
         """
         Executes the query string
 
@@ -72,15 +109,58 @@ class AMTQuery(QSqlQuery):
         Returns:
             bool: returns True if query is successful
         """
-        if not super().exec(queryString):
+        if query:
+            qs = query
+        else:
+            qs = self.queryString
+        if not qs:
+            logger.error("query is not prepared")
+            return False
+        logger.debug(f"executing query: {qs}")
+        if not super().exec(qs):
             logger.error(f"query failed: {self.lastError().text()}")
             return False
+        self._queryString = None
+        self._execStatus = True
+        return True
+        
+    def createTable(self, table : str, columns : dict[str, str], ifNotExists : bool = True, addLines : list[str] = []) -> bool:
+        """
+        Constructs query:
+            CREATE TABLE [IF NOT EXISTS] table (columns)
+
+        Args:
+            table (str): table to create
+            columns (dict[str, str]): dictionary of column names and types
+            ifNotExists (bool, optional): Defaults to True.
+        Returns:
+            bool: returns True if table creation query construction is successful
+        """
+        self._execStatus = False
+        self._queryString = f"CREATE TABLE {"IF NOT EXISTS" if ifNotExists else ""} {table} ({", ".join([f"{col} {colType}" for col, colType in columns.items()])} {", ".join(addLines) if addLines else ""})"
+        self._setState("createTable", True)
+        return True
+    
+    def createTableAddLines(self, lines : list[str]) -> bool:
+        """
+        Adds lines to the table creation query string
+
+        Args:
+            columns (list[str]): list of lines to add to the table creation query string
+
+        Returns:
+            bool: returns True if column addition query construction is successful
+        """
+        if not self.getState("createTable") or self._execStatus:
+            logger.error("table creation query is not prepared")
+            return False
+        self._queryString = f"{self._queryString[:-1]}, {', '.join(lines)})"
         return True
         
     def select(self, table : str, columns : list[str] = [], filter : str = "") -> bool:
         """
-        Implements query:
-            SELECT table.columns FROM table WHERE filter
+        Constructs query:
+            SELECT table.columns FROM table [WHERE filter]
 
         Args:
             table (str): table to select from
@@ -88,30 +168,19 @@ class AMTQuery(QSqlQuery):
             filter (str, optional): Defaults to "".
 
         Returns:
-            bool: _description_
+            bool: True if selection query construction is successful
         """
-        queryString = "SELECT "
-        if columns:
-            for col in columns[:-1]:
-                queryString += f"{table}.{col}, "
-            queryString += f"{table}.{col} "
-        else:
-            queryString += "* "
-        queryString += f"FROM {table}"
+        self._execStatus = False
+        self._queryString = f"SELECT {", ".join(columns) if columns else "*"} FROM {table}"
         if filter:
-            queryString += f" WHERE {filter}"
-        logger.info(f"select {table} from db")
-        if self.exec(queryString):
-            logger.info(f"selection successful")
-            return True
-        else:
-            logger.error("selection failed: " + self.lastError().text())
-            return False
+            self._queryString += f" WHERE {filter}"
+        self._setState("select", True)
+        return True
     
     def selectByReference(self, table : str, refTable : str, id : str, refid : str, columns : list[str] = [], filter : str = "") -> bool:
         """
-        Implements query:
-            SELECT table.columns FROM table JOIN refTable ON table.id = refTable.refid WHERE filter
+        Constructs query:
+            SELECT table.columns FROM table JOIN refTable ON table.id = refTable.refid [WHERE filter]
 
         Args:
             table (str): table to select from
@@ -122,22 +191,45 @@ class AMTQuery(QSqlQuery):
             filter (str, optional): Defaults to "".
 
         Returns:
-            bool: returns True if selection is successful
+            bool: returns True if selection query construction is successful
         """
-        queryString = "SELECT "
-        if columns:
-            for col in columns[:-1]:
-                queryString += f"{table}.{col}, "
-            queryString += f"{table}.{col} "
-        else:
-            queryString += "* "
-        queryString += f"FROM {table} JOIN {refTable} ON {table}.{id} = {refTable}.{refid}"
+        self._execStatus = False
+        self._queryString = f"SELECT {", ".join([f"{table}.{column}" for column in columns]) if columns else f"{table}.*"} FROM {table} JOIN {refTable} ON {table}.{id} = {refTable}.{refid}"
         if filter:
-            queryString += f" WHERE {filter}"
-        if self.exec(queryString):
-            return True
-        else:
-            logger.error("selection failed: " + self.lastError().text())
-            return False
+            self._queryString += f" WHERE {filter}"
+        self._setState("select", True)
+        return True
         
+    def insert(self, table : str, values : dict[str, str], orIgnore: bool = False) -> bool:
+        """
+        Constructs query:
+            INSERT INTO [OR IGNORE] table (columns) VALUES (values)
+        Insertion values can be str or None. If None, NULL is inserted.
+        Args:
+            table (str): table to insert into
+            values (dict[str, str]): dictionary of column names and values
+
+        Returns:
+            bool: returns True if insertion query construction is successful
+        """
+        self._execStatus = False
+        self._queryString = f"INSERT{' OR IGNORE' if orIgnore else ''} INTO {table} ({', '.join(values.keys())}) VALUES ({', '.join([f"'{val}'" if not val is None else "NULL" for val in values.values()])})"
+        self._setState("insert", True)
+        return True
     
+    def delete(self, table : str, filter : str) -> bool:
+        """
+        Constructs query:
+            DELETE FROM table WHERE filter
+
+        Args:
+            table (str): table to delete from
+            filter (str): filter for deletion
+
+        Returns:
+            bool: returns True if deletion query construction is successful
+        """
+        self._execStatus = False
+        self._queryString = f"DELETE FROM {table} WHERE {filter}"
+        self._setState("delete", True)
+        return True
