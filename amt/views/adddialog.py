@@ -57,9 +57,9 @@ class AddDialog(QDialog):
         self.ui = addDialog_ui.Ui_Dialog()
         self.ui.setupUi(self)
         # list of forms in one-to-one correspondence to options of self.ui.entryTypeComboBox
-        self.forms = {"Article":ArticleForm(self), "Book": BookForm(self), "Lecture notes": LecturesForm(self)}
+        self.forms: dict[str, AbstractForm] = {"Article":ArticleForm(self), "Book": BookForm(self), "Lecture notes": LecturesForm(self)}
         self.ui.entryTypeComboBox.setCurrentText("Article")
-        self.currentForm = self.forms[self.ui.entryTypeComboBox.currentText()]
+        self.currentForm: AbstractForm = self.forms[self.ui.entryTypeComboBox.currentText()]
         for form in self.forms.values():
             self.ui.formWidget.layout().addWidget(form)
             form.hide()

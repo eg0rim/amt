@@ -55,6 +55,7 @@ class AMTModel(QAbstractTableModel):
         self._entryTypes = ["articles", "books", "lectures"]
         for cls in self._supportedDataTypes.values():
             cls.createTable(AMTQuery(self.db))
+        self._changed = False
         
     def entryToDisplayData(self, entry : EntryData, column : int) -> str:
         return entry.getDisplayData(self._columnToField[column])
@@ -130,7 +131,7 @@ class AMTModel(QAbstractTableModel):
             return Qt.NoItemFlags
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled 
     
-    def removeEntryAt(self, row : int) -> bool:
+    def removeEntriesAt(self, rows : list[int]) -> bool:
         """
         removes entry at given row
 
@@ -140,13 +141,12 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
-        if row < 0 or row >= len(self._dataCache):
-            return False
-        self.beginRemoveRows(QModelIndex(), row, row)
-        entry = self._dataCache.pop(row)
-        self._dataDeleteCache.append(entry)
-        logger.info(f"remove entry {entry}")
-        self.endRemoveRows()
+        self.beginResetModel()
+        for row in rows:
+            entry = self._dataCache.pop(row)
+            self._dataDeleteCache.append(entry)
+            logger.info(f"remove entry {entry}")
+        self.endResetModel()
         return True
     
     
@@ -208,7 +208,6 @@ class AMTModel(QAbstractTableModel):
         """
         logger.info(f"add entry {entry}")
         self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
-        entry.insert(self.db)
         self._dataCache.append(entry)
         self._dataAddCache.append(entry)
         self.endInsertRows()

@@ -424,7 +424,7 @@ class EntryData(AbstractData):
     @classmethod
     def extractData(cls, db: AMTDatabase, filter: str = "") -> list[AbstractData]:
         entries = super().extractData(db, filter)
-        logger.debug(f"extracted {len(entries)} entries")
+        #logger.debug(f"extracted {len(entries)} entries")
         query = AMTQuery(db)
         for entry in entries:
             refTable = f"{cls.tableName}_{AuthorData.tableName}"
@@ -436,7 +436,7 @@ class EntryData(AbstractData):
                 authorRow = [query.value(i) for i in range(len(AuthorData.tableColumns))]
                 author = AuthorData.fromRow(authorRow)
                 authors.append(author)
-                logger.debug(f"extracted author {[author.firstName, author.lastName, author.middleNames]}")
+                #logger.debug(f"extracted author {[author.firstName, author.lastName, author.middleNames]}")
             entry.authors = authors
         return entries
         

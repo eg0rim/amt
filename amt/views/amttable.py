@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QAbstractItemModel, Qt
 from PySide6.QtCore import QPoint
 
-from amt.db.model import AMTModel
+from amt.db.tablemodel import AMTModel
 from amt.logger import getLogger
 
 logger = getLogger(__name__)
@@ -73,10 +73,10 @@ class ATMTableContextMenu(QMenu):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._model = None
-        self.addAction("Open")
-        self.addAction("Edit")
-        self.addAction("Remove")
-        self.addAction("Debug")
+        self.openAction = self.addAction("Open")
+        self.editAction = self.addAction("Edit")
+        self.deleteAction = self.addAction("Remove")
+        self.DebugAction = self.addAction("Debug")
         self.triggered.connect(self.menuAction)
     
     @property
@@ -87,14 +87,4 @@ class ATMTableContextMenu(QMenu):
     def model(self, model : AMTModel):
         self._model = model
         
-    def menuAction(self, action):        
-        if action.text() == "Open":
-            logger.debug("Open action triggered")
-        elif action.text() == "Edit":
-            logger.debug("Edit action triggered")
-        elif action.text() == "Remove":
-            logger.debug("Remove action triggered")
-        elif action.text() == "Debug":
-            logger.debug("Debug action triggered")
-        else:
-            logger.debug("Unknown action triggered")
+   

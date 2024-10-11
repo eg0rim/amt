@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QDialog
 )
 from PySide6.QtGui import QIcon
-from amt.db.model import AMTModel
+from amt.db.tablemodel import AMTModel
 from amt.db.database import AMTDatabaseError, AMTQuery
 from amt.db.datamodel import ArticleData, AuthorData, BookData, LecturesData
 
@@ -79,6 +79,9 @@ class MainWindow(QMainWindow):
         self.ui.actionOpen_library.triggered.connect(self.openLibrary)
         self.ui.actionSave_library.triggered.connect(self.saveLibrary)
         self.ui.actionSave_as.triggered.connect(self.saveAsLibrary)
+        # actions for context menu in qtableview
+        self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)
+        self.ui.tableView.contextMenu.DebugAction.triggered.connect(self.debug)
         # main table 
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
@@ -96,34 +99,25 @@ class MainWindow(QMainWindow):
         dialog = AddDialog(self)
         # if accepted add article to database and update table
         if dialog.exec() == QDialog.Accepted:
-            #self.model.addArticle(dialog.data)
             logger.debug(f"add entry of type {type(dialog.data)}")
-            self.updateTable()
-    
-    def deleteSelectedRows(self):
+            self.model.addEntry(dialog.data)
+            
+    def deleteSelectedRows(self) -> bool:
         logger.debug(f"delete selected rows")
-    #     rows = [r.row() for r in self.ui.tableWidget.selectionModel().selectedRows()]
-    #     if len(rows)<1:
-    #         # QMessageBox.warning(
-    #         #     self,
-    #         #     "Warning!",
-    #         #     f"No rows selected.",
-    #         # )
-    #         return False
-    #     messageBox = QMessageBox.warning(
-    #         self,
-    #         "Warning!",
-    #         f"Do you want to remove the selected articles ({len(rows)})?",
-    #         QMessageBox.Ok | QMessageBox.Cancel,
-    #     )
-    #     if messageBox == QMessageBox.Ok:
-    #         for row in rows:
-    #             #self.model.deleteArticle(self.ui.tableWidget.item(row,0).text())
-    #             logger.debug(f"delete row {row}")
-    #         #self.updateTable()
-    #         return True
-    #     else:
-    #         return False
+        rows = [r.row() for r in self.ui.tableView.selectionModel().selectedRows()]
+        if len(rows)<1:
+            return False
+        messageBox = QMessageBox.warning(
+            self,
+            "Warning!",
+            f"Do you want to remove the selected articles ({len(rows)})?",
+            QMessageBox.Ok | QMessageBox.Cancel,
+        )
+        if messageBox == QMessageBox.Ok:
+            self.model.removeEntriesAt(rows)
+            return True
+        else:
+            return False
             
     def debug(self):
         logger.debug("Debug button pressed")
@@ -147,3 +141,13 @@ class MainWindow(QMainWindow):
     def saveAsLibrary(self):
         logger.debug("save as other file db library")
         
+    def contextMenuAction(self, action):
+        logger.debug(f"context menu action {action.text()}")
+        if action.text() == "Remove":
+            self.deleteSelectedRows()
+        if action.text() == "Edit":
+            pass
+        if action.text() == "Open":
+            pass
+        if action.text() == "Debug":
+            self.debug()
