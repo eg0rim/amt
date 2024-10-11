@@ -45,6 +45,7 @@ class AMTModel(QAbstractTableModel):
         self._dataCache : list[EntryData] = []
         self._dataDeleteCache : list[EntryData] = []
         self._dataEditCache : list[EntryData] = []
+        self._dataAddCache : list[EntryData] = []
         self._supportedDataTypes: dict[str,EntryData] = {
             "articles": ArticleData,
             "books": BookData,
@@ -209,6 +210,67 @@ class AMTModel(QAbstractTableModel):
         self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
         entry.insert(self.db)
         self._dataCache.append(entry)
+        self._dataAddCache.append(entry)
         self.endInsertRows()
         return True
+    
+    def submitAdd(self) -> bool:
+        """
+        submits all added entries to the database
+
+        Returns:
+            bool: True if successful
+        """
+        status = True
+        query = AMTQuery(self.db)
+        for entry in self._dataAddCache:
+            if entry.insert(query):
+                self._dataAddCache.remove(entry)
+            else:
+                logger.error(f"failed to insert entry {entry}; it is still in add cache")
+                status = False
+        return status
+    
+    def submitDelete(self) -> bool:
+        """
+        submits all deleted entries to the database
+
+        Returns:
+            bool: True if successful
+        """
+        status = True
+        query = AMTQuery(self.db)
+        for entry in self._dataDeleteCache:
+            if entry.delete(query):
+                self._dataDeleteCache.remove(entry)
+            else:
+                logger.error(f"failed to delete entry {entry}; it is still in delete cache")
+                status = False
+        return status
+    
+    def submitEdit(self) -> bool:
+        """
+        submits all edited entries to the database
+
+        Returns:
+            bool: True if successful
+        """
+        status = True
+        query = AMTQuery(self.db)
+        for entry in self._dataEditCache:
+            if entry.update(query):
+                self._dataEditCache.remove(entry)
+            else:
+                logger.error(f"failed to update entry {entry}; it is still in edit cache")
+                status = False
+        return status
+    
+    def submitAll(self) -> bool:
+        """
+        submits all changes to the database
+
+        Returns:
+            bool: True if successful
+        """
+        return self.submitAdd() and self.submitDelete() and self.submitEdit()   
 
