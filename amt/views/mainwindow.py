@@ -24,7 +24,8 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QTableWidgetItem,
-    QDialog
+    QDialog,
+    QFileDialog
 )
 from PySide6.QtGui import QIcon
 from amt.db.tablemodel import AMTModel
@@ -47,9 +48,12 @@ class MainWindow(QMainWindow):
     """main window"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        # connect a model to the UI
+        # setup ui
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        # create empty model (by default in a temp location)
         try:
-            self.model = AMTModel("test.amtdb")
+            self.model = AMTModel()
             logger.info(f"Model is connected")
         except AMTDatabaseError:
             logger.critical(f"Database Error: {self.model.db.lastError().text()}")
@@ -59,9 +63,11 @@ class MainWindow(QMainWindow):
             f"Database Error: {self.model.db.lastError().text()}",
             )
             sys.exit(1)
-        # setup ui
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
+        self.model.temporaryStatusChanged.connect(self.setTemporary)
+        self.model.editedStatusChanged.connect(self.setEdited)
+        self.model.update()
+        self.setTemporary(True)
+        self.setEdited(False)
         # add icons
         self.ui.actionAdd.setIcon(QIcon(":add.png"))
         self.ui.actionDel.setIcon(QIcon(":remove.png"))
@@ -71,7 +77,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAdd.triggered.connect(self.openAddDialog)
         self.ui.actionDebug.triggered.connect(self.debug)
         self.ui.actionDel.triggered.connect(self.deleteSelectedRows)
-        self.ui.actionUpdate.triggered.connect(self.updateTable)
+        self.ui.actionUpdate.triggered.connect(self.model.update)
         # actions in menu
         self.ui.actionQuit.triggered.connect(self.close)
         self.ui.actionAbout.triggered.connect(self.openAboutDialog)
@@ -82,16 +88,53 @@ class MainWindow(QMainWindow):
         # actions for context menu in qtableview
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)
         self.ui.tableView.contextMenu.DebugAction.triggered.connect(self.debug)
+        # TODO
+        self.ui.tableView.contextMenu.openAction.triggered.connect(lambda: None)
+        self.ui.tableView.contextMenu.editAction.triggered.connect(lambda: None)
         # main table 
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
-        # update table
-        self.updateTable()
+    
+    def closeEvent(self, event):
+        logger.debug("close event")
+        if self.model.edited:
+            messageBox = QMessageBox.warning(
+                self,
+                "Warning!",
+                "Do you want to save changes?",
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+            )
+            if messageBox == QMessageBox.Save:
+                if self.model.temporary:
+                    self.saveAsLibrary()
+                else:
+                    self.saveLibrary()
+            elif messageBox == QMessageBox.Cancel:
+                event.ignore()
+                return
+        event.accept()
+            
+    # change appearance of the window title if the database is temporary
+    def setTemporary(self, status: bool):
+        logger.debug(f"set temporary status: {status}")
+        currentTitle = self.windowTitle()
+        if status:
+            self.setWindowTitle(currentTitle + " (temporary)")
+            self.ui.actionSave_library.setEnabled(False)
+        else:
+            self.setWindowTitle(currentTitle.replace(" (temporary)", ""))
+            self.ui.actionSave_library.setEnabled(True)
+            
+    # change appearance of the window title if the database is edited
+    def setEdited(self, status: bool):
+        logger.debug(f"set edited status: {status}")
+        currentTitle = self.windowTitle()
+        if status:
+            self.setWindowTitle(currentTitle + " (unsaved changes)")
+        else:
+            self.setWindowTitle(currentTitle.replace(" (unsaved changes)", ""))
         
-    def updateTable(self):
-        logger.info(f"update table button clicked")
-        self.model.update()
-        
+    # open additional dialog windows
     def openAboutDialog(self):
         AboutDialog(self).exec()
         
@@ -128,26 +171,45 @@ class MainWindow(QMainWindow):
         entry.edition = 5
         self.model.addEntry(entry)     
         
+        
+    # file operations
     def newLibrary(self):
         logger.debug("create new db library")
+        # create new temporary database
+        self.model.createNewTempDB()        
         
     def openLibrary(self):
         logger.debug("open db library")
+        # open file dialog and choose database to load
+        fileDialog = QFileDialog(self)  
+        fileDialog.setAcceptMode(QFileDialog.AcceptOpen)
+        fileDialog.setNameFilter("AMT Database Files (*.amtdb)")
+        if fileDialog.exec() == QFileDialog.Accepted:
+            filePath = fileDialog.selectedFiles()[0]
+            self.model.openExistingDB(filePath)
         
     def saveLibrary(self):
-        # NOTE: currently changes saved right away
+        # save current changes in cache to the database
         logger.debug("save db library")
+        if not self.model.saveDB():
+            logger.error("failed to save changes")
+            QMessageBox.critical(
+                self,
+                "Error!",
+                f"Failed to save changes. See log for details.",
+            )
+            return
+        
         
     def saveAsLibrary(self):
         logger.debug("save as other file db library")
-        
-    def contextMenuAction(self, action):
-        logger.debug(f"context menu action {action.text()}")
-        if action.text() == "Remove":
-            self.deleteSelectedRows()
-        if action.text() == "Edit":
-            pass
-        if action.text() == "Open":
-            pass
-        if action.text() == "Debug":
-            self.debug()
+        # open file dialog and save current database to the selected file
+        fileDialog = QFileDialog(self)
+        fileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        fileDialog.setNameFilter("AMT Database Files (*.amtdb)")
+        if fileDialog.exec() == QFileDialog.Accepted:
+            filePath = fileDialog.selectedFiles()[0]
+            if not filePath.endswith(".amtdb"):
+                filePath += ".amtdb"
+            self.model.saveDBAs(filePath)
+            logger.info(f"Library saved as: {filePath}")

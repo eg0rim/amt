@@ -31,31 +31,37 @@ class AMTDatabaseError(Exception):
     def __init__(self, *args: object) -> None:
         """Class of database errors"""
         super().__init__(*args)
+        
+class AMTDatabaseCloseError(AMTDatabaseError):
+    def __init__(self, *args: object) -> None:
+        """Class of database errors"""
+        super().__init__(*args)
 
 class AMTDatabase(QSqlDatabase):
     def __init__(self, databaseFile : str, *args : object) -> None:
-        """Inherits QSqlDatabase. Creates database for AMT.
+        """Inherits QSqlDatabase. Creates sqlite database for AMT.
         
         :param str databaseFile: path to the database file
-        :raises DatabaseEroor: if the connection to the database can not be established
+        :raises AMTDatabaseCloseError: if the database can not be opened
         """
         super().__init__("QSQLITE", *args)
         self.setDatabaseName(databaseFile)
-        # if not self.open():
-        #     errormsg=self.lastError().text()
-        #     logger.error(errormsg)
-        #     raise AMTDatabaseError(errormsg)
-        # self._createTables()
+
+    def __del__(self):
+        if self.isOpen():
+            self.close()
+        logger.debug("database closed")
 
     def open(self):
         if not super().open():
             errormsg=self.lastError().text()
             logger.critical(f"db open error: {errormsg}")
-            raise AMTDatabaseError(errormsg)
+            raise AMTDatabaseCloseError(errormsg)
         query = QSqlQuery(self)
         # allow foreign keys
         query.exec("PRAGMA foreign_keys = ON")
-
+        
+        
 class AMTQueryError(Exception):
     def __init__(self, *args: object) -> None:
         """Class of query errors"""
@@ -104,7 +110,7 @@ class AMTQuery(QSqlQuery):
         Executes the query string
 
         Args:
-            queryString (str): query string to execute
+            queryString (str, optional): query string to execute; if None, uses the prepared query string. Defaults to None.
 
         Returns:
             bool: returns True if query is successful

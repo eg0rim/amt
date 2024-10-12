@@ -18,8 +18,10 @@
 
 """model to manage the articles, books, etc"""
 
+import  os, tempfile, shutil
+
 from PySide6.QtSql import QSqlRecord
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
 from .database import AMTDatabase, AMTQuery
 from .datamodel import (
     AuthorData,
@@ -34,32 +36,65 @@ from amt.logger import getLogger
 logger = getLogger(__name__) 
 
 class AMTModel(QAbstractTableModel):
-    def __init__(self, dbfile : str, *args : object):
+    """Model to manage the articles, books, etc"""
+    # signal to notify about changes in the model
+    editedStatusChanged = Signal(bool)
+    temporaryStatusChanged = Signal(bool)
+    
+    def __init__(self, dbFile : str = None, *args : object):
         """Provides model to interact with db"""
-        super().__init__(*args)
-        self.db = AMTDatabase(dbfile)
-        self.db.open()       
+        super().__init__(*args)  
+        # specify columns
         self._columnCount= 3
         self._columnNames = ["Title", "Author(s)", "ArXiv ID"]
+        # map columns to fields in datamodel
         self._columnToField = {0: "title", 1: "authors", 2: "arxivid"}
+        # cache of data; any non-saved changes to the data are stored here
         self._dataCache : list[EntryData] = []
         self._dataDeleteCache : list[EntryData] = []
         self._dataEditCache : list[EntryData] = []
         self._dataAddCache : list[EntryData] = []
+        # supported data types; if new data types are added, they should be added here
         self._supportedDataTypes: dict[str,EntryData] = {
             "articles": ArticleData,
             "books": BookData,
             "lectures": LecturesData,
             "authors": AuthorData
         }
+        # data types that are shown in the corresponding table view
         self._entryTypes = ["articles", "books", "lectures"]
-        for cls in self._supportedDataTypes.values():
-            cls.createTable(AMTQuery(self.db))
-        self._changed = False
+        # keep track of changes; on change must emit signal
+        self._edited: bool = False
+        # keep track whether the database is temporary; on change must emit signal
+        self._temporary: bool = False
+        # if no db file is provided, create a temp file
+        if dbFile is None:
+            self.createNewTempDB()
+        else:
+            self.openExistingDB(dbFile)
         
-    def entryToDisplayData(self, entry : EntryData, column : int) -> str:
-        return entry.getDisplayData(self._columnToField[column])
+    @property
+    def edited(self) -> bool:
+        return self._edited
+    @edited.setter
+    def edited(self, value: bool):
+        if value == self._edited:
+            return  
+        self._edited = value
+        self.editedStatusChanged.emit(value)
+            
+    @property
+    def temporary(self) -> bool:
+        return self._temporary
+    @temporary.setter
+    def temporary(self, value: bool):
+        if value == self._temporary:
+            return
+        self._temporary = value
+        logger.debug(f"temporary status changed to {value}; emiting  signal")
+        self.temporaryStatusChanged.emit(value)
         
+    # implement abstract methods           
     def columnCount(self, parent : QModelIndex = None) -> int:
         """
         total number of columns in the model
@@ -131,6 +166,19 @@ class AMTModel(QAbstractTableModel):
             return Qt.NoItemFlags
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled 
     
+    # custom methods
+    # prepare tabels 
+    def prepareTables(self) -> bool:
+        for cls in self._supportedDataTypes.values():
+            cls.createTable(self.db)
+        return True
+        
+    # display data
+    def entryToDisplayData(self, entry : EntryData, column : int) -> str:
+        return entry.getDisplayData(self._columnToField[column])
+    
+    # manioulate data
+    # all changes are stored in cache
     def removeEntriesAt(self, rows : list[int]) -> bool:
         """
         removes entry at given row
@@ -145,6 +193,7 @@ class AMTModel(QAbstractTableModel):
         for row in rows:
             entry = self._dataCache.pop(row)
             self._dataDeleteCache.append(entry)
+            self.edited = True
             logger.info(f"remove entry {entry}")
         self.endResetModel()
         return True
@@ -161,15 +210,33 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
-        if row < 0 or row >= len(self._dataCache):
-            return False
         self.beginResetModel()
         self._dataCache[row] = newEntry
         self._dataEditCache.append(newEntry)
+        self.edited = True
         logger.info(f"edit entry {newEntry}")
         self.endResetModel()
         return True
     
+    def addEntry(self, entry : EntryData) -> bool:
+        """
+        adds entry to the model
+
+        Args:
+            entry (EntryData): entry to add
+
+        Returns:
+            bool: True if successful
+        """
+        self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
+        self._dataCache.append(entry)
+        self._dataAddCache.append(entry)
+        self.edited = True
+        logger.info(f"add entry {entry}")
+        self.endInsertRows()
+        return True
+    
+    # extract entries from the database
     def extractEntries(self) -> list[EntryData]:
         """
         extracts all entries from article, book and lecture tables
@@ -184,7 +251,11 @@ class AMTModel(QAbstractTableModel):
             data += cls.extractData(query)
         return data
         
+    # update the model with the data from the database
     def update(self) -> bool:
+        """ 
+        updates the model with the data from the database
+        """
         logger.info(f"update started")
         self.beginResetModel()
         logger.info(f"remove all rows")
@@ -193,27 +264,12 @@ class AMTModel(QAbstractTableModel):
         data = self.extractEntries()
         logger.info(f"insert all rows")
         self._dataCache = data
+        self.edited = False
         self.endResetModel()
         return True
     
-    def addEntry(self, entry : EntryData) -> bool:
-        """
-        adds entry to the model
-
-        Args:
-            entry (EntryData): entry to add
-
-        Returns:
-            bool: True if successful
-        """
-        logger.info(f"add entry {entry}")
-        self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
-        self._dataCache.append(entry)
-        self._dataAddCache.append(entry)
-        self.endInsertRows()
-        return True
-    
-    def submitAdd(self) -> bool:
+    #submit changes to the database
+    def _submitAdd(self) -> bool:
         """
         submits all added entries to the database
 
@@ -230,7 +286,7 @@ class AMTModel(QAbstractTableModel):
                 status = False
         return status
     
-    def submitDelete(self) -> bool:
+    def _submitDelete(self) -> bool:
         """
         submits all deleted entries to the database
 
@@ -247,7 +303,7 @@ class AMTModel(QAbstractTableModel):
                 status = False
         return status
     
-    def submitEdit(self) -> bool:
+    def _submitEdit(self) -> bool:
         """
         submits all edited entries to the database
 
@@ -264,12 +320,83 @@ class AMTModel(QAbstractTableModel):
                 status = False
         return status
     
-    def submitAll(self) -> bool:
+    # database file operations    
+    def saveDB(self) -> bool:
         """
-        submits all changes to the database
+        saves all changes to the database
 
         Returns:
             bool: True if successful
         """
-        return self.submitAdd() and self.submitDelete() and self.submitEdit()   
+        status =  self._submitAdd() and self._submitDelete() and self._submitEdit()   
+        if status:
+            self.edited = False
+        return status
+    
+    def openExistingDB(self, filePath : str) -> bool:
+        """
+        opens the database
 
+        Args:
+            filePath (str): file path
+
+        Returns:
+            bool: True if successful
+        """
+        self.db = AMTDatabase(filePath)
+        #self.prepareTables()
+        self.db.open()
+        self.temporary = False
+        self.update()
+        logger.info(f"database opened: {filePath}")
+        return True    
+    
+    def saveDBAs(self, filePath : str) -> bool:
+        """
+        saves the database to a file
+
+        Args:
+            filePath (str): file path
+
+        Returns:
+            bool: True if successful
+        """
+        # copy the current file to the new location
+        try:
+            self.db.close()
+            try:
+                os.replace(self.db.databaseName(), filePath)
+            except OSError as e:
+                if e.errno == 18:  # Invalid cross-device link
+                    shutil.copy2(self.db.databaseName(), filePath)
+                else:
+                    raise
+            self.db = AMTDatabase(filePath)
+            self.db.open()
+            logger.debug(f"save db as {filePath}")
+            logger.debug(f"save changes in cache")
+            self.temporary = False
+            logger.info(f"database saved as {filePath}")
+            return self.saveDB()
+        except Exception as e:
+            logger.error(f"failed to save database as {filePath}: {e}")
+            return False
+        
+    def createNewTempDB(self) -> bool:
+        """
+        creates a new temporary database
+
+        Returns:
+            bool: True if successful
+        """
+        tmpFile = tempfile.NamedTemporaryFile(delete=False, suffix=".amtdb")
+        logger.info(f"using temp file {tmpFile.name}")
+        self.db = AMTDatabase(tmpFile.name)
+        tmpFile.close()
+        self.db.open()
+        logger.debug(f"create new db {tmpFile.name}")
+        self.temporary = True
+        self.prepareTables()
+        self.update()
+        return True
+        
