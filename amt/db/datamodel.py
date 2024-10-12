@@ -449,10 +449,11 @@ class EntryData(AbstractData):
         return data
     
     def insert(self, db: AMTDatabase) -> bool:
-        state = True
+        # if insertion of entry failed, do not insert authors and reference
         if not super().insert(db):
-            state = False
+            return False
         # insert authors and reference
+        state = True # becomes False if any insertion fails of authors or reference
         query = AMTQuery(db)
         refTable = f"{self.tableName}_{AuthorData.tableName}"
         refId = f"{self.tableName}_id"
