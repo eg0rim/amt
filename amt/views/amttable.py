@@ -39,6 +39,7 @@ class AMTTableWidget(QTableView):
         # set up the table
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.horizontalHeader().setStretchLastSection(True)
+        self.verticalHeader().setVisible(False)
         self.setSelectionBehavior(QTableView.SelectRows)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.setSortingEnabled(True)

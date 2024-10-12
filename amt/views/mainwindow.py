@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
             )
             sys.exit(1)
         self.model.temporaryStatusChanged.connect(self.setTemporary)
-        self.model.editedStatusChanged.connect(self.setEdited)
+        self.model.dataCache.cacheDiverged.connect(self.setEdited)
         self.model.update()
         self.setTemporary(True)
         self.setEdited(False)
@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         logger.debug("close event")
-        if self.model.edited:
+        if self.model.dataCache.diverged:
             messageBox = QMessageBox.warning(
                 self,
                 "Warning!",

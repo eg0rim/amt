@@ -122,6 +122,9 @@
    <property name="toolTip">
     <string>Delete entry</string>
    </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
   </action>
   <action name="actionUpdate">
    <property name="text">
@@ -129,9 +132,6 @@
    </property>
    <property name="toolTip">
     <string>Update table</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+U</string>
    </property>
   </action>
   <action name="actionDebug">
@@ -142,6 +142,9 @@
   <action name="actionNew_library">
    <property name="text">
     <string>New lib</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionOpen_library">

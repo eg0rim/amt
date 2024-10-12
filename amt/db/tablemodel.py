@@ -20,8 +20,7 @@
 
 import  os, tempfile, shutil
 
-from PySide6.QtSql import QSqlRecord
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal, QObject
 from .database import AMTDatabase, AMTQuery
 from .datamodel import (
     AuthorData,
@@ -35,36 +34,149 @@ from amt.logger import getLogger
 
 logger = getLogger(__name__) 
 
+class DataCache(QObject):
+    """Cache to store data changes"""
+    cacheDiverged = Signal(bool)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._data : list[EntryData] = []
+        self._dataToDelete : list[EntryData] = []
+        self._dataToEdit : list[EntryData] = []
+        self._dataToAdd : list[EntryData] = []
+        self._diverged: bool = False
+        
+    @property
+    def diverged(self) -> bool:
+        return self._diverged
+    @diverged.setter
+    def diverged(self, value: bool):
+        if value == self._diverged:
+            return
+        self._diverged = value
+        self.cacheDiverged.emit(value)
+        
+    @property
+    def data(self) -> list[EntryData]:
+        return self._data
+    @data.setter
+    def data(self, value: list[EntryData]):
+        self._data = value
+        self._dataToDelete = []
+        self._dataToEdit = []
+        self._dataToAdd = [] 
+        self.diverged = False   
+    
+    @property
+    def dataToDelete(self) -> list[EntryData]:
+        return self._dataToDelete
+    
+    @property
+    def dataToEdit(self) -> list[EntryData]:
+        return self._dataToEdit
+    
+    @property
+    def dataToAdd(self) -> list[EntryData]:
+        return self._dataToAdd
+      
+    def add(self, entry : EntryData) -> bool:
+        self._data.append(entry)
+        self._dataToAdd.append(entry)
+        self.diverged = True      
+        return True
+    
+    def remove(self, entry : EntryData) -> bool:
+        # first try to remove from add cache
+        try: 
+            self._dataToAdd.remove(entry)
+            # if the entry is in add cache, it is not in the db
+            # check if anything in the editing cache
+            if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
+                # if all caches are empty, cache is not diverged anymore
+                self.diverged = False
+            return True
+        except ValueError:
+            pass
+        # if not in add cache, try to remove from the edit cache
+        try:    
+            self._dataToEdit.remove(entry)
+            # if the entry is in edit cache, it is not in the db
+            # check if anything in the editing cache
+            if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
+                # if all caches are empty, cache is not diverged anymore
+                self.diverged = False
+            return True
+        except ValueError:
+            pass
+        # if not in edit cache, try to remove from the main cache
+        try:
+            self._data.remove(entry)
+            # add to delete cache
+            self._dataToDelete.append(entry)
+            # data now differs from the db
+            self.diverged = True
+            return True
+        except ValueError:
+            # entry was not in the cache
+            return False
+            
+    def removeByIndex(self, index : int) -> bool:
+        if index < 0 or index >= len(self._data):
+            return False
+        entry = self._data[index]
+        return self.remove(entry)
+        
+    # editing means replacing the entry with a new one
+    def edit(self, oldEntry : EntryData, newEntry : EntryData) -> bool:
+        # first check if the entry is in the add cache
+        try:
+            # if the entry is in the add cache, just replace it
+            self._dataToAdd[self._dataToAdd.index(oldEntry)] = newEntry
+            self._data[self._data.index(oldEntry)] = newEntry
+            # entry in add cache does not have an id
+            self.diverged = True
+            return True
+        except ValueError:
+            pass
+        # if the entry is not in the add cache, try to replace it in the main cache
+        try:
+            self._data[self._data.index(oldEntry)] = newEntry
+            # entry in the main cache has and not in add cache has an id
+            newEntry.id = oldEntry.id
+            self._dataToEdit.append(newEntry)
+            self.diverged = True
+            return True
+        except ValueError:
+            return False
+            
+    def editByIndex(self, index : int, newEntry : EntryData) -> bool:
+        if index < 0 or index >= len(self._data):
+            return False
+        return self.edit(self._data[index], newEntry)
+        
 class AMTModel(QAbstractTableModel):
     """Model to manage the articles, books, etc"""
     # signal to notify about changes in the model
-    editedStatusChanged = Signal(bool)
     temporaryStatusChanged = Signal(bool)
+    # specify columns
+    _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID"]
+    _columnCount: int = len(_columnNames)
+    # map columns to fields in datamodel
+    _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid"}
+    # supported data types; if new data types are added, they should be added here
+    _supportedDataTypes: dict[str,EntryData] = {
+        "articles": ArticleData,
+        "books": BookData,
+        "lectures": LecturesData,
+        "authors": AuthorData
+    }
+    # data types that are shown in the corresponding table view
+    _entryTypes = ["articles", "books", "lectures"]
     
     def __init__(self, dbFile : str = None, *args : object):
         """Provides model to interact with db"""
-        super().__init__(*args)  
-        # specify columns
-        self._columnCount= 3
-        self._columnNames = ["Title", "Author(s)", "ArXiv ID"]
-        # map columns to fields in datamodel
-        self._columnToField = {0: "title", 1: "authors", 2: "arxivid"}
+        super().__init__(*args)          
         # cache of data; any non-saved changes to the data are stored here
-        self._dataCache : list[EntryData] = []
-        self._dataDeleteCache : list[EntryData] = []
-        self._dataEditCache : list[EntryData] = []
-        self._dataAddCache : list[EntryData] = []
-        # supported data types; if new data types are added, they should be added here
-        self._supportedDataTypes: dict[str,EntryData] = {
-            "articles": ArticleData,
-            "books": BookData,
-            "lectures": LecturesData,
-            "authors": AuthorData
-        }
-        # data types that are shown in the corresponding table view
-        self._entryTypes = ["articles", "books", "lectures"]
-        # keep track of changes; on change must emit signal
-        self._edited: bool = False
+        self.dataCache : DataCache = DataCache(self)      
         # keep track whether the database is temporary; on change must emit signal
         self._temporary: bool = False
         # if no db file is provided, create a temp file
@@ -72,16 +184,6 @@ class AMTModel(QAbstractTableModel):
             self.createNewTempDB()
         else:
             self.openExistingDB(dbFile)
-        
-    @property
-    def edited(self) -> bool:
-        return self._edited
-    @edited.setter
-    def edited(self, value: bool):
-        if value == self._edited:
-            return  
-        self._edited = value
-        self.editedStatusChanged.emit(value)
             
     @property
     def temporary(self) -> bool:
@@ -91,7 +193,6 @@ class AMTModel(QAbstractTableModel):
         if value == self._temporary:
             return
         self._temporary = value
-        logger.debug(f"temporary status changed to {value}; emiting  signal")
         self.temporaryStatusChanged.emit(value)
         
     # implement abstract methods           
@@ -118,13 +219,13 @@ class AMTModel(QAbstractTableModel):
         Returns:
             int: number of rows
         """
-        return len(self._dataCache)
+        return len(self.dataCache.data)
     
     def data(self, index : QModelIndex, role : int = Qt.DisplayRole):
         if not index.isValid():
             return None
         if role == Qt.DisplayRole:
-            return self.entryToDisplayData(self._dataCache[index.row()], index.column())
+            return self.entryToDisplayData(self.dataCache.data[index.row()], index.column())
         return None
                                       
     def headerData(self, section : int, orientation : Qt.Orientation, role : int = Qt.DisplayRole) -> object:
@@ -135,9 +236,9 @@ class AMTModel(QAbstractTableModel):
     def sort(self, column : int, order : Qt.SortOrder = Qt.AscendingOrder):
         logger.debug(f"sorting by column {column} order")
         self.beginResetModel()
-        self._dataCache.sort(key=lambda x: self.entryToDisplayData(x, column))
+        self.dataCache.data.sort(key=lambda x: self.entryToDisplayData(x, column))
         if order == Qt.DescendingOrder:
-            self._dataCache.reverse()
+            self.dataCache.data.reverse()
         self.endResetModel()
     
     # the code is not needed as we do not allow editing from QTableView        
@@ -169,13 +270,16 @@ class AMTModel(QAbstractTableModel):
     # custom methods
     # prepare tabels 
     def prepareTables(self) -> bool:
+        state = True
         for cls in self._supportedDataTypes.values():
-            cls.createTable(self.db)
-        return True
+            if not cls.createTable(self.db):
+                state = False
+        return state
         
     # display data
-    def entryToDisplayData(self, entry : EntryData, column : int) -> str:
-        return entry.getDisplayData(self._columnToField[column])
+    @classmethod
+    def entryToDisplayData(cls, entry : EntryData, column : int) -> str:
+        return entry.getDisplayData(cls._columnToField[column])
     
     # manioulate data
     # all changes are stored in cache
@@ -191,11 +295,7 @@ class AMTModel(QAbstractTableModel):
         """
         self.beginResetModel()
         for row in rows:
-            entry = self._dataCache.pop(row)
-            self._dataDeleteCache.append(entry)
-            self._dataAddCache.remove(entry)
-            self.edited = True
-            logger.info(f"remove entry {entry}")
+            self.dataCache.removeByIndex(row)
         self.endResetModel()
         return True
     
@@ -212,10 +312,7 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         self.beginResetModel()
-        self._dataCache[row] = newEntry
-        self._dataEditCache.append(newEntry)
-        self.edited = True
-        logger.info(f"edit entry {newEntry}")
+        self.dataCache.editByIndex(row, newEntry)
         self.endResetModel()
         return True
     
@@ -229,11 +326,8 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
-        self.beginInsertRows(QModelIndex(), len(self._dataCache), len(self._dataCache))
-        self._dataCache.append(entry)
-        self._dataAddCache.append(entry)
-        self.edited = True
-        logger.info(f"add entry {entry}")
+        self.beginInsertRows(QModelIndex(), len(self.dataCache.data), len(self.dataCache.data))
+        self.dataCache.add(entry)
         self.endInsertRows()
         return True
     
@@ -259,13 +353,8 @@ class AMTModel(QAbstractTableModel):
         """
         logger.info(f"update started")
         self.beginResetModel()
-        logger.info(f"remove all rows")
-        self._dataCache = []
         logger.info(f"extract all entries from db")
-        data = self.extractEntries()
-        logger.info(f"insert all rows")
-        self._dataCache = data
-        self.edited = False
+        self.dataCache.data = self.extractEntries()
         self.endResetModel()
         return True
     
@@ -278,14 +367,12 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        logger.debug(f"cache add: {self._dataAddCache}")
-        for entry in self._dataAddCache[:]:
-            logger.debug(f"insert entry {entry}")
-            if entry.insert(self.db):
-                self._dataAddCache.remove(entry)
-            else:
-                logger.error(f"failed to insert entry {entry}; it is still in add cache")
+        for entry in self.dataCache.dataToAdd[:]:
+            #logger.debug(f"insert entry {entry}")
+            if not entry.insert(self.db):
+                logger.error(f"failed to insert entry {entry}")
                 status = False
+            self.dataCache.dataToAdd.remove(entry)
         return status
     
     def _submitDelete(self) -> bool:
@@ -296,12 +383,11 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        for entry in self._dataDeleteCache[:]:
-            if entry.delete(self.db):
-                self._dataDeleteCache.remove(entry)
-            else:
-                logger.error(f"failed to delete entry {entry}; it is still in delete cache")
+        for entry in self.dataCache.dataToDelete[:]:
+            if not entry.delete(self.db):
+                logger.error(f"failed to delete entry {entry}")
                 status = False
+            self.dataCache.dataToDelete.remove(entry)
         return status
     
     def _submitEdit(self) -> bool:
@@ -312,12 +398,11 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        for entry in self._dataEditCache[:]:
-            if entry.update(self.db):
-                self._dataEditCache.remove(entry)
-            else:
-                logger.error(f"failed to update entry {entry}; it is still in edit cache")
+        for entry in self.dataCache.dataToEdit[:]:
+            if not entry.update(self.db):
+                logger.error(f"failed to update entry {entry}")
                 status = False
+            self.dataCache.dataToEdit.remove(entry)
         return status
     
     # database file operations    
@@ -329,10 +414,8 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         logger.debug(f"save changes in cache")
-        logger.debug(f"{self._dataAddCache}")
         status =  self._submitAdd() and self._submitDelete() and self._submitEdit()   
-        if status:
-            self.edited = False
+        self.dataCache.diverged = False
         return status
     
     def openExistingDB(self, filePath : str) -> bool:
