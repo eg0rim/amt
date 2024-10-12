@@ -108,9 +108,13 @@ class AbstractData(object):
             logger.error("Cannot update data without id")
             return False
         query = AMTQuery(db)
-        if not self.delete(query):
+        dataToInsert = self.getDataToInsert()
+        dataToInsert.pop("id", None)
+        if not query.update(self.tableName, dataToInsert, f"id = {self.id}"):
             return False
-        return self.insert(query)       
+        if not query.exec():
+            return False
+        return True     
     
     @classmethod
     def fromRow(cls, row : list[str]) -> 'AbstractData':
