@@ -181,7 +181,7 @@
   <customwidget>
    <class>AMTTableWidget</class>
    <extends>QTableView</extends>
-   <header>amt/views/amttable</header>
+   <header>amt/views/customWidgets/amttable</header>
   </customwidget>
  </customwidgets>
  <resources/>
