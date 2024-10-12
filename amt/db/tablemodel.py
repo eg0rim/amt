@@ -193,6 +193,7 @@ class AMTModel(QAbstractTableModel):
         for row in rows:
             entry = self._dataCache.pop(row)
             self._dataDeleteCache.append(entry)
+            self._dataAddCache.remove(entry)
             self.edited = True
             logger.info(f"remove entry {entry}")
         self.endResetModel()
@@ -277,9 +278,10 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        query = AMTQuery(self.db)
-        for entry in self._dataAddCache:
-            if entry.insert(query):
+        logger.debug(f"cache add: {self._dataAddCache}")
+        for entry in self._dataAddCache[:]:
+            logger.debug(f"insert entry {entry}")
+            if entry.insert(self.db):
                 self._dataAddCache.remove(entry)
             else:
                 logger.error(f"failed to insert entry {entry}; it is still in add cache")
@@ -294,9 +296,8 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        query = AMTQuery(self.db)
-        for entry in self._dataDeleteCache:
-            if entry.delete(query):
+        for entry in self._dataDeleteCache[:]:
+            if entry.delete(self.db):
                 self._dataDeleteCache.remove(entry)
             else:
                 logger.error(f"failed to delete entry {entry}; it is still in delete cache")
@@ -311,9 +312,8 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        query = AMTQuery(self.db)
-        for entry in self._dataEditCache:
-            if entry.update(query):
+        for entry in self._dataEditCache[:]:
+            if entry.update(self.db):
                 self._dataEditCache.remove(entry)
             else:
                 logger.error(f"failed to update entry {entry}; it is still in edit cache")
@@ -328,6 +328,8 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
+        logger.debug(f"save changes in cache")
+        logger.debug(f"{self._dataAddCache}")
         status =  self._submitAdd() and self._submitDelete() and self._submitEdit()   
         if status:
             self.edited = False
@@ -374,7 +376,6 @@ class AMTModel(QAbstractTableModel):
             self.db = AMTDatabase(filePath)
             self.db.open()
             logger.debug(f"save db as {filePath}")
-            logger.debug(f"save changes in cache")
             self.temporary = False
             logger.info(f"database saved as {filePath}")
             return self.saveDB()

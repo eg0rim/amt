@@ -141,12 +141,12 @@
   </action>
   <action name="actionNew_library">
    <property name="text">
-    <string>New library</string>
+    <string>New lib</string>
    </property>
   </action>
   <action name="actionOpen_library">
    <property name="text">
-    <string>Open library</string>
+    <string>Open lib</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -154,7 +154,7 @@
   </action>
   <action name="actionSave_library">
    <property name="text">
-    <string>Save library</string>
+    <string>Save lib</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -167,7 +167,10 @@
   </action>
   <action name="actionSave_as">
    <property name="text">
-    <string>Save as</string>
+    <string>Save lib as</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
  </widget>

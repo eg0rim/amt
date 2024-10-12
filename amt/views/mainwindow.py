@@ -211,5 +211,12 @@ class MainWindow(QMainWindow):
             filePath = fileDialog.selectedFiles()[0]
             if not filePath.endswith(".amtdb"):
                 filePath += ".amtdb"
-            self.model.saveDBAs(filePath)
-            logger.info(f"Library saved as: {filePath}")
+            if not self.model.saveDBAs(filePath):
+                logger.error("failed to save changes in new file")
+                QMessageBox.critical(
+                    self,
+                    "Error!",
+                    f"Failed to save changes in new file. See log for details.",
+                )
+                return
+            
