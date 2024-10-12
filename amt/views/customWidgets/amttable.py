@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# amt/views/libtable.py
+# amt/views/customWidgets/amttable.py
 
 # Copyright (c) 2024 Egor Im
 # This file is part of Article Management Tool.

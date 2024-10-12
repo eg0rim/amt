@@ -108,9 +108,9 @@ class ArticleForm(AbstractForm):
         data.journal = ui.journalLineEdit.text()
         data.doi = ui.dOILineEdit.text()
         data.link = ui.linkLineEdit.text()
-        data.datePublished = ui.publishedDateEdit.date()
-        data.dateArxivUploaded = ui.arXivUploadDateTimeEdit.dateTime()
-        data.dateArxivUpdated = ui.arXivUploadDateTimeEdit.dateTime()
+        data.datePublished = ui.publishedDateInput.dateEdit.date()
+        data.dateArxivUploaded = ui.arxivUploadDatetimeInput.dateTimeEdit.dateTime()
+        data.dateArxivUpdated = ui.arxivUpdateDateTimeInput.dateTimeEdit.dateTime()
         return data
         
     def getMetadataFromArxiv(self):
@@ -161,7 +161,7 @@ class BookForm(AbstractForm):
         data = BookData(title, authors)
         data.isbn = ui.iSBNLineEdit.text()
         data.publisher = ui.publisherLineEdit.text()
-        data.datePublished = ui.datePublishedDateEdit.date()
+        data.datePublished = ui.publishedDateInput.dateEdit.date()
         return data
         
 class LecturesForm(AbstractForm):
@@ -179,5 +179,5 @@ class LecturesForm(AbstractForm):
         data = LecturesData(title, authors)
         data.course = ui.courseLineEdit.text()
         data.school = ui.uniLineEdit.text()
-        data.date = ui.dateDateEdit.date()
+        data.datePublished = ui.dateInput.dateEdit.date()
         return data
