@@ -74,7 +74,7 @@ class AbstractData(object):
         Get data to insert into the table.
         Baseclass implementation returns only id.
         Returns:
-            dict[str, str]: dictionary of column names and values. values can be None.
+            dict[str, str]: dictionary of column names and values. values can be None, corresponding to NULL in SQL
         """
         data = {}
         if self.id:

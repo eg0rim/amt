@@ -81,9 +81,10 @@ class AMTQuery(QSqlQuery):
             "createTable": False,
             "select": False,
             "insert": False,
-            "delete": False
+            "delete": False,
+            "update": False
         }
-        # TODO: perhaps add drop, alter, update
+        # TODO: perhaps add drop, alter
         self._execStatus: bool = False
     
     @property  
@@ -238,4 +239,22 @@ class AMTQuery(QSqlQuery):
         self._execStatus = False
         self._queryString = f"DELETE FROM {table} WHERE {filter}"
         self._setState("delete", True)
+        return True
+    
+    def update(self, table : str, values : dict[str, str], filter : str) -> bool:
+        """
+        Constructs query:
+            UPDATE table SET values WHERE filter
+
+        Args:
+            table (str): table to update
+            values (dict[str, str]): dictionary of column names and values
+            filter (str): filter for updating
+
+        Returns:
+            bool: returns True if update query construction is successful
+        """
+        self._execStatus = False
+        self._queryString = f"UPDATE {table} SET {', '.join([f"{col} = {"NULL" if val is None else f"'{val}'"}" for col, val in values.items()])} WHERE {filter}"
+        self._setState("update", True)
         return True
