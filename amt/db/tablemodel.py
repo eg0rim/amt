@@ -297,9 +297,10 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
+        entriesToRemove = [self.dataCache.data[row] for row in rows]
         self.beginResetModel()
-        for row in rows:
-            self.dataCache.removeByIndex(row)
+        for entry in entriesToRemove:
+            self.dataCache.remove(entry)
         self.endResetModel()
         return True
     
