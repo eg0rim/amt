@@ -22,7 +22,7 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QLineEdit" name="titleLineEdit"/>
+    <widget class="AMTLineEdit" name="titleLineEdit"/>
    </item>
    <item row="1" column="0">
     <widget class="QLabel" name="authorLabel">
@@ -32,7 +32,7 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QLineEdit" name="authorLineEdit"/>
+    <widget class="AMTLineEdit" name="authorLineEdit"/>
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="iSBNLabel">
@@ -42,7 +42,7 @@
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="QLineEdit" name="iSBNLineEdit"/>
+    <widget class="AMTLineEdit" name="iSBNLineEdit"/>
    </item>
    <item row="3" column="0">
     <widget class="QLabel" name="publisherLabel">
@@ -52,7 +52,7 @@
     </widget>
    </item>
    <item row="3" column="1">
-    <widget class="QLineEdit" name="publisherLineEdit"/>
+    <widget class="AMTLineEdit" name="publisherLineEdit"/>
    </item>
    <item row="4" column="0">
     <widget class="QLabel" name="publishedLabel">
@@ -64,14 +64,35 @@
    <item row="4" column="1">
     <widget class="AMTDateInput" name="publishedDateInput" native="true"/>
    </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="fileLabel">
+     <property name="text">
+      <string>File:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="AMTFileInput" name="fileInput" native="true"/>
+   </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
    <class>AMTDateInput</class>
    <extends>QWidget</extends>
-   <header>amt/views/customWidgets/amtdatetime</header>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AMTFileInput</class>
+   <extends>QWidget</extends>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AMTLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
   </customwidget>
  </customwidgets>
  <resources/>

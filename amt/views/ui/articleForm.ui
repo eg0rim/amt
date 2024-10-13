@@ -24,7 +24,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="titleLineEdit"/>
+      <widget class="AMTLineEdit" name="titleLineEdit"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="authorLabel">
@@ -44,7 +44,7 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QLineEdit" name="arXivIDLineEdit"/>
+      <widget class="AMTLineEdit" name="arXivIDLineEdit"/>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="versionLabel">
@@ -54,7 +54,7 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QLineEdit" name="versionLineEdit"/>
+      <widget class="AMTLineEdit" name="versionLineEdit"/>
      </item>
      <item row="4" column="0">
       <widget class="QLabel" name="journalLabel">
@@ -64,7 +64,7 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QLineEdit" name="journalLineEdit"/>
+      <widget class="AMTLineEdit" name="journalLineEdit"/>
      </item>
      <item row="5" column="0">
       <widget class="QLabel" name="dOILabel">
@@ -74,7 +74,7 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QLineEdit" name="dOILineEdit"/>
+      <widget class="AMTLineEdit" name="dOILineEdit"/>
      </item>
      <item row="6" column="0">
       <widget class="QLabel" name="linkLabel">
@@ -84,7 +84,7 @@
       </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QLineEdit" name="linkLineEdit"/>
+      <widget class="AMTLineEdit" name="linkLineEdit"/>
      </item>
      <item row="8" column="0">
       <widget class="QLabel" name="arXivUpdateLabel">
@@ -116,6 +116,16 @@
      <item row="9" column="1">
       <widget class="AMTDateInput" name="publishedDateInput" native="true"/>
      </item>
+     <item row="10" column="0">
+      <widget class="QLabel" name="fileLabel">
+       <property name="text">
+        <string>File:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1">
+      <widget class="AMTFileInput" name="fileInput" native="true"/>
+     </item>
     </layout>
    </item>
    <item>
@@ -131,14 +141,25 @@
   <customwidget>
    <class>AMTDateInput</class>
    <extends>QWidget</extends>
-   <header>amt/views/customWidgets/amtdatetime</header>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>AMTDateTimeInput</class>
    <extends>QWidget</extends>
-   <header>amt/views/customWidgets/amtdatetime</header>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AMTFileInput</class>
+   <extends>QWidget</extends>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AMTLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
   </customwidget>
  </customwidgets>
  <resources/>
