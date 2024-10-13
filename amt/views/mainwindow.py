@@ -205,21 +205,13 @@ class MainWindow(QMainWindow):
             return False
             
     def debug(self):
-        logger.debug("Debug button pressed")
-        author = AuthorData("John James Jacob Doe")
-        author.id = 4
-        entry = BookData("Test 3", [author])
-        entry.id = 3
-        entry.edition = 5
-        self.model.addEntry(entry)     
-        
+        logger.debug("Debug button pressed")       
         
     # file operations
     def newLibrary(self):
         logger.debug("create new db library")
         # create new temporary database
-        self.model.createNewTempDB()      
-        self.currentFile = ""  
+        self.model.createNewTempDB()   
         
     def openLibrary(self):
         logger.debug("open db library")
@@ -230,7 +222,6 @@ class MainWindow(QMainWindow):
         if fileDialog.exec() == QFileDialog.Accepted:
             filePath = fileDialog.selectedFiles()[0]
             self.model.openExistingDB(filePath)
-            self.currentFile = filePath  
         
     def saveLibrary(self):
         # save current changes in cache to the database
@@ -243,7 +234,6 @@ class MainWindow(QMainWindow):
                 f"Failed to save changes. See log for details.",
             )
             return
-        
         
     def saveAsLibrary(self):
         logger.debug("save as other file db library")
