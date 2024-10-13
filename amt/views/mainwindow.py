@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
         self.ui.actionDebug.triggered.connect(self.debug)
         self.ui.actionDel.triggered.connect(self.deleteSelectedRows)
         self.ui.actionUpdate.triggered.connect(self.updateTable)
+        self.ui.actionEdit.triggered.connect(self.editSelectedRow)
         # actions in menu
         self.ui.actionQuit.triggered.connect(self.close)
         self.ui.actionAbout.triggered.connect(self.openAboutDialog)
@@ -106,7 +107,7 @@ class MainWindow(QMainWindow):
         # actions in table
         self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
         self.ui.tableView.contextMenu.openAction.triggered.connect(self.openSelectedRowsExternally)
-        self.ui.tableView.contextMenu.editAction.triggered.connect(lambda : None)
+        self.ui.tableView.contextMenu.editAction.triggered.connect(self.editSelectedRow)
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)    
     
     def updateTable(self):
@@ -233,6 +234,26 @@ class MainWindow(QMainWindow):
             return True
         else:
             return False        
+        
+    def editSelectedRow(self) -> bool:
+        logger.debug(f"edit selected row")
+        rows = [r.row() for r in self.ui.tableView.selectionModel().selectedRows()]
+        logger.debug(f"selected rows: {rows}")
+        if len(rows) != 1:
+            QMessageBox.warning( 
+                self,
+                "Warning!",
+                "Please select one row to edit."
+            )
+            return False
+        logger.debug(f"edit row {rows[0]}")
+        dialog = AddDialog(self)
+        dialog.setData(self.model.dataCache.data[rows[0]])
+        if dialog.exec() == QDialog.Accepted:
+            self.model.editEntryAt(rows[0], dialog.data)
+            return True
+        else:
+            return False
         
     # open additional dialog windows
     def openAboutDialog(self):

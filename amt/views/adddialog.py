@@ -45,7 +45,8 @@ from amt.db.datamodel import (
     ArticleData,
     BookData,
     LecturesData,
-    AuthorData
+    AuthorData,
+    EntryData
 )
 
 logger = getLogger(__name__)
@@ -69,7 +70,7 @@ class AddDialog(QDialog):
         self.ui.buttonBox.accepted.connect(self.accept)
         self.ui.buttonBox.rejected.connect(self.reject)
         # data
-        self.data = None
+        self.data: EntryData = None
         
     def changeForm(self, text):
         self.currentForm.hide()
@@ -80,13 +81,28 @@ class AddDialog(QDialog):
         """Accept the data provided through the dialog."""
         self.data = self.currentForm.getData()
         super().accept()
+           
+    def setData(self, data: EntryData):
+        self.ui.entryTypeComboBox.setVisible(False)
+        if isinstance(data, ArticleData):
+            self.ui.entryTypeComboBox.setCurrentText("Article")
+        elif isinstance(data, BookData):
+            self.ui.entryTypeComboBox.setCurrentText("Book")
+        elif isinstance(data, LecturesData):
+            self.ui.entryTypeComboBox.setCurrentText("Lecture notes")
+        else:
+            raise ValueError("Unknown data type")
+        self.currentForm.setData(data)
         
 class AbstractForm(QWidget):
     """abstract add form"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
     
-    def getData(self):
+    def getData(self) -> EntryData:
+        pass
+    
+    def setData(self, data: EntryData):
         pass
 
 class ArticleForm(AbstractForm):
@@ -113,6 +129,20 @@ class ArticleForm(AbstractForm):
         data.dateArxivUpdated = ui.arxivUpdateDateTimeInput.dateTimeEdit.dateTime()
         data.fileName = ui.fileInput.getFilePath()
         return data
+
+    def setData(self, data: ArticleData):
+        ui = self.ui
+        ui.titleLineEdit.setText(data.title)
+        ui.authorLineEdit.setText(', '.join([author.toString() for author in data.authors]))
+        ui.arXivIDLineEdit.setText(data.arxivid)
+        ui.versionLineEdit.setText(data.version)
+        ui.journalLineEdit.setText(data.journal)
+        ui.dOILineEdit.setText(data.doi)
+        ui.linkLineEdit.setText(data.link)
+        ui.publishedDateInput.setDate(data.datePublished)
+        ui.arxivUploadDatetimeInput.setDateTime(data.dateArxivUploaded)
+        ui.arxivUpdateDateTimeInput.setDateTime(data.dateArxivUpdated)
+        ui.fileInput.filepath = data.fileName
         
     def getMetadataFromArxiv(self):
         logger.debug("metadata requested")    
@@ -165,6 +195,15 @@ class BookForm(AbstractForm):
         data.datePublished = ui.publishedDateInput.dateEdit.date()
         data.fileName = ui.fileInput.getFilePath()
         return data
+    
+    def setData(self, data: BookData):
+        ui = self.ui
+        ui.titleLineEdit.setText(data.title)
+        ui.authorLineEdit.setText(', '.join([author.toString() for author in data.authors]))
+        ui.iSBNLineEdit.setText(data.isbn)
+        ui.publisherLineEdit.setText(data.publisher)
+        ui.publishedDateInput.setDate(data.datePublished)
+        ui.fileInput.filepath = data.fileName
         
 class LecturesForm(AbstractForm):
     """add article form"""
@@ -184,3 +223,12 @@ class LecturesForm(AbstractForm):
         data.datePublished = ui.dateInput.dateEdit.date()
         data.fileName = ui.fileInput.getFilePath()
         return data
+
+    def setData(self, data: LecturesData):
+        ui = self.ui
+        ui.titleLineEdit.setText(data.title)
+        ui.authorLineEdit.setText(', '.join([author.toString() for author in data.authors]))
+        ui.courseLineEdit.setText(data.course)
+        ui.uniLineEdit.setText(data.school)
+        ui.dateInput.setDate(data.datePublished)
+        ui.fileInput.filepath = data.fileName

@@ -82,6 +82,16 @@ class AMTDateTimeInput(QWidget):
         self.activeCheckBox.setChecked(False)
         self.dateTimeEdit.setEnabled(False)
         self.activeCheckBox.stateChanged.connect(self.dateTimeEdit.setEnabled)
+        
+    def getDateTime(self):
+        return self.dateTimeEdit.dateTime()
+    
+    def setDateTime(self, dateTime):
+        if not dateTime:
+            self.activeCheckBox.setChecked(False)
+            return
+        self.activeCheckBox.setChecked(True)
+        self.dateTimeEdit.setDateTime(dateTime)
 
 class AMTDateInput(QWidget):
     def __init__(self, parent=None):
@@ -97,11 +107,21 @@ class AMTDateInput(QWidget):
         self.dateEdit.setEnabled(False)
         self.activeCheckBox.stateChanged.connect(self.dateEdit.setEnabled)
         
+    def getDate(self):
+        return self.dateEdit.date()
+    
+    def setDate(self, date):
+        if not date:
+            self.activeCheckBox.setChecked(False)
+            return
+        self.activeCheckBox.setChecked(True)
+        self.dateEdit.setDate(date)
+        
 
 class AMTFileInput(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.filepath = ""
+        self._filepath = ""
         self.filepathEdit = QLineEdit()
         self.filepathEdit.setReadOnly(True)
         self.filepathButton = QPushButton("Browse")
@@ -111,10 +131,18 @@ class AMTFileInput(QWidget):
         self.layout().addWidget(self.filepathButton)
         self.layout().setStretch(0, 1)
         self.layout().setStretch(1, 0)
+    
+    @property
+    def filepath(self):
+        return self._filepath
+    
+    @filepath.setter
+    def filepath(self, filepath: str):
+        self._filepath = filepath
+        self.filepathEdit.setText(filepath)
         
     def browseFile(self):
         self.filepath, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*)")
-        self.filepathEdit.setText(self.filepath)
         
     def getFilePath(self):
         if self.filepath == "":
