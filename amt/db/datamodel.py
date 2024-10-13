@@ -23,6 +23,7 @@ from PySide6.QtCore import (
     QDateTime,
     Qt
 )
+import subprocess
 from amt.db.database import AMTDatabase, AMTQuery
 from amt.logger import getLogger
 
@@ -505,6 +506,15 @@ class EntryData(AbstractData):
         elif field == "comment":
             return self.comment or ""
         return super().getDisplayData(field)
+    
+    def openExternally(self) -> bool:
+        # works only on linux
+        # TODO: add support for other OS
+        if self.fileName:
+            subprocess.Popen(["xdg-open", self.fileName])
+            return True
+        else:
+            return False
     
 class PublishableData(EntryData):
     """publishable data"""

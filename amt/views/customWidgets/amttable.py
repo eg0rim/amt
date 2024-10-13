@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QHeaderView
 )
-from PySide6.QtCore import QAbstractItemModel, Qt
+from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
 from PySide6.QtCore import QPoint
 
 from amt.db.tablemodel import AMTModel
@@ -45,7 +45,8 @@ class AMTTableWidget(QTableView):
         self.setSortingEnabled(True)
         # define variables
         self.contextMenu = ATMTableContextMenu(self)
-        self.customContextMenuRequested.connect(self.showContextMenu)        
+        self.customContextMenuRequested.connect(self.showContextMenu)   
+        self.doubleClicked.connect(self.onItemDoubleClicked)     
         
     def showContextMenu(self, pos: QPoint):
         self.contextMenu.exec_(self.mapToGlobal(pos))
@@ -69,6 +70,14 @@ class AMTTableWidget(QTableView):
                 self.setColumnWidth(i, int(tableWidth * defaultTitleFraction))
             else:
                 self.setColumnWidth(i, int(tableWidth * (1-defaultTitleFraction)/ float((numberOfColumns - 1))))
+        
+    def onItemDoubleClicked(self, index: QModelIndex):
+        if not self.model().openEntryExternally(index.row()):
+            QMessageBox.warning(
+                self,
+                "AMT",
+                "Can not open the entry. Check if the file name specified or the file exists."
+            )
         
 class ATMTableContextMenu(QMenu):
     def __init__(self, parent=None):
