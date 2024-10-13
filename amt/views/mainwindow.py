@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAdd.triggered.connect(self.openAddDialog)
         self.ui.actionDebug.triggered.connect(self.debug)
         self.ui.actionDel.triggered.connect(self.deleteSelectedRows)
-        self.ui.actionUpdate.triggered.connect(self.model.update)
+        self.ui.actionUpdate.triggered.connect(self.updateTable)
         # actions in menu
         self.ui.actionQuit.triggered.connect(self.close)
         self.ui.actionAbout.triggered.connect(self.openAboutDialog)
@@ -93,12 +93,6 @@ class MainWindow(QMainWindow):
         self.ui.actionOpen_library.triggered.connect(self.openLibrary)
         self.ui.actionSave_library.triggered.connect(self.saveLibrary)
         self.ui.actionSave_as.triggered.connect(self.saveAsLibrary)
-        # actions for context menu in qtableview
-        self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)
-        self.ui.tableView.contextMenu.DebugAction.triggered.connect(self.debug)
-        # TODO
-        self.ui.tableView.contextMenu.openAction.triggered.connect(lambda: None)
-        self.ui.tableView.contextMenu.editAction.triggered.connect(lambda: None)
         # main table 
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
@@ -106,7 +100,24 @@ class MainWindow(QMainWindow):
         # hide unused widgets
         self.ui.actionSettings.setVisible(False)
         self.ui.menuRecent.setVisible(False)
+        # actions in table
+        self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
+        self.ui.tableView.contextMenu.openAction.triggered.connect(self.openSelectedRowsExternally)
+        self.ui.tableView.contextMenu.editAction.triggered.connect(lambda : None)
+        self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)    
     
+    def updateTable(self):
+        if self.model.dataCache.diverged:
+            # warn that changes will be lost
+            messageBox = QMessageBox.warning(
+                self,
+                "Warning!",
+                "Do you want to update the table? All unsaved changes will be lost.",
+                QMessageBox.Ok | QMessageBox.Cancel,
+            )
+            if messageBox == QMessageBox.Cancel:
+                return
+        self.model.update()
  
     def setCurrentFile(self, file: str):
         if self.model.temporary:
@@ -175,21 +186,37 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(currentTitle + " (unsaved changes)")
         else:
             self.setWindowTitle(currentTitle.replace(" (unsaved changes)", ""))
-        
-    # open additional dialog windows
-    def openAboutDialog(self):
-        AboutDialog(self).exec()
-        
-    def openAddDialog(self):
-        dialog = AddDialog(self)
-        # if accepted add article to database and update table
-        if dialog.exec() == QDialog.Accepted:
-            logger.debug(f"add entry of type {type(dialog.data)}")
-            self.model.addEntry(dialog.data)
+            
+    def openSelectedRowsExternally(self) -> bool:
+        state = True
+        logger.debug(f"open selected rows externally")
+        rows = [r.row() for r in self.ui.tableView.selectionModel().selectedRows()]
+        if len(rows)<1:
+            return False
+        if len(rows)>1:
+            messageBox = QMessageBox.warning(
+                self,
+                "AMT",
+                f"Multiple entries are selected ({len(rows)}). Do you really want to open all of them?",
+                QMessageBox.Ok | QMessageBox.Cancel,
+            )
+            if messageBox == QMessageBox.Cancel:
+                return False
+        for row in rows:
+            if not self.model.openEntryExternally(row):
+                QMessageBox.warning(
+                    self,
+                    "AMT",
+                    f"Can not open the entry '{self.model.dataCache.data[row].toString()}'. Check if the file name specified or the file exists."
+                )
+                state = False
+        return state
+                
             
     def deleteSelectedRows(self) -> bool:
         logger.debug(f"delete selected rows")
         rows = [r.row() for r in self.ui.tableView.selectionModel().selectedRows()]
+        logger.debug(f"selected rows: {rows}")
         if len(rows)<1:
             return False
         messageBox = QMessageBox.warning(
@@ -202,7 +229,18 @@ class MainWindow(QMainWindow):
             self.model.removeEntriesAt(rows)
             return True
         else:
-            return False
+            return False        
+        
+    # open additional dialog windows
+    def openAboutDialog(self):
+        AboutDialog(self).exec()
+        
+    def openAddDialog(self):
+        dialog = AddDialog(self)
+        # if accepted add article to database and update table
+        if dialog.exec() == QDialog.Accepted:
+            logger.debug(f"add entry of type {type(dialog.data)}")
+            self.model.addEntry(dialog.data)
             
     def debug(self):
         logger.debug("Debug button pressed")       

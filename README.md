@@ -5,14 +5,13 @@ Manage articles, books, lecture notes, etc for research.
 ## Features
 
 - Store research related references.
-- Pull metadata from arxiv.org
+- Search within the references.
 
 ### Soon to be implemented
 
-- Pull metadata from various sources
-- Organize storage for pdf/djvu/etc files 
-- Download pdf for articles from arxiv
-- Compose bibtex files
+- Pull metadata from various sources (with the focus on arxiv.org).
+- Download and store pdf/djvu/etc files from open sources.
+- Compose bibtex files.
 
 ## Installation
 

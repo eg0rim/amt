@@ -46,7 +46,6 @@ class AMTTableWidget(QTableView):
         # define variables
         self.contextMenu = ATMTableContextMenu(self)
         self.customContextMenuRequested.connect(self.showContextMenu)   
-        self.doubleClicked.connect(self.onItemDoubleClicked)     
         
     def showContextMenu(self, pos: QPoint):
         self.contextMenu.exec_(self.mapToGlobal(pos))
@@ -71,14 +70,6 @@ class AMTTableWidget(QTableView):
             else:
                 self.setColumnWidth(i, int(tableWidth * (1-defaultTitleFraction)/ float((numberOfColumns - 1))))
         
-    def onItemDoubleClicked(self, index: QModelIndex):
-        if not self.model().openEntryExternally(index.row()):
-            QMessageBox.warning(
-                self,
-                "AMT",
-                "Can not open the entry. Check if the file name specified or the file exists."
-            )
-        
 class ATMTableContextMenu(QMenu):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -86,9 +77,8 @@ class ATMTableContextMenu(QMenu):
         self.openAction = self.addAction("Open")
         self.editAction = self.addAction("Edit")
         self.deleteAction = self.addAction("Remove")
-        self.DebugAction = self.addAction("Debug")
         self.triggered.connect(self.menuAction)
-    
+        
     @property
     def model(self):
         return self._model
@@ -96,5 +86,6 @@ class ATMTableContextMenu(QMenu):
     @model.setter
     def model(self, model : AMTModel):
         self._model = model
+        
         
    

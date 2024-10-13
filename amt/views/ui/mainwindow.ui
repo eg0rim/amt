@@ -16,6 +16,18 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
+     <widget class="QWidget" name="widget" native="true">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QComboBox" name="filterComboBox"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="searchLineEdit"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <widget class="AMTTableWidget" name="tableView">
       <property name="alternatingRowColors">
        <bool>true</bool>
@@ -41,13 +53,13 @@
    </property>
    <widget class="QMenu" name="menuMenu">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <widget class="QMenu" name="menuRecent">
      <property name="title">
@@ -66,8 +78,14 @@
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
-     <string>Edit</string>
+     <string>&amp;Edit</string>
     </property>
+    <addaction name="actionAdd"/>
+    <addaction name="actionDel"/>
+    <addaction name="actionEdit"/>
+    <addaction name="separator"/>
+    <addaction name="actionSearch"/>
+    <addaction name="actionUpdate"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -85,6 +103,8 @@
    </attribute>
    <addaction name="actionAdd"/>
    <addaction name="actionDel"/>
+   <addaction name="actionEdit"/>
+   <addaction name="actionSearch"/>
    <addaction name="actionUpdate"/>
    <addaction name="actionDebug"/>
   </widget>
@@ -106,7 +126,7 @@
   </action>
   <action name="actionAdd">
    <property name="text">
-    <string>Add</string>
+    <string>Add entry</string>
    </property>
    <property name="toolTip">
     <string>Add entry</string>
@@ -117,7 +137,7 @@
   </action>
   <action name="actionDel">
    <property name="text">
-    <string>Del</string>
+    <string>Remove entry</string>
    </property>
    <property name="toolTip">
     <string>Delete entry</string>
@@ -128,10 +148,10 @@
   </action>
   <action name="actionUpdate">
    <property name="text">
-    <string>Update</string>
+    <string>Refresh table</string>
    </property>
    <property name="toolTip">
-    <string>Update table</string>
+    <string>Retrieve entries from DB</string>
    </property>
   </action>
   <action name="actionDebug">
@@ -174,6 +194,19 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionEdit">
+   <property name="text">
+    <string>Edit entry</string>
+   </property>
+  </action>
+  <action name="actionSearch">
+   <property name="text">
+    <string>Search</string>
+   </property>
+   <property name="toolTip">
+    <string>Show search bar</string>
    </property>
   </action>
  </widget>
