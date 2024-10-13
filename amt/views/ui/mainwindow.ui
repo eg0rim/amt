@@ -16,16 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QWidget" name="widget" native="true">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QComboBox" name="filterComboBox"/>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="searchLineEdit"/>
-       </item>
-      </layout>
-     </widget>
+     <widget class="AMTSearchInput" name="searchInput" native="true"/>
     </item>
     <item>
      <widget class="AMTTableWidget" name="tableView">
@@ -215,6 +206,12 @@
    <class>AMTTableWidget</class>
    <extends>QTableView</extends>
    <header>amt/views/customWidgets/amttable</header>
+  </customwidget>
+  <customwidget>
+   <class>AMTSearchInput</class>
+   <extends>QWidget</extends>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

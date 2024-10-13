@@ -18,7 +18,16 @@
 
 """custom input widgets"""
 
-from PySide6.QtWidgets import QDateTimeEdit, QWidget, QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QFileDialog
+from PySide6.QtWidgets import (
+    QDateTimeEdit, 
+    QWidget, 
+    QCheckBox, 
+    QHBoxLayout, 
+    QLineEdit, 
+    QPushButton, 
+    QFileDialog,
+    QComboBox
+)
 
 class AMTDateTimeEdit(QDateTimeEdit):
     def __init__(self, parent=None):
@@ -121,3 +130,19 @@ class AMTLineEdit(QLineEdit):
         if text == "":
             return None
         return text
+    
+class AMTSearchInput(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.searchLineEdit = AMTLineEdit(self)
+        self.filterComboBox = QComboBox(self)
+        self.setLayout(QHBoxLayout(self))
+        self.layout().addWidget(self.filterComboBox)
+        self.layout().addWidget(self.searchLineEdit)
+        self.layout().setStretch(0, 0)
+        self.layout().setStretch(1, 1)
+        self.setVisible(False)
+        
+    def toggleVisible(self):
+        self.setVisible(not self.isVisible())
+        

@@ -4,5 +4,7 @@
         <file alias="bug.png">files/icons/bug.png</file>
         <file alias="remove.png">files/icons/remove.png</file>
         <file alias="update.png">files/icons/update.png</file>
+        <file alias="edit.png">files/icons/edit.png</file>
+        <file alias="search.png">files/icons/search.png</file>
     </qresource>
 </RCC>

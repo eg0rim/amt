@@ -56,6 +56,8 @@ class MainWindow(QMainWindow):
         self.ui.actionDel.setIcon(QIcon(":remove.png"))
         self.ui.actionUpdate.setIcon(QIcon(":update.png"))
         self.ui.actionDebug.setIcon(QIcon(":bug.png"))
+        self.ui.actionSearch.setIcon(QIcon(":search.png"))
+        self.ui.actionEdit.setIcon(QIcon(":edit.png"))
         # current database file
         self.currentFile = ""
         # settings
@@ -93,6 +95,7 @@ class MainWindow(QMainWindow):
         self.ui.actionOpen_library.triggered.connect(self.openLibrary)
         self.ui.actionSave_library.triggered.connect(self.saveLibrary)
         self.ui.actionSave_as.triggered.connect(self.saveAsLibrary)
+        self.ui.actionSearch.triggered.connect(self.ui.searchInput.toggleVisible)
         # main table 
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
