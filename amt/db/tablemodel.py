@@ -88,6 +88,7 @@ class DataCache(QObject):
         # first try to remove from add cache
         try: 
             self._dataToAdd.remove(entry)
+            self._data.remove(entry)
             # if the entry is in add cache, it is not in the db
             # check if anything in the editing cache
             if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
@@ -99,6 +100,7 @@ class DataCache(QObject):
         # if not in add cache, try to remove from the edit cache
         try:    
             self._dataToEdit.remove(entry)
+            self._data.remove(entry)
             # if the entry is in edit cache, it is not in the db
             # check if anything in the editing cache
             if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
