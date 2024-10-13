@@ -103,6 +103,10 @@ class MainWindow(QMainWindow):
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
         self.model.update()
+        # hide unused widgets
+        self.ui.actionSettings.setVisible(False)
+        self.ui.menuRecent.setVisible(False)
+    
  
     def setCurrentFile(self, file: str):
         if self.model.temporary:

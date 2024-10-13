@@ -28,9 +28,9 @@ def main():
     # create the app
     app = QApplication(sys.argv)
     # set the app properties
-    QCoreApplication.setOrganizationName("Egor Im's Soft")
+    QCoreApplication.setOrganizationName("Egor-Im-Soft")
     QCoreApplication.setOrganizationDomain("egorim.win")
-    QCoreApplication.setApplicationName("Article Management Tool")
+    QCoreApplication.setApplicationName("Article-Management-Tool")
     # fix light theme 
     qdarktheme.setup_theme("light")
     # create the main window
