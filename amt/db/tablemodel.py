@@ -159,6 +159,7 @@ class AMTModel(QAbstractTableModel):
     """Model to manage the articles, books, etc"""
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
+    databaseConnected = Signal(str)
     # specify columns
     _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID"]
     _columnCount: int = len(_columnNames)
@@ -174,7 +175,7 @@ class AMTModel(QAbstractTableModel):
     # data types that are shown in the corresponding table view
     _entryTypes = ["articles", "books", "lectures"]
     
-    def __init__(self, dbFile : str = None, *args : object):
+    def __init__(self, dbFile : str = "", *args : object):
         """Provides model to interact with db"""
         super().__init__(*args)          
         # cache of data; any non-saved changes to the data are stored here
@@ -182,7 +183,8 @@ class AMTModel(QAbstractTableModel):
         # keep track whether the database is temporary; on change must emit signal
         self._temporary: bool = False
         # if no db file is provided, create a temp file
-        if dbFile is None:
+        self.db : AMTDatabase = None
+        if not dbFile:
             self.createNewTempDB()
         else:
             self.openExistingDB(dbFile)
@@ -435,6 +437,7 @@ class AMTModel(QAbstractTableModel):
         self.db.open()
         self.temporary = False
         self.update()
+        self.databaseConnected.emit(filePath)
         logger.info(f"database opened: {filePath}")
         return True    
     
@@ -484,5 +487,6 @@ class AMTModel(QAbstractTableModel):
         self.temporary = True
         self.prepareTables()
         self.update()
+        self.databaseConnected.emit("")
         return True
         

@@ -19,7 +19,7 @@
 """main window for the app"""
 
 import sys
-#from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSettings
 from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
@@ -51,9 +51,23 @@ class MainWindow(QMainWindow):
         # setup ui
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        # create empty model (by default in a temp location)
+        # add icons
+        self.ui.actionAdd.setIcon(QIcon(":add.png"))
+        self.ui.actionDel.setIcon(QIcon(":remove.png"))
+        self.ui.actionUpdate.setIcon(QIcon(":update.png"))
+        self.ui.actionDebug.setIcon(QIcon(":bug.png"))
+        # current database file
+        self.currentFile = ""
+        # settings
+        self.readSettings()
+        if self.currentFile:
+            self.setTemporary(False)
+        else:
+            self.setTemporary(True)
+        self.setEdited(False)
+        # create model (by default in a temp location)
         try:
-            self.model = AMTModel()
+            self.model = AMTModel(self.currentFile)
             logger.info(f"Model is connected")
         except AMTDatabaseError:
             logger.critical(f"Database Error: {self.model.db.lastError().text()}")
@@ -63,16 +77,10 @@ class MainWindow(QMainWindow):
             f"Database Error: {self.model.db.lastError().text()}",
             )
             sys.exit(1)
+        # connect signals
         self.model.temporaryStatusChanged.connect(self.setTemporary)
         self.model.dataCache.cacheDiverged.connect(self.setEdited)
-        self.model.update()
-        self.setTemporary(True)
-        self.setEdited(False)
-        # add icons
-        self.ui.actionAdd.setIcon(QIcon(":add.png"))
-        self.ui.actionDel.setIcon(QIcon(":remove.png"))
-        self.ui.actionUpdate.setIcon(QIcon(":update.png"))
-        self.ui.actionDebug.setIcon(QIcon(":bug.png"))
+        self.model.databaseConnected.connect(self.setCurrentFile)
         # actions in toolbar
         self.ui.actionAdd.triggered.connect(self.openAddDialog)
         self.ui.actionDebug.triggered.connect(self.debug)
@@ -94,7 +102,36 @@ class MainWindow(QMainWindow):
         # main table 
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
-    
+        self.model.update()
+ 
+    def setCurrentFile(self, file: str):
+        if self.model.temporary:
+            self.currentFile = ""
+        else:
+            self.currentFile = file
+        
+    def writeSettings(self):
+        settings = QSettings()
+        settings.beginGroup("MainWindow")
+        settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("state", self.saveState())
+        settings.endGroup()
+        
+        settings.beginGroup("Database")
+        settings.setValue("lastUsedFile", self.currentFile)
+        settings.endGroup()
+        
+    def readSettings(self):
+        settings = QSettings()
+        settings.beginGroup("MainWindow")
+        self.restoreGeometry(settings.value("geometry"))
+        self.restoreState(settings.value("state"))
+        settings.endGroup()
+        
+        settings.beginGroup("Database")
+        self.currentFile = settings.value("lastUsedFile", "")
+        settings.endGroup()
+        
     def closeEvent(self, event):
         logger.debug("close event")
         if self.model.dataCache.diverged:
@@ -112,6 +149,7 @@ class MainWindow(QMainWindow):
             elif messageBox == QMessageBox.Cancel:
                 event.ignore()
                 return
+        self.writeSettings()
         event.accept()
             
     # change appearance of the window title if the database is temporary
@@ -176,7 +214,8 @@ class MainWindow(QMainWindow):
     def newLibrary(self):
         logger.debug("create new db library")
         # create new temporary database
-        self.model.createNewTempDB()        
+        self.model.createNewTempDB()      
+        self.currentFile = ""  
         
     def openLibrary(self):
         logger.debug("open db library")
@@ -187,6 +226,7 @@ class MainWindow(QMainWindow):
         if fileDialog.exec() == QFileDialog.Accepted:
             filePath = fileDialog.selectedFiles()[0]
             self.model.openExistingDB(filePath)
+            self.currentFile = filePath  
         
     def saveLibrary(self):
         # save current changes in cache to the database
