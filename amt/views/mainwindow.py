@@ -19,17 +19,16 @@
 """main window for the app"""
 
 import sys
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
-    QTableWidgetItem,
     QDialog,
     QFileDialog
 )
 from PySide6.QtGui import QIcon
 from amt.db.tablemodel import AMTModel, AMTFilter
-from amt.db.database import AMTDatabaseError, AMTQuery
+from amt.db.database import AMTDatabaseError
 from amt.db.datamodel import ArticleData, AuthorData, BookData, LecturesData
 
 from  .build.resources_qrc import *
@@ -124,7 +123,7 @@ class MainWindow(QMainWindow):
         self.ui.actionOpenLibrary.triggered.connect(self.openLibrary)
         self.ui.actionSaveLibrary.triggered.connect(self.saveLibrary)
         self.ui.actionSaveAs.triggered.connect(self.saveAsLibrary)
-        self.ui.actionSearch.triggered.connect(self.ui.searchInput.toggleVisible)
+        self.ui.actionSearch.triggered.connect(self.toggleSearchBar)
         
         
     def setupSearchBar(self):
@@ -141,6 +140,10 @@ class MainWindow(QMainWindow):
         logger.debug(f"search in fields: {fields}, pattern: {pattern}, useRegex: {useRegex}")
         filter = AMTFilter(fields, pattern, not useRegex)
         self.model.filter(filter)
+        
+    def toggleSearchBar(self):
+        self.ui.searchInput.reset()
+        self.ui.searchInput.toggleVisible()
     
     def updateTable(self):
         if self.model.dataCache.diverged:
@@ -300,9 +303,7 @@ class MainWindow(QMainWindow):
             
     def debug(self):
         logger.debug("Debug button pressed")
-        for i in range(100):
-            article = ArticleData(f"Article {i}", [AuthorData(f"Firstname{i} Lastname{i}")])
-            self.model.addEntry(article)
+
         
     # file operations
     def newLibrary(self):

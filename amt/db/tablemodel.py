@@ -19,7 +19,6 @@
 """model to manage the articles, books, etc"""
 
 import  tempfile, shutil, re
-from typing import SupportsIndex
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal, QObject
 from .database import AMTDatabase, AMTQuery

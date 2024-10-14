@@ -197,6 +197,10 @@ class AMTSearchInput(QWidget):
             return text[2:], True
         return text, False
     
+    def reset(self):
+        self.searchLineEdit.clear()
+        self.filterComboBox.setCurrentIndex(0)
+    
     def onSearchLineEditChange(self, _):
         text, isRegex = self.text()
         index = self.filterComboBox.currentIndex()

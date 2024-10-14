@@ -20,21 +20,11 @@
 
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QFormLayout,
-    QDialogButtonBox,
-    QMessageBox,
     QWidget,
-    QLabel,
-    QDateEdit,
-    QDateTimeEdit
+    QMessageBox
 )
 from PySide6.QtGui import *
-import urllib.request
 
-from amt.parser.parser import parseArxiv
 import amt.views.build.addDialog_ui as addDialog_ui
 import amt.views.build.articleForm_ui as articleForm_ui
 import amt.views.build.bookForm_ui as bookForm_ui
@@ -145,37 +135,12 @@ class ArticleForm(AbstractForm):
         ui.fileInput.filepath = data.fileName
         
     def getMetadataFromArxiv(self):
-        logger.debug("metadata requested")    
-        # if not self.ui.arXivIDLineEdit.text():
-        #     QMessageBox.critical(
-        #         self,
-        #         "Error!",
-        #         f"You must provide arxiv id",
-        #     )
-        #     return
-        # try:
-        #     data = parseArxiv(self.ui.arXivIDLineEdit.text())
-        # except urllib.error.URLError:
-        #     QMessageBox.critical(
-        #         self,
-        #         "Error!",
-        #         f"Check your internet connection",
-        #     )
-        #     return
-        # if not data:
-        #     QMessageBox.critical(
-        #         self,
-        #         "Error!",
-        #         f"Article not found! Check the arXiv id",
-        #     )
-        #     return
-        # self.ui.titleLineEdit.setText(data['title'])
-        # self.ui.authorLineEdit.setText(', '.join(data['authors']))
-        # self.ui.arXivIDLineEdit.setText(data['arxiv_id'])
-        # self.ui.versionLineEdit.setText(data['version'])
-        # self.ui.datePublishedLineEdit.setText(data['date_published'])
-        # self.ui.dateUpdatedLineEdit.setText(data['date_updated'])
-        # self.ui.linkLineEdit.setText(data['link'])
+        logger.debug("metadata requested")   
+        QMessageBox.information(
+            self,
+            "Information",
+            "This feature will be implemented in 0.2.0 version. Stay tuned!",
+        )
         
 class BookForm(AbstractForm):
     """add article form"""

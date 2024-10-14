@@ -18,14 +18,13 @@
 
 """library table widget"""
 
-from PySide6.QtGui import QResizeEvent, QPalette, QColor
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QTableView,
     QMenu,
-    QMessageBox,
     QHeaderView
 )
-from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
+from PySide6.QtCore import QAbstractItemModel, Qt
 from PySide6.QtCore import QPoint
 
 from amt.db.tablemodel import AMTModel

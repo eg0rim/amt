@@ -22,7 +22,6 @@ from PySide6.QtSql import (
     QSqlDatabase, 
     QSqlQuery,
 )
-from PySide6.QtCore import Qt, QDateTime, QDate
 from amt.logger import getLogger
 
 logger = getLogger(__name__)

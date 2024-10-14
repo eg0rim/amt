@@ -199,6 +199,9 @@
    <property name="toolTip">
     <string>Show search bar</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
   </action>
  </widget>
  <customwidgets>
