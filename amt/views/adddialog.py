@@ -20,8 +20,7 @@
 
 from PySide6.QtWidgets import (
     QDialog,
-    QWidget,
-    QMessageBox
+    QWidget
 )
 from PySide6.QtGui import *
 
@@ -37,6 +36,11 @@ from amt.db.datamodel import (
     LecturesData,
     AuthorData,
     EntryData
+)
+from amt.views.customWidgets.amtmessagebox import (
+    AMTInfoMessageBox, 
+    AMTWarnMessageBox, 
+    AMTErrorMessageBox
 )
 
 logger = getLogger(__name__)
@@ -136,11 +140,10 @@ class ArticleForm(AbstractForm):
         
     def getMetadataFromArxiv(self):
         logger.debug("metadata requested")   
-        QMessageBox.information(
-            self,
-            "Information",
-            "This feature will be implemented in 0.2.0 version. Stay tuned!",
-        )
+        msgBox = AMTInfoMessageBox(self)
+        msgBox.setText("This feature is not implemented yet.")
+        msgBox.setInformativeText("It will be implemented in 0.2.0 version. Stay tuned!")
+        msgBox.exec()
         
 class BookForm(AbstractForm):
     """add article form"""
