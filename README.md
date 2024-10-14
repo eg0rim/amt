@@ -17,10 +17,20 @@ Manage articles, books, lecture notes, etc for research.
 
 See `dist/README.md`
 
-## Installing from source
+## Installing from source (for Linux)
 
 1. Clone this repository.
-2. Compile `.qrc` and `.ui` files using make
+2. Create virtual environment and activate (recommended)
+```bash
+    python3 -m venv /path/to/venv
+    source /path/to/venv/bin/activate
+```
+3. Install (currently, there is an issue with `pyqrdarktheme`, so `--ignore-requires-python` is required; to be resolved in a future release)
+```bash
+    cd /path/to/article-management-tool
+    pip install --ignore-requires-python .
+```
+2. Compile `.qrc` and `.ui` files
 ```bash 
     make
 ```
@@ -31,7 +41,10 @@ See `dist/README.md`
 
 ## Requirements
 
-See REQUIREMENTS.txt file
+This package was tested on 
+- `python3.12.3`
+- `PySide6==6.7.3`
+- `pyqtdarktheme==2.1.0`
 
 ## License
 

@@ -22,7 +22,8 @@ setup(
     ],
     python_requires=">=3.12.3",
     install_requires=[
-        "PySide6>=6.7.3",
+        "PySide6==6.7.3",
+        "pyqtdarktheme==2.1.0"
     ],
     entry_points={
         "console_scripts": [
