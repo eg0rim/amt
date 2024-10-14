@@ -13,13 +13,18 @@ Manage articles, books, lecture notes, etc for research.
 - Download and store pdf/djvu/etc files from open sources.
 - Compose bibtex files.
 
-## Installation
+## Running 
 
-Compile .qrc and .ui files using make
+See `dist/README.md`
+
+## Installing from source
+
+1. Clone this repository.
+2. Compile `.qrc` and `.ui` files using make
 ```bash 
     make
 ```
-Run the app
+3. Run the app
 ```bash
     ./articlemanagementtool.py
 ```
@@ -29,4 +34,5 @@ Run the app
 See REQUIREMENTS.txt file
 
 ## License
+
 This software is licensed under the GNU General Public License v3.0. See the COPYING.txt file for details.
