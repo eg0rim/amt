@@ -29,7 +29,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from amt.db.tablemodel import AMTModel, AMTFilter
 from amt.db.database import AMTDatabaseError
-from amt.db.datamodel import ArticleData, AuthorData, BookData, LecturesData
+from amt.db.datamodel import (
+    ArticleData, 
+    AuthorData, 
+    BookData, 
+    LecturesData
+)
 
 from  .build.resources_qrc import *
 from .build.mainwindow_ui import (
@@ -40,6 +45,13 @@ from .aboutdialog import AboutDialog
 from .adddialog import AddDialog
 
 from amt.logger import getLogger
+from amt.views.customWidgets.amtmessagebox import (
+    AMTErrorMessageBox,
+    AMTWarnMessageBox,
+    AMTCriticalMessageBox,
+    AMTInfoMessageBox,
+    AMTQuestionMessageBox
+)
 
 logger = getLogger(__name__)
 
@@ -63,11 +75,10 @@ class MainWindow(QMainWindow):
             logger.info(f"Model is connected")
         except AMTDatabaseError:
             logger.critical(f"Database Error: {self.model.db.lastError().text()}")
-            QMessageBox.critical(
-            None,
-            "AMT",
-            f"Database Error: {self.model.db.lastError().text()}",
-            )
+            msgBox = AMTCriticalMessageBox(self)
+            msgBox.setText("Critical Error! AMT will be closed.")
+            msgBox.setInformativeText(f"Database Error: {self.model.db.lastError().text()}")
+            msgBox.exec()
             sys.exit(1)
         # main table 
         self.ui.tableView.setModel(self.model)
@@ -148,13 +159,12 @@ class MainWindow(QMainWindow):
     def updateTable(self):
         if self.model.dataCache.diverged:
             # warn that changes will be lost
-            messageBox = QMessageBox.warning(
-                self,
-                "Warning!",
-                "Do you want to update the table? All unsaved changes will be lost.",
-                QMessageBox.Ok | QMessageBox.Cancel,
-            )
-            if messageBox == QMessageBox.Cancel:
+            msgBox = AMTQuestionMessageBox(self)
+            msgBox.setText("Do you want to update the table?")
+            msgBox.setInformativeText("All unsaved changes will be lost.")
+            msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            ret = msgBox.exec()
+            if ret == QMessageBox.Cancel:
                 return
         self.model.update()
  
@@ -189,18 +199,19 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         logger.debug("close event")
         if self.model.dataCache.diverged:
-            messageBox = QMessageBox.warning(
-                self,
-                "Warning!",
-                "Do you want to save changes?",
+            msgBox = AMTQuestionMessageBox(self)
+            msgBox.setText("Do you want to save changes before closing?")
+            msgBox.setInformativeText("All unsaved changes will be lost.")
+            msgBox.setStandardButtons(
                 QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
             )
-            if messageBox == QMessageBox.Save:
+            ret = msgBox.exec()
+            if ret == QMessageBox.Save:
                 if self.model.temporary:
                     self.saveAsLibrary()
                 else:
                     self.saveLibrary()
-            elif messageBox == QMessageBox.Cancel:
+            elif ret == QMessageBox.Cancel:
                 event.ignore()
                 return
         self.writeSettings()
@@ -233,21 +244,19 @@ class MainWindow(QMainWindow):
         if len(rows)<1:
             return False
         if len(rows)>1:
-            messageBox = QMessageBox.warning(
-                self,
-                "AMT",
-                f"Multiple entries are selected ({len(rows)}). Do you really want to open all of them?",
-                QMessageBox.Ok | QMessageBox.Cancel,
-            )
-            if messageBox == QMessageBox.Cancel:
+            msgBox = AMTInfoMessageBox(self)
+            msgBox.setText("Multiple entries are selected.")
+            msgBox.setInformativeText("Do you want to open all of them?")
+            msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            ret = msgBox.exec()       
+            if ret == QMessageBox.Cancel:
                 return False
         for row in rows:
             if not self.model.openEntryExternally(row):
-                QMessageBox.warning(
-                    self,
-                    "AMT",
-                    f"Can not open the entry '{self.model.dataCache.data[row].toString()}'. Check if the file name specified or the file exists."
-                )
+                msgBox = AMTErrorMessageBox(self)
+                msgBox.setText("Can not open the entry.")
+                msgBox.setInformativeText("Check if the file name specified or the file exists.")
+                msgBox.exec()
                 state = False
         return state
                 
@@ -258,13 +267,11 @@ class MainWindow(QMainWindow):
         logger.debug(f"selected rows: {rows}")
         if len(rows)<1:
             return False
-        messageBox = QMessageBox.warning(
-            self,
-            "Warning!",
-            f"Do you want to remove the selected articles ({len(rows)})?",
-            QMessageBox.Ok | QMessageBox.Cancel,
-        )
-        if messageBox == QMessageBox.Ok:
+        msgBox = AMTQuestionMessageBox(self)
+        msgBox.setText(f"Do you want to remove selected entries ({len(rows)})?")
+        msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        ret = msgBox.exec()
+        if ret == QMessageBox.Ok:
             self.model.removeEntriesAt(rows)
             return True
         else:
@@ -275,11 +282,9 @@ class MainWindow(QMainWindow):
         rows = [r.row() for r in self.ui.tableView.selectionModel().selectedRows()]
         logger.debug(f"selected rows: {rows}")
         if len(rows) != 1:
-            QMessageBox.warning( 
-                self,
-                "Warning!",
-                "Please select one row to edit."
-            )
+            msgBox = AMTInfoMessageBox(self)
+            msgBox.setText("Please select only one row to edit.")
+            msgBox.exec()
             return False
         logger.debug(f"edit row {rows[0]}")
         dialog = AddDialog(self)
@@ -326,11 +331,10 @@ class MainWindow(QMainWindow):
         logger.debug("save db library")
         if not self.model.saveDB():
             logger.error("failed to save changes")
-            QMessageBox.critical(
-                self,
-                "Error!",
-                f"Failed to save changes. See log for details.",
-            )
+            msgBox = AMTErrorMessageBox(self)
+            msgBox.setText("Failed to save changes.")
+            msgBox.setInformativeText("See logs for details.")
+            msgBox.exec()
             return
         
     def saveAsLibrary(self):
@@ -345,10 +349,9 @@ class MainWindow(QMainWindow):
                 filePath += ".amtdb"
             if not self.model.saveDBAs(filePath):
                 logger.error("failed to save changes in new file")
-                QMessageBox.critical(
-                    self,
-                    "Error!",
-                    f"Failed to save changes in new file. See log for details.",
-                )
+                msgBox = AMTErrorMessageBox(self)
+                msgBox.setText("Failed to save changes in new file.")
+                msgBox.setInformativeText("See logs for details.")
+                msgBox.exec()
                 return
             
