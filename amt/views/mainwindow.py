@@ -48,16 +48,7 @@ class MainWindow(QMainWindow):
     """main window"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        # setup ui
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
-        # add icons
-        self.ui.actionAdd.setIcon(QIcon(":add.png"))
-        self.ui.actionDel.setIcon(QIcon(":remove.png"))
-        self.ui.actionUpdate.setIcon(QIcon(":update.png"))
-        self.ui.actionDebug.setIcon(QIcon(":bug.png"))
-        self.ui.actionSearch.setIcon(QIcon(":search.png"))
-        self.ui.actionEdit.setIcon(QIcon(":edit.png"))
+        self.setupUI()
         # current database file
         self.currentFile = ""
         # settings
@@ -79,24 +70,6 @@ class MainWindow(QMainWindow):
             f"Database Error: {self.model.db.lastError().text()}",
             )
             sys.exit(1)
-        # connect signals
-        self.model.temporaryStatusChanged.connect(self.setTemporary)
-        self.model.dataCache.cacheDiverged.connect(self.setEdited)
-        self.model.databaseConnected.connect(self.setCurrentFile)
-        # actions in toolbar
-        self.ui.actionAdd.triggered.connect(self.openAddDialog)
-        self.ui.actionDebug.triggered.connect(self.debug)
-        self.ui.actionDel.triggered.connect(self.deleteSelectedRows)
-        self.ui.actionUpdate.triggered.connect(self.updateTable)
-        self.ui.actionEdit.triggered.connect(self.editSelectedRow)
-        # actions in menu
-        self.ui.actionQuit.triggered.connect(self.close)
-        self.ui.actionAbout.triggered.connect(self.openAboutDialog)
-        self.ui.actionNew_library.triggered.connect(self.newLibrary)
-        self.ui.actionOpen_library.triggered.connect(self.openLibrary)
-        self.ui.actionSave_library.triggered.connect(self.saveLibrary)
-        self.ui.actionSave_as.triggered.connect(self.saveAsLibrary)
-        self.ui.actionSearch.triggered.connect(self.ui.searchInput.toggleVisible)
         # main table 
         self.ui.tableView.setModel(self.model)
         self.ui.tableView.resizeColumnsToContents()
@@ -109,6 +82,47 @@ class MainWindow(QMainWindow):
         self.ui.tableView.contextMenu.openAction.triggered.connect(self.openSelectedRowsExternally)
         self.ui.tableView.contextMenu.editAction.triggered.connect(self.editSelectedRow)
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)    
+        
+        self.model.temporaryStatusChanged.connect(self.setTemporary)
+        self.model.dataCache.cacheDiverged.connect(self.setEdited)
+        self.model.databaseConnected.connect(self.setCurrentFile)
+        
+        
+    def setupUI(self):
+        # setup ui
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        # set icons
+        self.ui.actionAdd.setIcon(QIcon(":/icons/add"))
+        self.ui.actionDel.setIcon(QIcon(":/icons/remove"))
+        self.ui.actionEdit.setIcon(QIcon(":/icons/edit"))
+        self.ui.actionUpdate.setIcon(QIcon(":/icons/update"))
+        self.ui.actionSaveLibrary.setIcon(QIcon(":/icons/save"))
+        self.ui.actionSaveAs.setIcon(QIcon(":/icons/saveas"))
+        self.ui.actionNewLibrary.setIcon(QIcon(":/icons/new"))
+        self.ui.actionOpenLibrary.setIcon(QIcon(":/icons/open"))
+        self.ui.actionSearch.setIcon(QIcon(":/icons/search"))
+        self.ui.actionQuit.setIcon(QIcon(":/icons/quit"))
+        self.ui.actionAbout.setIcon(QIcon(":/icons/about"))
+        self.ui.actionDebug.setIcon(QIcon(":/icons/bug"))
+        self.ui.actionUpdate.setIcon(QIcon(":/icons/update"))
+        self.ui.actionSettings.setIcon(QIcon(":/icons/settings"))
+        # connect signals
+        
+        # actions in toolbar
+        self.ui.actionAdd.triggered.connect(self.openAddDialog)
+        self.ui.actionDebug.triggered.connect(self.debug)
+        self.ui.actionDel.triggered.connect(self.deleteSelectedRows)
+        self.ui.actionUpdate.triggered.connect(self.updateTable)
+        self.ui.actionEdit.triggered.connect(self.editSelectedRow)
+        # actions in menu
+        self.ui.actionQuit.triggered.connect(self.close)
+        self.ui.actionAbout.triggered.connect(self.openAboutDialog)
+        self.ui.actionNewLibrary.triggered.connect(self.newLibrary)
+        self.ui.actionOpenLibrary.triggered.connect(self.openLibrary)
+        self.ui.actionSaveLibrary.triggered.connect(self.saveLibrary)
+        self.ui.actionSaveAs.triggered.connect(self.saveAsLibrary)
+        self.ui.actionSearch.triggered.connect(self.ui.searchInput.toggleVisible)
     
     def updateTable(self):
         if self.model.dataCache.diverged:
@@ -177,10 +191,10 @@ class MainWindow(QMainWindow):
         currentTitle = self.windowTitle()
         if status:
             self.setWindowTitle(currentTitle + " (temporary)")
-            self.ui.actionSave_library.setEnabled(False)
+            self.ui.actionSaveLibrary.setEnabled(False)
         else:
             self.setWindowTitle(currentTitle.replace(" (temporary)", ""))
-            self.ui.actionSave_library.setEnabled(True)
+            self.ui.actionSaveLibrary.setEnabled(True)
             
     # change appearance of the window title if the database is edited
     def setEdited(self, status: bool):

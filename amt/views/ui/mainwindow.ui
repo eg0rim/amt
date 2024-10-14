@@ -57,10 +57,10 @@
       <string>Recent...</string>
      </property>
     </widget>
-    <addaction name="actionNew_library"/>
-    <addaction name="actionOpen_library"/>
-    <addaction name="actionSave_library"/>
-    <addaction name="actionSave_as"/>
+    <addaction name="actionNewLibrary"/>
+    <addaction name="actionOpenLibrary"/>
+    <addaction name="actionSaveLibrary"/>
+    <addaction name="actionSaveAs"/>
     <addaction name="menuRecent"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
@@ -150,7 +150,7 @@
     <string>Debug</string>
    </property>
   </action>
-  <action name="actionNew_library">
+  <action name="actionNewLibrary">
    <property name="text">
     <string>New lib</string>
    </property>
@@ -158,7 +158,7 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="actionOpen_library">
+  <action name="actionOpenLibrary">
    <property name="text">
     <string>Open lib</string>
    </property>
@@ -166,7 +166,7 @@
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionSave_library">
+  <action name="actionSaveLibrary">
    <property name="text">
     <string>Save lib</string>
    </property>
@@ -179,7 +179,7 @@
     <string>Settings</string>
    </property>
   </action>
-  <action name="actionSave_as">
+  <action name="actionSaveAs">
    <property name="text">
     <string>Save lib as</string>
    </property>

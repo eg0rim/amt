@@ -458,15 +458,10 @@ class AMTModel(QAbstractTableModel):
         # copy the current file to the new location
         try:
             self.db.close()
-            try:
-                os.replace(self.db.databaseName(), filePath)
-            except OSError as e:
-                if e.errno == 18:  # Invalid cross-device link
-                    shutil.copy2(self.db.databaseName(), filePath)
-                else:
-                    raise
+            shutil.copy2(self.db.databaseName(), filePath)
             self.db = AMTDatabase(filePath)
             self.db.open()
+            self.databaseConnected.emit(filePath)
             logger.debug(f"save db as {filePath}")
             self.temporary = False
             logger.info(f"database saved as {filePath}")
