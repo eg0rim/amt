@@ -41,6 +41,7 @@ class AMTFilter:
         self._fields: list[str] = []
         self._fields.append(field) if isinstance(field, str) else self._fields.extend(field)
         self._escape: bool = escape
+        self._caseIndependent: bool = True # implement change of it
         
     def addField(self, field : str):
         self._fields.append(field)
@@ -75,11 +76,15 @@ class AMTFilter:
     def test(self, entry : EntryData) -> bool:
         #logger.debug(f"test filter {self.pattern} {self.fields} on entry {entry.title}")
         if self.pattern and self.fields:
+            pattern = self.pattern.lower() if self._caseIndependent else self.pattern
             if self.escape:
-                regex = re.compile(re.escape(self.pattern))
+                regex = re.compile(re.escape(pattern))
             else: 
-                regex = re.compile(self.pattern)
-            return any([regex.search(entry.getDisplayData(field)) for field in self.fields])
+                regex = re.compile(pattern)
+            if self._caseIndependent:
+                return any([regex.search(entry.getDisplayData(field).lower()) for field in self.fields])
+            else:
+                return any([regex.search(entry.getDisplayData(field)) for field in self.fields])
         return True
         
     def apply(self, data : list[EntryData]) -> list[EntryData]:
