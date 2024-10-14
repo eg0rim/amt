@@ -152,12 +152,22 @@ class AbstractData(object):
         return ""
     
     def getDisplayData(self, field : str) -> str:
+        """
+        Get data to display in the view.
+        Must only return str.
+        
+        Args:
+            field (str): field name
+            
+        Returns:
+            str: data to display
+        """
         if field == "id":
             return str(self.id) if self.id else ""
-        elif field == "name":
-            return self.toString() 
-        elif field == "shortName":
-            return self.toShortString()      
+        # elif field == "name":
+        #     return self.toString() 
+        # elif field == "shortName":
+        #     return self.toShortString()      
         return ""
 
 class OrganizationData(AbstractData):
@@ -231,6 +241,10 @@ class OrganizationData(AbstractData):
             return self.address or ""
         elif field == "info":
             return self.info
+        elif field == "name":
+            return self.name
+        elif field == "shortName":
+            return self.shortName
         return super().getDisplayData(field)
     
 

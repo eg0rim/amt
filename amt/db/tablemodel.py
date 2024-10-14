@@ -18,7 +18,8 @@
 
 """model to manage the articles, books, etc"""
 
-import  os, tempfile, shutil
+import  tempfile, shutil, re
+from typing import SupportsIndex
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal, QObject
 from .database import AMTDatabase, AMTQuery
@@ -34,8 +35,66 @@ from amt.logger import getLogger
 
 logger = getLogger(__name__) 
 
+class AMTFilter:
+    def __init__(self, field : str | list[str] = [], pattern : str = "", escape : bool = True):
+        super().__init__()
+        self._pattern: str = pattern
+        self._fields: list[str] = []
+        self._fields.append(field) if isinstance(field, str) else self._fields.extend(field)
+        self._escape: bool = escape
+        
+    def addField(self, field : str):
+        self._fields.append(field)
+        
+    def removeField(self, field : str):
+        try:
+            self._fields.remove(field)
+        except ValueError:
+            logger.error(f"field {field} not found")
+        
+    @property
+    def pattern(self) -> str:
+        return self._pattern
+    @pattern.setter
+    def pattern(self, value: str):
+        self._pattern = value
+        
+    @property   
+    def fields(self) -> list[str]:
+        return self._fields
+    @fields.setter
+    def fields(self, value: list[str]):
+        self._fields = value
+        
+    @property
+    def escape(self) -> bool:
+        return self._escape
+    @escape.setter
+    def escape(self, value: bool):
+        self._escape = value
+        
+    def test(self, entry : EntryData) -> bool:
+        #logger.debug(f"test filter {self.pattern} {self.fields} on entry {entry.title}")
+        if self.pattern and self.fields:
+            if self.escape:
+                regex = re.compile(re.escape(self.pattern))
+            else: 
+                regex = re.compile(self.pattern)
+            return any([regex.search(entry.getDisplayData(field)) for field in self.fields])
+        return True
+        
+    def apply(self, data : list[EntryData]) -> list[EntryData]:
+        #logger.debug(f"applying filter {self.pattern} {self.fields}")
+        if self.pattern and self.fields:
+            filtered =  [entry for entry in data if self.test(entry)]
+            #logger.debug(f"filtered {len(filtered)} entries")
+            return filtered
+        else:
+            return data[:]
+
 class DataCache(QObject):
     """Cache to store data changes"""
+    dataReset = Signal()
     cacheDiverged = Signal(bool)
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,6 +103,8 @@ class DataCache(QObject):
         self._dataToEdit : list[EntryData] = []
         self._dataToAdd : list[EntryData] = []
         self._diverged: bool = False
+        self._filter: AMTFilter = AMTFilter()
+        self.dataReset.connect(self.resetChangeCache)
         
     @property
     def diverged(self) -> bool:
@@ -56,15 +117,24 @@ class DataCache(QObject):
         self.cacheDiverged.emit(value)
         
     @property
+    def filter(self) -> AMTFilter:
+        return self._filter
+    @filter.setter
+    def filter(self, value: AMTFilter):
+        self._filter = value
+        logger.debug(f"filter set to {value.pattern} {value.fields}")
+        
+    @property
+    def dataToDisplay(self) -> list[EntryData]:
+        return self._filter.apply(self._data)
+        
+    @property
     def data(self) -> list[EntryData]:
         return self._data
     @data.setter
     def data(self, value: list[EntryData]):
         self._data = value
-        self._dataToDelete = []
-        self._dataToEdit = []
-        self._dataToAdd = [] 
-        self.diverged = False   
+        self.dataReset.emit()
     
     @property
     def dataToDelete(self) -> list[EntryData]:
@@ -79,8 +149,8 @@ class DataCache(QObject):
         return self._dataToAdd
       
     def add(self, entry : EntryData) -> bool:
-        self._data.append(entry)
-        self._dataToAdd.append(entry)
+        self.data.append(entry)
+        self.dataToAdd.append(entry)
         self.diverged = True      
         return True
     
@@ -154,7 +224,13 @@ class DataCache(QObject):
         if index < 0 or index >= len(self._data):
             return False
         return self.edit(self._data[index], newEntry)
-        
+    
+    def resetChangeCache(self):
+        self._dataToDelete = []
+        self._dataToEdit = []
+        self._dataToAdd = []
+        self.diverged = False
+                
 class AMTModel(QAbstractTableModel):
     """Model to manage the articles, books, etc"""
     # signal to notify about changes in the model
@@ -188,6 +264,8 @@ class AMTModel(QAbstractTableModel):
             self.createNewTempDB()
         else:
             self.openExistingDB(dbFile)
+            
+        
             
     @property
     def temporary(self) -> bool:
@@ -223,13 +301,13 @@ class AMTModel(QAbstractTableModel):
         Returns:
             int: number of rows
         """
-        return len(self.dataCache.data)
+        return len(self.dataCache.dataToDisplay)
     
     def data(self, index : QModelIndex, role : int = Qt.DisplayRole):
         if not index.isValid():
             return None
         if role == Qt.DisplayRole:
-            return self.entryToDisplayData(self.dataCache.data[index.row()], index.column())
+            return self.entryToDisplayData(self.dataCache.dataToDisplay[index.row()], index.column())
         return None
                                       
     def headerData(self, section : int, orientation : Qt.Orientation, role : int = Qt.DisplayRole) -> object:
@@ -363,6 +441,12 @@ class AMTModel(QAbstractTableModel):
         self.beginResetModel()
         logger.info(f"extract all entries from db")
         self.dataCache.data = self.extractEntries()
+        self.endResetModel()
+        return True
+    
+    def filter(self, filter : AMTFilter) -> bool:
+        self.beginResetModel()
+        self.dataCache.filter = filter
         self.endResetModel()
         return True
     

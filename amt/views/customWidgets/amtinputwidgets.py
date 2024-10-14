@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QComboBox
 )
+from PySide6.QtCore import Signal
 
 class AMTDateTimeEdit(QDateTimeEdit):
     def __init__(self, parent=None):
@@ -160,17 +161,48 @@ class AMTLineEdit(QLineEdit):
         return text
     
 class AMTSearchInput(QWidget):
+    searchInputChanged = Signal(int, str, bool)
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.columns: list[str] = ["All"]
         self.searchLineEdit = AMTLineEdit(self)
         self.filterComboBox = QComboBox(self)
+        #self.regexCheckBox = QCheckBox("Use regex", self)
         self.setLayout(QHBoxLayout(self))
         self.layout().addWidget(self.filterComboBox)
+        #self.layout().addWidget(self.regexCheckBox)
         self.layout().addWidget(self.searchLineEdit)
         self.layout().setStretch(0, 0)
         self.layout().setStretch(1, 1)
         self.setVisible(False)
+        self.filterComboBox.addItems(self.columns)
+        self.searchLineEdit.textChanged.connect(self.onSearchLineEditChange)
+        self.filterComboBox.currentIndexChanged.connect(self.onFilterComboBoxChange)
+        
+    def addColumns(self, columns: list[str]):
+        self.columns = columns
+        self.filterComboBox.addItems(columns)
+        
+    def setColumns(self, columns: list[str]):
+        self.columns = columns
+        self.filterComboBox.clear()
+        self.filterComboBox.addItems(columns)    
         
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
         
+    def text(self) -> tuple[str, bool]:
+        text =self.searchLineEdit.text() or ""
+        if text.startswith("//"):
+            return text[2:], True
+        return text, False
+    
+    def onSearchLineEditChange(self, _):
+        text, isRegex = self.text()
+        index = self.filterComboBox.currentIndex()
+        self.searchInputChanged.emit(index, text, isRegex)
+        
+    def onFilterComboBoxChange(self, _):
+        text, isRegex = self.text()
+        index = self.filterComboBox.currentIndex()
+        self.searchInputChanged.emit(index, text, isRegex)

@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QFileDialog
 )
 from PySide6.QtGui import QIcon
-from amt.db.tablemodel import AMTModel
+from amt.db.tablemodel import AMTModel, AMTFilter
 from amt.db.database import AMTDatabaseError, AMTQuery
 from amt.db.datamodel import ArticleData, AuthorData, BookData, LecturesData
 
@@ -87,6 +87,8 @@ class MainWindow(QMainWindow):
         self.model.dataCache.cacheDiverged.connect(self.setEdited)
         self.model.databaseConnected.connect(self.setCurrentFile)
         
+        self.setupSearchBar()
+        
         
     def setupUI(self):
         # setup ui
@@ -123,6 +125,22 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveLibrary.triggered.connect(self.saveLibrary)
         self.ui.actionSaveAs.triggered.connect(self.saveAsLibrary)
         self.ui.actionSearch.triggered.connect(self.ui.searchInput.toggleVisible)
+        
+        
+    def setupSearchBar(self):
+        self.ui.searchInput.addColumns(self.model._columnNames)
+        self.ui.searchInput.searchInputChanged.connect(self.search)
+        
+    def search(self, index, pattern, useRegex):
+        logger.debug("search")
+        fieldsIndex = index - 1
+        if fieldsIndex == -1 : 
+            fields = self.model._columnToField.values()
+        else:
+            fields = self.model._columnToField[fieldsIndex]
+        logger.debug(f"search in fields: {fields}, pattern: {pattern}, useRegex: {useRegex}")
+        filter = AMTFilter(fields, pattern, not useRegex)
+        self.model.filter(filter)
     
     def updateTable(self):
         if self.model.dataCache.diverged:
@@ -281,7 +299,10 @@ class MainWindow(QMainWindow):
             self.model.addEntry(dialog.data)
             
     def debug(self):
-        logger.debug("Debug button pressed")       
+        logger.debug("Debug button pressed")
+        for i in range(100):
+            article = ArticleData(f"Article {i}", [AuthorData(f"Firstname{i} Lastname{i}")])
+            self.model.addEntry(article)
         
     # file operations
     def newLibrary(self):

@@ -18,7 +18,7 @@
 
 """library table widget"""
 
-from PySide6.QtGui import QResizeEvent
+from PySide6.QtGui import QResizeEvent, QPalette, QColor
 from PySide6.QtWidgets import (
     QTableView,
     QMenu,
@@ -43,6 +43,7 @@ class AMTTableWidget(QTableView):
         self.setSelectionBehavior(QTableView.SelectRows)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.setSortingEnabled(True)
+        self.setAlternatingRowColors(True) # does not work?! figure out why
         # define variables
         self.contextMenu = ATMTableContextMenu(self)
         self.customContextMenuRequested.connect(self.showContextMenu)   
