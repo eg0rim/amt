@@ -24,6 +24,11 @@ from PySide6.QtGui import QIcon
 from amt.views.build.resources_qrc import *
 
 class AMTMessageBox(QMessageBox):
+    """ 
+    Custom message box for the Article Management Tool (AMT). Inherits from QMessageBox.
+    All message box has the same title "Article Management Tool".
+    Subclasses only differ by the icon.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Article Management Tool")
