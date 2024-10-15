@@ -26,11 +26,20 @@ from PySide6.QtWidgets import (
     QLineEdit, 
     QPushButton, 
     QFileDialog,
-    QComboBox
+    QComboBox,
+    QLabel,
+    QVBoxLayout,
+    QGridLayout
 )
 from PySide6.QtCore import Signal
+import re
 
 class AMTDateTimeEdit(QDateTimeEdit):
+    """
+    Custom QDateTimeEdit widget for the Article Management Tool (AMT). Iherits from QDateTimeEdit.
+    Has fixed display format "dd/MM/yyyy hh:mm:ss".
+    dateTime, date and time methods return None if the widget is disabled.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setDisplayFormat("dd/MM/yyyy hh:mm:ss")
@@ -51,6 +60,11 @@ class AMTDateTimeEdit(QDateTimeEdit):
         return super().time()
 
 class AMTDateEdit(QDateTimeEdit):
+    """ 
+    Custom QDateTimeEdit widget for the Article Management Tool (AMT). Inherits from QDateTimeEdit.
+    Has fixed display format "dd/MM/yyyy".
+    dateTime, date and time methods return None if the widget is disabled.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setDisplayFormat("dd/MM/yyyy")
@@ -71,6 +85,10 @@ class AMTDateEdit(QDateTimeEdit):
         return super().time()
     
 class AMTDateTimeInput(QWidget):
+    """ 
+    Composite widget for date and time input. Contains a checkbox to enable/disable the widget.
+    checactiveCheckBoxhBox enables/disables the AMTDateTimeEdit widget.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.dateTimeEdit = AMTDateTimeEdit(self)
@@ -95,6 +113,10 @@ class AMTDateTimeInput(QWidget):
         self.dateTimeEdit.setDateTime(dateTime)
 
 class AMTDateInput(QWidget):
+    """ 
+    Composite widget for date and time input. Contains a checkbox to enable/disable the widget.
+    checactiveCheckBoxhBox enables/disables the AMTDateTimeEdit widget.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.dateEdit = AMTDateEdit(self)
@@ -120,6 +142,10 @@ class AMTDateInput(QWidget):
         
 
 class AMTFileInput(QWidget):
+    """ 
+    Composite widget for file input. Contains a QLineEdit and a QPushButton to browse for a file.
+    If no file is selected, the filepath is an empty string. getFilePath returns None if no file is selected.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self._filepath = ""
@@ -151,6 +177,10 @@ class AMTFileInput(QWidget):
         return self.filepath
     
 class AMTLineEdit(QLineEdit):
+    """ 
+    Custom QLineEdit widget for the Article Management Tool (AMT). Inherits from QLineEdit.
+    text method returns None if the lineEdit is empty.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -161,52 +191,131 @@ class AMTLineEdit(QLineEdit):
         return text
     
 class AMTSearchInput(QWidget):
+    """ 
+    Composite widget for search input. Contains a QComboBox to select the column to search in and a QLineEdit to input the search text.
+    If input text starts with "/", the search is performed using regex.
+    
+    Emits: 
+        searchInputChanged(int, str, bool): Signal emitted when the search input is changed. The signal contains the index of the selected column, the search text, and a boolean indicating if the search should be performed using regex.
+    
+    Attributes:
+        columns (list[str]): List of columns to search in.
+        searchLineEdit (AMTLineEdit): LineEdit widget for the search text.
+        filterComboBox (QComboBox): ComboBox widget for selecting the column to search in.
+    
+    Methods:
+        __init__(self, parent=None)
+        setupUI(self)
+        addColumns(self, columns: list[str])
+        setColumns(self, columns: list[str])
+        toggleVisible(self)
+        text(self) -> tuple[str, bool]
+        reset(self)
+        onSearchLineEditChange(self, _)
+        onFilterComboBoxChange(self, _)
+    """
     searchInputChanged = Signal(int, str, bool)
     def __init__(self, parent=None):
         super().__init__(parent)
         self.columns: list[str] = ["All"]
         self.searchLineEdit = AMTLineEdit(self)
         self.filterComboBox = QComboBox(self)
+        self.errorLabel = QLabel(self)
         #self.regexCheckBox = QCheckBox("Use regex", self)
-        self.setLayout(QHBoxLayout(self))
-        self.layout().addWidget(self.filterComboBox)
-        #self.layout().addWidget(self.regexCheckBox)
-        self.layout().addWidget(self.searchLineEdit)
-        self.layout().setStretch(0, 0)
-        self.layout().setStretch(1, 1)
+        self.setupUI()
+    
+    def setupUI(self):
+        """
+        Sets up the user interface for the custom widget.
+        """
+        self.searchLineEdit.setPlaceholderText("Start search string with '/' for using regex")
+        layout = QGridLayout(self)
+        self.setLayout(layout)
+        layout.addWidget(self.filterComboBox, 0, 0)
+        layout.addWidget(self.searchLineEdit, 0, 1)
+        layout.addWidget(self.errorLabel, 1, 0, 1, 2)
+        layout.setColumnStretch(0, 0)
+        layout.setColumnStretch(1, 1)
+        layout.addWidget(self.errorLabel)
+        self.errorLabel.setVisible(False)
+        self.errorLabel.setText("Invalid regex") 
+        self.errorLabel.setStyleSheet("color: red;")       
         self.setVisible(False)
         self.filterComboBox.addItems(self.columns)
+        # any changes in the searchLineEdit or filterComboBox should emit the searchInputChanged signal
         self.searchLineEdit.textChanged.connect(self.onSearchLineEditChange)
         self.filterComboBox.currentIndexChanged.connect(self.onFilterComboBoxChange)
         
     def addColumns(self, columns: list[str]):
-        self.columns = columns
+        """
+        Adds a list of columns to the existing columns and updates the filterComboBox.
+        Args:
+            columns (list[str]): A list of column names to be added.
+        """
+        self.columns += columns
         self.filterComboBox.addItems(columns)
         
     def setColumns(self, columns: list[str]):
+        """ 
+        Resets the columns to the given list of columns and updates the filterComboBox.
+        Args:
+            columns (list[str]): A list of column names to be set.
+        """
         self.columns = columns
         self.filterComboBox.clear()
         self.filterComboBox.addItems(columns)    
         
     def toggleVisible(self):
+        """ 
+        Toggle the visibility of the widget.
+        """
         self.setVisible(not self.isVisible())
         
     def text(self) -> tuple[str, bool]:
+        """ 
+        Returns the text from the searchLineEdit and a boolean indicating if the text to be interpreted as a regex.
+        Returns:
+            tuple[str, bool]: The search text and a boolean indicating if the text is a regex.
+        """
         text =self.searchLineEdit.text() or ""
-        if text.startswith("//"):
-            return text[2:], True
+        if text.startswith("/"):
+            return text[1:], True
         return text, False
     
     def reset(self):
+        """ 
+        Resets the searchLineEdit and filterComboBox to their default values.
+        """
         self.searchLineEdit.clear()
         self.filterComboBox.setCurrentIndex(0)
     
     def onSearchLineEditChange(self, _):
+        """ 
+        If the searchLineEdit text is changed, emit the searchInputChanged signal.
+        """
+        text, isRegex = self.text()
+        index = self.filterComboBox.currentIndex()
+        self.testSearchRegex()
+        self.searchInputChanged.emit(index, text, isRegex)
+        
+    def onFilterComboBoxChange(self, _):
+        """ 
+        If the filterComboBox selection is changed, emit the searchInputChanged signal.
+        """
         text, isRegex = self.text()
         index = self.filterComboBox.currentIndex()
         self.searchInputChanged.emit(index, text, isRegex)
         
-    def onFilterComboBoxChange(self, _):
+    def testSearchRegex(self):
+        """ 
+        Test the search text for regex validity.
+        """
         text, isRegex = self.text()
-        index = self.filterComboBox.currentIndex()
-        self.searchInputChanged.emit(index, text, isRegex)
+        if isRegex:
+            try:
+                re.compile(text)
+                self.errorLabel.setVisible(False)
+            except re.error:
+                self.errorLabel.setVisible(True)
+        else:
+            self.errorLabel.setVisible(False)   

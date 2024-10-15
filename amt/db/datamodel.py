@@ -32,15 +32,35 @@ logger = getLogger(__name__)
 
 class AbstractData(object):
     """
-    Implements data storage and its insertion, deletion, update, etc. to database via query
+    Abstract class for data storage and its insertion, deletion, update, etc. to specified database.
+    Class attributes: 
+        tableName: str - table name corresponding to the data type. Must be specified in subclasses
+        tableColumns: dict[str, str] - table columns must be specified in the order of their appearance in the table with type and constraints. Must be specified in subclasses
+        tableAddLines: list[str] - additional lines needed for create query. 
+    Properties:
+        id: int - id of the data. Must be specified only to existing data in database. For new data it is must be None. Insertion must assign id.
+    Methods:
+        createTable(db: AMTDatabase) -> bool
+        select(db: AMTDatabase, filter: str = "") -> bool
+        getDataToInsert() -> dict[str, str]
+        insert(db: AMTDatabase) -> bool
+        delete(db: AMTDatabase) -> bool
+        update(db: AMTDatabase) -> bool
+        fromRow(row: list[str]) -> 'AbstractData'
+        extractData(db: AMTDatabase, filter: str = "") -> list['AbstractData']
+        toString() -> str
+        toShortString() -> str
+        getDisplayData(field: str) -> str
     """
-    # table name corresponding to the data class
+    # table name corresponding to the data type
     tableName: str = None
     # table columns must be specified in the order of their appearance in the table
     # with type and constraints
     # for example: {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "name": "TEXT NOT NULL"}
     tableColumns: dict[str, str] = None
-    
+    # additional lines needed for create query
+    # for example: ["UNIQUE(name)"]
+    tableAddLines: list[str] = []
     def __init__(self):
         super().__init__()
         # id must be specified only to existing data in database
@@ -58,13 +78,28 @@ class AbstractData(object):
            
     @classmethod
     def createTable(cls, db : AMTDatabase) -> bool:
+        """ 
+        Create table in the database corresponding to the data type.
+        Args:
+            db (AMTDatabase): database object
+        Returns:
+            bool: True if table created successfully, False otherwise
+        """
         query = AMTQuery(db)
-        if not query.createTable(cls.tableName, cls.tableColumns):
+        if not query.createTable(cls.tableName, cls.tableColumns): #, addLines=cls.tableAddLines):
             return False
         return query.exec()
     
     @classmethod
     def select(cls, db : AMTDatabase, filter : str = "") -> bool:
+        """ 
+        Select data from the table corresponding to the data type.
+        Args:
+            db (AMTDatabase): database object
+            filter (str, optional): filter string. Defaults to "".
+        Returns:
+            bool: True if select query executed successfully, False otherwise
+        """
         query = AMTQuery(db)
         if not query.select(cls.tableName, cls.tableColumns.keys(), filter):
             return False
@@ -83,6 +118,13 @@ class AbstractData(object):
         return data
         
     def insert(self, db : AMTDatabase) -> bool:
+        """ 
+        Insert data into the table corresponding to the data type.
+        Args:
+            db (AMTDatabase): database object
+        Returns:
+            bool: True if insert query executed successfully, False otherwise
+        """
         query = AMTQuery(db)
         if not query.insert(self.tableName, self.getDataToInsert()):
             return False
@@ -93,6 +135,13 @@ class AbstractData(object):
         return True
     
     def delete(self, db : AMTDatabase) -> bool:
+        """ 
+        Delete data from the table corresponding to the data type.
+        Args:
+            db (AMTDatabase): database object
+        Returns:
+            bool: True if delete query executed successfully, False otherwise
+        """
         if not self.id:
             logger.error("Cannot delete data without id")
             return False
@@ -105,6 +154,13 @@ class AbstractData(object):
         return True
     
     def update(self, db : AMTDatabase) -> bool:
+        """ 
+        Update data in the table corresponding to the data type.
+        Args:
+            db (AMTDatabase): database object
+        Returns:    
+            bool: True if update query executed successfully, False otherwise
+        """
         if not self.id:
             logger.error("Cannot update data without id")
             return False
@@ -133,6 +189,14 @@ class AbstractData(object):
     
     @classmethod 
     def extractData(cls, db : AMTDatabase, filter : str = "") -> list['AbstractData']:
+        """ 
+        Extract data from the table corresponding to the data type based on the filter.
+        Args:
+            db (AMTDatabase): database object
+            filter (str, optional): filter string. Defaults to "".
+        Returns:
+            list[AbstractData]: list of data objects
+        """
         query = AMTQuery(db)
         query.select(cls.tableName, cls.tableColumns.keys(), filter)
         query.exec()
@@ -146,9 +210,17 @@ class AbstractData(object):
         return data
     
     def toString(self) -> str:
+        """ 
+        String representation of the data.
+        Must only return str.
+        """
         return ""
     
     def toShortString(self) -> str:
+        """ 
+        Short string representation of the data.
+        Must only return str.
+        """
         return ""
     
     def getDisplayData(self, field : str) -> str:
@@ -171,7 +243,9 @@ class AbstractData(object):
         return ""
 
 class OrganizationData(AbstractData):
-    """institute, university, company, etc data"""
+    """
+    Data type to store organization data like universities, research centers, etc.
+    """
     tableName = "organizations"
     tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "name": "TEXT NOT NULL", "short_name": "TEXT", "address": "TEXT", "info": "TEXT"}
     def __init__(self, orgName : str):
@@ -249,10 +323,12 @@ class OrganizationData(AbstractData):
     
 
 class AuthorData(AbstractData):
-    """author data"""
+    """
+    Data type to store author data.
+    """
     tableName = "authors"
     tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "first_name": "TEXT NOT NULL", "middle_name": "TEXT NOT NULL", "last_name": "TEXT NOT NULL", "birth_date": "TEXT", "death_date": "TEXT", "bio": "TEXT"}
-    tableAddLines = ["UNIQUE(first_name, middle_name, last_name, birth_date)"]
+    tableAddLines = []#["UNIQUE(first_name, middle_name, last_name)"]
     def __init__(self, name : str):
         # name is space separated string
         super().__init__()
@@ -379,7 +455,10 @@ class AuthorData(AbstractData):
         return super().getDisplayData(field)
 
 class EntryData(AbstractData):
-    """entry data"""
+    """
+    Abstract Data type to store entry data like articles, books, lecture notes, etc.
+    createTable creates also additional tables to keep reference to authors.
+    """    
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__()
         self._title: str = title
@@ -523,7 +602,8 @@ class EntryData(AbstractData):
     
     def openExternally(self) -> bool:
         # works only on linux
-        # TODO: add support for other OS
+        # TODO: add support for other OS or support pdf viewer
+        # TODO: keep subprocess object to close it if needed
         if self.fileName:
             subprocess.Popen(["xdg-open", self.fileName])
             return True
@@ -531,7 +611,9 @@ class EntryData(AbstractData):
             return False
     
 class PublishableData(EntryData):
-    """publishable data"""
+    """
+    Abstract Data type to store publishable data like articles, books, lecture notes, etc. that have DOI, link, date published.
+    """
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._doi: str = None
@@ -579,10 +661,12 @@ class PublishableData(EntryData):
         return super().getDisplayData(field)
         
 class ArticleData(PublishableData):
-    """article data"""
+    """
+    Data type to store article data.
+    """
     tableName = "articles"
     tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}    
-    tableAddLines = ["UNIQUE(title, doi)"]
+    tableAddLines = [] #["UNIQUE(title, doi)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._arxivid : str = None
@@ -685,10 +769,12 @@ class ArticleData(PublishableData):
         return super().getDisplayData(field)
         
 class BookData(PublishableData):
-    """books data"""
+    """
+    Data type to store book data.
+    """
     tableName = "books"
     tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}
-    tableAddLines = ["UNIQUE(title, doi. edition)"]
+    tableAddLines = [] #["UNIQUE(title, doi, edition)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._isbn: str = None
@@ -751,10 +837,12 @@ class BookData(PublishableData):
         return super().getDisplayData(field)
 
 class LecturesData(PublishableData):
-    """lecture notes data"""
+    """
+    Data type to store lecture notes data.
+    """
     tableName = "lectures"
     tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "school": "TEXT", "course": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}
-    tableAddLines = ["UNIQUE(title, course, school)"]
+    tableAddLines = [] #["UNIQUE(title, course, school)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._school: str = None
