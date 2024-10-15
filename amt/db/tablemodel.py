@@ -729,9 +729,9 @@ class AMTModel(QAbstractTableModel):
             shutil.copy2(self.db.databaseName(), filePath)
             self.db = AMTDatabase(filePath)
             self.db.open()
-            self.databaseConnected.emit(filePath)
             logger.debug(f"save db as {filePath}")
             self.temporary = False
+            self.databaseConnected.emit(filePath)
             logger.info(f"database saved as {filePath}")
             return self.saveDB()
         except Exception as e:

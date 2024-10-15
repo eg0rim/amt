@@ -171,7 +171,6 @@ class AMTQuery(QSqlQuery):
             logger.error("query is not prepared")
             return False
         logger.debug(f"Executing query: {qs}")
-        print("debug")
         if not super().exec(qs):
             logger.error(f"Query failed: {self.lastError().text()}")
             return False
