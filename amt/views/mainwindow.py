@@ -435,7 +435,7 @@ class MainWindow(QMainWindow):
             return False
         # use the same dialog for adding and editing
         # perhaps, to be reconsidered in the future
-        entry = self.model.dataCache.data[rows[0]]
+        entry = self.model.getDataAt(rows[0])
         dialog = AddDialog(entryToEdit=entry, parent=self)
         #dialog.setData(self.model.dataCache.data[rows[0]])
         if dialog.exec() == QDialog.Accepted:
