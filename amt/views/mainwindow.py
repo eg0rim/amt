@@ -52,6 +52,7 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTInfoMessageBox,
     AMTQuestionMessageBox
 )
+from amt.file_utils.filehandler import ExternalEntryHandler
 
 logger = getLogger(__name__)
 
@@ -103,6 +104,8 @@ class MainWindow(QMainWindow):
         self.ui: Ui_MainWindow = None
         # model for the table view
         self.model: AMTModel = None
+        # file handler
+        self.fileHandler = ExternalEntryHandler()
         # load settings
         self.readSettings()
         # setup ui
@@ -390,7 +393,8 @@ class MainWindow(QMainWindow):
                 return False
         # open each entry in the cycle
         for row in rows:
-            if not self.model.openEntryExternally(row):
+            entry = self.model.getDataAt(row)
+            if not self.fileHandler.openEntry(entry):
                 msgBox = AMTErrorMessageBox(self)
                 msgBox.setText("Can not open the entry.")
                 msgBox.setInformativeText("Check if the file name specified or the file exists.")

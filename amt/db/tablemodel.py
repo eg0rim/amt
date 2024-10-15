@@ -635,16 +635,6 @@ class AMTModel(QAbstractTableModel):
         self.endInsertRows()
         return True
     
-    def openEntryExternally(self, row : int) -> bool:
-        """ 
-        opens the entry at the given row externally
-        Args:
-            row (int): row number
-        Returns:
-            bool: True if successful
-        """
-        return self.dataCache.data[row].openExternally()
-    
     # extract entries from the database
     def extractEntries(self) -> list[EntryData]:
         """
