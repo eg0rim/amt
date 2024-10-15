@@ -197,7 +197,7 @@ class ArticleForm(AbstractForm):
     def getData(self) -> ArticleData:
         ui = self.ui
         authorsStr = ui.authorLineEdit.text()
-        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')]
+        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')] if authorsStr else []
         title = ui.titleLineEdit.text()     
         data = ArticleData(title, authors)
         data.arxivid = ui.arXivIDLineEdit.text()
@@ -248,7 +248,7 @@ class BookForm(AbstractForm):
     def getData(self) -> BookData:
         ui = self.ui
         authorsStr = ui.authorLineEdit.text()
-        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')]
+        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')] if authorsStr else []
         title = ui.titleLineEdit.text()     
         data = BookData(title, authors)
         data.isbn = ui.iSBNLineEdit.text()
@@ -279,7 +279,7 @@ class LecturesForm(AbstractForm):
     def getData(self) -> LecturesData:
         ui = self.ui
         authorsStr = ui.authorLineEdit.text()
-        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')]
+        authors = [AuthorData(name.strip()) for name in authorsStr.split(',')] if authorsStr else []
         title = ui.titleLineEdit.text()     
         data = LecturesData(title, authors)
         data.course = ui.courseLineEdit.text()
