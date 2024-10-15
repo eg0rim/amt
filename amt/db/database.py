@@ -170,9 +170,12 @@ class AMTQuery(QSqlQuery):
         if not qs:
             logger.error("query is not prepared")
             return False
+        logger.debug(f"executing query: {qs}")
+        print("debug")
         if not super().exec(qs):
             logger.error(f"query failed: {self.lastError().text()}")
             return False
+        logger.info(f"query executed: {qs}")
         # after excution, reset query string and status
         self._queryString = None
         self._execStatus = True
@@ -187,11 +190,13 @@ class AMTQuery(QSqlQuery):
             table (str): table to create
             columns (dict[str, str]): dictionary of column names and types
             ifNotExists (bool, optional): Defaults to True.
+            addLines (list[str], optional): additional lines to add to the table creation query string. Defaults to [].
         Returns:
             bool: returns True if table creation query construction is successful
         """
         self._execStatus = False
-        self._queryString = f"CREATE TABLE {"IF NOT EXISTS" if ifNotExists else ""} {table} ({", ".join([f"{col} {colType}" for col, colType in columns.items()])} {", ".join(addLines) if addLines else ""})"
+        self._queryString = f"CREATE TABLE {"IF NOT EXISTS" if ifNotExists else ""} {table} ({", ".join([f"{col} {colType}" for col, colType in columns.items()])} {f", {", ".join(addLines)}" if addLines else ""})"
+        logger.debug(f"create table query: {self._queryString}")
         self._setState("createTable", True)
         return True
     
