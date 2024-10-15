@@ -600,16 +600,6 @@ class EntryData(AbstractData):
             return self.comment or ""
         return super().getDisplayData(field)
     
-    def openExternally(self) -> bool:
-        # works only on linux
-        # TODO: add support for other OS or support pdf viewer
-        # TODO: keep subprocess object to close it if needed
-        if self.fileName:
-            subprocess.Popen(["xdg-open", self.fileName])
-            return True
-        else:
-            return False
-    
 class PublishableData(EntryData):
     """
     Abstract Data type to store publishable data like articles, books, lecture notes, etc. that have DOI, link, date published.
