@@ -26,9 +26,13 @@ from PySide6.QtWidgets import (
     QLineEdit, 
     QPushButton, 
     QFileDialog,
-    QComboBox
+    QComboBox,
+    QLabel,
+    QVBoxLayout,
+    QGridLayout
 )
 from PySide6.QtCore import Signal
+import re
 
 class AMTDateTimeEdit(QDateTimeEdit):
     """
@@ -216,6 +220,7 @@ class AMTSearchInput(QWidget):
         self.columns: list[str] = ["All"]
         self.searchLineEdit = AMTLineEdit(self)
         self.filterComboBox = QComboBox(self)
+        self.errorLabel = QLabel(self)
         #self.regexCheckBox = QCheckBox("Use regex", self)
         self.setupUI()
     
@@ -224,12 +229,17 @@ class AMTSearchInput(QWidget):
         Sets up the user interface for the custom widget.
         """
         self.searchLineEdit.setPlaceholderText("Start search string with '/' for using regex")
-        self.setLayout(QHBoxLayout(self))
-        self.layout().addWidget(self.filterComboBox)
-        #self.layout().addWidget(self.regexCheckBox)
-        self.layout().addWidget(self.searchLineEdit)
-        self.layout().setStretch(0, 0)
-        self.layout().setStretch(1, 1)
+        layout = QGridLayout(self)
+        self.setLayout(layout)
+        layout.addWidget(self.filterComboBox, 0, 0)
+        layout.addWidget(self.searchLineEdit, 0, 1)
+        layout.addWidget(self.errorLabel, 1, 0, 1, 2)
+        layout.setColumnStretch(0, 0)
+        layout.setColumnStretch(1, 1)
+        layout.addWidget(self.errorLabel)
+        self.errorLabel.setVisible(False)
+        self.errorLabel.setText("Invalid regex") 
+        self.errorLabel.setStyleSheet("color: red;")       
         self.setVisible(False)
         self.filterComboBox.addItems(self.columns)
         # any changes in the searchLineEdit or filterComboBox should emit the searchInputChanged signal
@@ -285,6 +295,7 @@ class AMTSearchInput(QWidget):
         """
         text, isRegex = self.text()
         index = self.filterComboBox.currentIndex()
+        self.testSearchRegex()
         self.searchInputChanged.emit(index, text, isRegex)
         
     def onFilterComboBoxChange(self, _):
@@ -294,3 +305,17 @@ class AMTSearchInput(QWidget):
         text, isRegex = self.text()
         index = self.filterComboBox.currentIndex()
         self.searchInputChanged.emit(index, text, isRegex)
+        
+    def testSearchRegex(self):
+        """ 
+        Test the search text for regex validity.
+        """
+        text, isRegex = self.text()
+        if isRegex:
+            try:
+                re.compile(text)
+                self.errorLabel.setVisible(False)
+            except re.error:
+                self.errorLabel.setVisible(True)
+        else:
+            self.errorLabel.setVisible(False)   
