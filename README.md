@@ -13,11 +13,7 @@ Manage articles, books, lecture notes, etc for research.
 - Download and store pdf/djvu/etc files from open sources.
 - Compose bibtex files.
 
-## Running 
-
-See `dist/README.md`
-
-## Installing from source (for Linux)
+## Installing (for Linux)
 
 1. Clone this repository.
 2. Create virtual environment and activate (recommended)
