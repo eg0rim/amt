@@ -170,12 +170,12 @@ class AMTQuery(QSqlQuery):
         if not qs:
             logger.error("query is not prepared")
             return False
-        logger.debug(f"executing query: {qs}")
+        logger.debug(f"Executing query: {qs}")
         print("debug")
         if not super().exec(qs):
-            logger.error(f"query failed: {self.lastError().text()}")
+            logger.error(f"Query failed: {self.lastError().text()}")
             return False
-        logger.info(f"query executed: {qs}")
+        logger.debug(f"Query executed successfully")
         # after excution, reset query string and status
         self._queryString = None
         self._execStatus = True
@@ -196,7 +196,6 @@ class AMTQuery(QSqlQuery):
         """
         self._execStatus = False
         self._queryString = f"CREATE TABLE {"IF NOT EXISTS" if ifNotExists else ""} {table} ({", ".join([f"{col} {colType}" for col, colType in columns.items()])} {f", {", ".join(addLines)}" if addLines else ""})"
-        logger.debug(f"create table query: {self._queryString}")
         self._setState("createTable", True)
         return True
     
