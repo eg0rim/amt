@@ -35,18 +35,45 @@ from amt.logger import getLogger
 logger = getLogger(__name__) 
 
 class AMTFilter:
-    def __init__(self, field : str | list[str] = [], pattern : str = "", escape : bool = True):
+    """ 
+    Filter object contains information about the filter: pattern, fields to search in, if search is case independent and if pattern should be escaped.
+    Properties:
+        pattern (str): pattern to search for
+        fields (list[str]): fields to search in
+        escape (bool): if True, pattern is escaped
+    Methods:
+        __init__(self, field: str | list[str] = [], pattern: str = "", escape: bool = True, caseIndependent: bool = True)
+        addField(self, field: str)
+        removeField(self, field: str)
+        test(self, entry: EntryData) -> bool
+        apply(self, data: list[EntryData]) -> list[EntryData]
+    """
+    def __init__(self, field : str | list[str] = [], pattern : str = "", escape : bool = True, caseIndependent : bool = True):
+        """ 
+        Constructor for the filter object.
+        Args:
+            field (str | list[str]): field or list of fields to search in
+            pattern (str): pattern to search for
+            escape (bool): if True, pattern is escaped
+            caseIndependent (bool): if True, search is case independent
+        """
         super().__init__()
         self._pattern: str = pattern
         self._fields: list[str] = []
         self._fields.append(field) if isinstance(field, str) else self._fields.extend(field)
         self._escape: bool = escape
-        self._caseIndependent: bool = True # implement change of it
+        self._caseIndependent: bool = caseIndependent
         
     def addField(self, field : str):
+        """ 
+        Adds a field to the filter.
+        """
         self._fields.append(field)
         
     def removeField(self, field : str):
+        """ 
+        Removes a field from the filter.
+        """
         try:
             self._fields.remove(field)
         except ValueError:
@@ -74,7 +101,13 @@ class AMTFilter:
         self._escape = value
         
     def test(self, entry : EntryData) -> bool:
-        #logger.debug(f"test filter {self.pattern} {self.fields} on entry {entry.title}")
+        """ 
+        Apply the filter to the entry.
+        Args:
+            entry (EntryData): entry to test
+        Returns:
+            bool: True if the entry passes the filter
+        """
         if self.pattern and self.fields:
             pattern = self.pattern.lower() if self._caseIndependent else self.pattern
             if self.escape:
@@ -88,16 +121,41 @@ class AMTFilter:
         return True
         
     def apply(self, data : list[EntryData]) -> list[EntryData]:
-        #logger.debug(f"applying filter {self.pattern} {self.fields}")
+        """ 
+        Apply the filter to the list of entries.
+        Args:
+            data (list[EntryData]): list of entries
+        Returns:
+            list[EntryData]: list of entries that pass the filter
+        """
         if self.pattern and self.fields:
             filtered =  [entry for entry in data if self.test(entry)]
-            #logger.debug(f"filtered {len(filtered)} entries")
             return filtered
         else:
             return data[:]
 
 class DataCache(QObject):
-    """Cache to store data changes"""
+    """
+    Class QObject to store the data and changes to the data.
+    Signals:
+        dataReset: emitted when the data is reset
+        cacheDiverged: emitted when the cache differs from the initial set data
+    Properties:
+        diverged (bool): True if the cache differs from initial set data
+        filter (AMTFilter): filter to apply to the data
+        dataToDisplay (list[EntryData]): data to display
+        data (list[EntryData]): all data
+        dataToDelete (list[EntryData]): data to delete
+        dataToEdit (list[EntryData]): data to edit
+        dataToAdd (list[EntryData]): data to add
+    Methods:
+        add(self, entry: EntryData) -> bool
+        remove(self, entry: EntryData) -> bool
+        removeByIndex(self, index: int) -> bool
+        edit(self, oldEntry: EntryData, newEntry: EntryData) -> bool
+        editByIndex(self, index: int, newEntry: EntryData) -> bool
+        resetChangeCache(self) -> None
+    """
     dataReset = Signal()
     cacheDiverged = Signal(bool)
     def __init__(self, parent=None):
@@ -153,12 +211,26 @@ class DataCache(QObject):
         return self._dataToAdd
       
     def add(self, entry : EntryData) -> bool:
+        """
+        adds entry to the cache
+        Args:
+            entry (EntryData): entry to add
+        Returns:
+            bool: True if the entry was added
+        """
         self.data.append(entry)
         self.dataToAdd.append(entry)
         self.diverged = True      
         return True
     
     def remove(self, entry : EntryData) -> bool:
+        """ 
+        Removes entry from the cache.
+        Args:
+            entry (EntryData): entry to remove
+        Returns:
+            bool: True if the entry was removed
+        """
         # first try to remove from add cache
         try: 
             self._dataToAdd.remove(entry)
@@ -196,6 +268,13 @@ class DataCache(QObject):
             return False
             
     def removeByIndex(self, index : int) -> bool:
+        """ 
+        Removes entry at given index.
+        Args:
+            index (int): index of the entry
+        Returns:
+            bool: True if the entry was removed
+        """
         if index < 0 or index >= len(self._data):
             return False
         entry = self._data[index]
@@ -203,6 +282,14 @@ class DataCache(QObject):
         
     # editing means replacing the entry with a new one
     def edit(self, oldEntry : EntryData, newEntry : EntryData) -> bool:
+        """ 
+        Edits entry in the cache.
+        Args:
+            oldEntry (EntryData): entry to replace
+            newEntry (EntryData): new entry
+        Returns:
+            bool: True if the entry was edited
+        """
         # first check if the entry is in the add cache
         try:
             # if the entry is in the add cache, just replace it
@@ -225,18 +312,48 @@ class DataCache(QObject):
             return False
             
     def editByIndex(self, index : int, newEntry : EntryData) -> bool:
+        """ 
+        Edits entry at given index.
+        Args:
+            index (int): index of the entry
+            newEntry (EntryData): new entry
+        Returns:
+            bool: True if the entry was edited
+        """
         if index < 0 or index >= len(self._data):
             return False
         return self.edit(self._data[index], newEntry)
     
     def resetChangeCache(self):
+        """ 
+        Reset data in change cache.
+        """
         self._dataToDelete = []
         self._dataToEdit = []
         self._dataToAdd = []
         self.diverged = False
                 
 class AMTModel(QAbstractTableModel):
-    """Model to manage the articles, books, etc"""
+    """
+    Model to manage the articles, books, etc.
+    Inherits from QAbstractTableModel.
+    Signals:
+        temporaryStatusChanged (bool): emitted when the temporary status of the model changes. Emits True if the model is temporary
+        databaseConnected (str): emitted when the database is connected. Emits the path to the database
+    Class attributes:
+        _columnNames (list[str]): list of column names
+        _columnCount (int): number of columns
+        _columnToField (dict[int, str]): mapping of columns to fields in the data model
+        _supportedDataTypes (dict[str, EntryData]): supported data types
+        _entryTypes (list[str]): data types that are shown in the corresponding table view
+    Properties:
+        temporary (bool): True if the model is temporary
+    Attributes:
+        dataCache (DataCache): cache of data
+        db (AMTDatabase): database
+    Methods:
+    
+    """
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
     databaseConnected = Signal(str)
@@ -256,7 +373,12 @@ class AMTModel(QAbstractTableModel):
     _entryTypes = ["articles", "books", "lectures"]
     
     def __init__(self, dbFile : str = "", *args : object):
-        """Provides model to interact with db"""
+        """
+        Constructor for the model.
+        Args:
+            dbFile (str): path to the database file. If not provided, a temporary database is created
+            *args (object): arguments for the parent class
+        """
         super().__init__(*args)          
         # cache of data; any non-saved changes to the data are stored here
         self.dataCache : DataCache = DataCache(self)      
@@ -264,12 +386,11 @@ class AMTModel(QAbstractTableModel):
         self._temporary: bool = False
         # if no db file is provided, create a temp file
         self.db : AMTDatabase = None
+        # create empty db if dbfile is not provided
         if not dbFile:
             self.createNewTempDB()
         else:
-            self.openExistingDB(dbFile)
-            
-        
+            self.openExistingDB(dbFile)       
             
     @property
     def temporary(self) -> bool:
@@ -281,7 +402,7 @@ class AMTModel(QAbstractTableModel):
         self._temporary = value
         self.temporaryStatusChanged.emit(value)
         
-    # implement abstract methods           
+    # implement abstract methods from QAbstractTableModel     
     def columnCount(self, parent : QModelIndex = None) -> int:
         """
         total number of columns in the model
@@ -308,18 +429,41 @@ class AMTModel(QAbstractTableModel):
         return len(self.dataCache.dataToDisplay)
     
     def data(self, index : QModelIndex, role : int = Qt.DisplayRole):
+        """ 
+        data for the given index
+        
+        Args:
+            index (QModelIndex): index
+            role (int, optional): role. Defaults to Qt.DisplayRole.
+        """
         if not index.isValid():
             return None
         if role == Qt.DisplayRole:
             return self.entryToDisplayData(self.dataCache.dataToDisplay[index.row()], index.column())
         return None
                                       
+    
     def headerData(self, section : int, orientation : Qt.Orientation, role : int = Qt.DisplayRole) -> object:
+        """ 
+        returns the header data for the given section
+        Args:
+            section (int): section number
+            orientation (Qt.Orientation): orientation (Horizonatal of Vertical)
+            role (int, optional): role. Defaults to Qt.DisplayRole.
+        Returns:
+            object: header data
+        """
         if orientation == Qt.Horizontal and  role == Qt.DisplayRole:
             return self._columnNames[section]
         return None
          
     def sort(self, column : int, order : Qt.SortOrder = Qt.AscendingOrder):
+        """
+        Sorting of the data.
+        Args:
+            column (int): column number
+            order (Qt.SortOrder, optional): sorting order. Defaults to Qt.AscendingOrder
+        """
         logger.debug(f"sorting by column {column} order")
         self.beginResetModel()
         self.dataCache.data.sort(key=lambda x: self.entryToDisplayData(x, column))
@@ -349,6 +493,13 @@ class AMTModel(QAbstractTableModel):
     #     return True
     
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        """ 
+        Flags for the given index.
+        Args:
+            index (QModelIndex): index
+        Returns:
+            Qt.ItemFlags: flags
+        """
         if not index.isValid():
             return Qt.NoItemFlags
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled 
@@ -356,6 +507,11 @@ class AMTModel(QAbstractTableModel):
     # custom methods
     # prepare tabels 
     def prepareTables(self) -> bool:
+        """ 
+        Prepare tables in the database for all supported data types.
+        Returns:
+            bool: True if successful
+        """
         state = True
         for cls in self._supportedDataTypes.values():
             if not cls.createTable(self.db):
@@ -365,6 +521,14 @@ class AMTModel(QAbstractTableModel):
     # display data
     @classmethod
     def entryToDisplayData(cls, entry : EntryData, column : int) -> str:
+        """ 
+        Transforms the entry data to the string representation for the given column.
+        Args:
+            entry (EntryData): entry
+            column (int): column number
+        Returns:
+            str: string representation of the entry data
+        """
         return entry.getDisplayData(cls._columnToField[column])
     
     # manioulate data
@@ -419,6 +583,13 @@ class AMTModel(QAbstractTableModel):
         return True
     
     def openEntryExternally(self, row : int) -> bool:
+        """ 
+        opens the entry at the given row externally
+        Args:
+            row (int): row number
+        Returns:
+            bool: True if successful
+        """
         return self.dataCache.data[row].openExternally()
     
     # extract entries from the database
@@ -440,6 +611,8 @@ class AMTModel(QAbstractTableModel):
     def update(self) -> bool:
         """ 
         updates the model with the data from the database
+        Returns:
+            bool: True if successful
         """
         logger.info(f"update started")
         self.beginResetModel()
@@ -449,6 +622,13 @@ class AMTModel(QAbstractTableModel):
         return True
     
     def filter(self, filter : AMTFilter) -> bool:
+        """ 
+        Filters the data. 
+        Args:
+            filter (AMTFilter): filter object 
+        Returns:    
+            bool: True if successful
+        """
         self.beginResetModel()
         self.dataCache.filter = filter
         self.endResetModel()
