@@ -26,7 +26,10 @@ from .build.aboutDialog_ui import (
 )
 
 class AboutDialog(QDialog):
-    """main window"""
+    """
+    Show about dialog window with the information about the application.
+    Includes attributions, license, and version.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ui = Ui_AboutDialog()
