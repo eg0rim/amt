@@ -31,31 +31,45 @@ class AMTDatabaseError(Exception):
         """Class of database errors"""
         super().__init__(*args)
         
-class AMTDatabaseCloseError(AMTDatabaseError):
+class AMTDatabaseOpenError(AMTDatabaseError):
     def __init__(self, *args: object) -> None:
-        """Class of database errors"""
+        """Class of database errors when the database can not be opened"""
         super().__init__(*args)
 
 class AMTDatabase(QSqlDatabase):
+    """
+    AMTDatabase class that inherits from QSqlDatabase to manage an SQLite database for AMT.
+    Methods:
+        __init__(databaseFile: str, *args: object)
+        __del__() -> None
+        open() -> None
+    """    
     def __init__(self, databaseFile : str, *args : object) -> None:
         """Inherits QSqlDatabase. Creates sqlite database for AMT.
         
-        :param str databaseFile: path to the database file
-        :raises AMTDatabaseCloseError: if the database can not be opened
+        Args:
+            databaseFile (str): path to the database file
         """
         super().__init__("QSQLITE", *args)
         self.setDatabaseName(databaseFile)
 
     def __del__(self):
+        """ 
+        Closes the database connection when the object is deleted.
+        """
         if self.isOpen():
             self.close()
         logger.debug("database closed")
 
     def open(self):
+        """ 
+        Raises AMTDatabaseOpenError if the database can not be opened.
+        Allows foreign keys by default.
+        """
         if not super().open():
             errormsg=self.lastError().text()
             logger.critical(f"db open error: {errormsg}")
-            raise AMTDatabaseCloseError(errormsg)
+            raise AMTDatabaseOpenError(errormsg)
         query = QSqlQuery(self)
         # allow foreign keys
         query.exec("PRAGMA foreign_keys = ON")
@@ -72,7 +86,41 @@ class AMTUniqueConstraintError(AMTQueryError):
         super().__init__(*args)
          
 class AMTQuery(QSqlQuery):
+    """
+    AMTQuery class for constructing and executing SQL queries using QSqlQuery.
+    Properties:
+        queryString: str: current query string
+        execStatus: bool: True if the query was recently executed successfully and query was not changed
+    Methods:
+        queryString() -> str:
+            Returns the current query string.
+        execStatus() -> bool:
+            Returns the execution status of the last query.
+        getState(state: str) -> bool:
+            Returns the state of a specific query type.
+        exec(query: str = None) -> bool:
+            Executes the query string. Returns True if successful.
+        createTable(table: str, columns: dict[str, str], ifNotExists: bool = True, addLines: list[str] = []) -> bool:
+            Constructs a CREATE TABLE query. Returns True if successful.
+        createTableAddLines(lines: list[str]) -> bool:
+            Adds lines to the table creation query string. Returns True if successful.
+        select(table: str, columns: list[str] = [], filter: str = "") -> bool:
+            Constructs a SELECT query. Returns True if successful.
+        selectByReference(table: str, refTable: str, id: str, refid: str, columns: list[str] = [], filter: str = "") -> bool:
+            Constructs a SELECT query with JOIN. Returns True if successful.
+        insert(table: str, values: dict[str, str], orIgnore: bool = False) -> bool:
+            Constructs an INSERT query. Returns True if successful.
+        delete(table: str, filter: str) -> bool:
+            Constructs a DELETE query. Returns True if successful.
+        update(table: str, values: dict[str, str], filter: str) -> bool:
+            Constructs an UPDATE query. Returns True if successful.    
+    """    
     def __init__(self, db : AMTDatabase):
+        """ 
+        Inherits QSqlQuery. Initializes the query object.
+        Args:
+            db (AMTDatabase): database object
+        """
         super().__init__(db)
         self._db: AMTDatabase = db
         self._queryString: str = None
@@ -122,10 +170,12 @@ class AMTQuery(QSqlQuery):
         if not qs:
             logger.error("query is not prepared")
             return False
-        logger.debug(f"executing query: {qs}")
+        logger.debug(f"Executing query: {qs}")
         if not super().exec(qs):
-            logger.error(f"query failed: {self.lastError().text()}")
+            logger.error(f"Query failed: {self.lastError().text()}")
             return False
+        logger.debug(f"Query executed successfully")
+        # after excution, reset query string and status
         self._queryString = None
         self._execStatus = True
         return True
@@ -139,11 +189,12 @@ class AMTQuery(QSqlQuery):
             table (str): table to create
             columns (dict[str, str]): dictionary of column names and types
             ifNotExists (bool, optional): Defaults to True.
+            addLines (list[str], optional): additional lines to add to the table creation query string. Defaults to [].
         Returns:
             bool: returns True if table creation query construction is successful
         """
         self._execStatus = False
-        self._queryString = f"CREATE TABLE {"IF NOT EXISTS" if ifNotExists else ""} {table} ({", ".join([f"{col} {colType}" for col, colType in columns.items()])} {", ".join(addLines) if addLines else ""})"
+        self._queryString = f"CREATE TABLE {"IF NOT EXISTS" if ifNotExists else ""} {table} ({", ".join([f"{col} {colType}" for col, colType in columns.items()])} {f", {", ".join(addLines)}" if addLines else ""})"
         self._setState("createTable", True)
         return True
     

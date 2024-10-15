@@ -13,5 +13,10 @@
         <file alias="search">files/icons/icons8-search-100.png</file>
         <file alias="update">files/icons/icons8-update-100.png</file>
         <file alias="settings">files/icons/icons8-settings-100.png</file>
+        <file alias="warning">files/icons/icons8-error-100.png</file>
+        <file alias="information">files/icons/icons8-information.svg</file>
+        <file alias="error">files/icons/icons8-error.svg</file>
+        <file alias="question">files/icons/icons8-question-100.png</file>
+        <file alias="critical">files/icons/icons8-error-red.svg</file>
     </qresource>
 </RCC>

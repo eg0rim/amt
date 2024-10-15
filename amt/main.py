@@ -21,10 +21,13 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QCoreApplication
-from .views.mainwindow import MainWindow
-import qdarktheme
+from amt.views.mainwindow import MainWindow
+import qdarktheme 
 
 def main():
+    """
+    Main function to initialize and run the Article Management Tool application.
+    """
     # create the app
     app = QApplication(sys.argv)
     # set the app properties
