@@ -161,6 +161,7 @@ class DataCache(QObject):
         edit(self, oldEntry: EntryData, newEntry: EntryData) -> bool
         editByIndex(self, index: int, newEntry: EntryData) -> bool
         resetChangeCache(self) -> None
+        updateDataToDisplay(self) -> None
     """
     dataReset = Signal()
     cacheDiverged = Signal(bool)
@@ -205,7 +206,7 @@ class DataCache(QObject):
     @data.setter
     def data(self, value: list[EntryData]):
         self._data = value
-        self._dataToDisplay = self._filter.apply(self._data)
+        self.updateDataToDisplay()
         self.dataReset.emit()
     
     @property
@@ -245,6 +246,7 @@ class DataCache(QObject):
         try: 
             self._dataToAdd.remove(entry)
             self._data.remove(entry)
+            self.updateDataToDisplay()
             # if the entry is in add cache, it is not in the db
             # check if anything in the editing cache
             if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
@@ -257,6 +259,7 @@ class DataCache(QObject):
         try:    
             self._dataToEdit.remove(entry)
             self._data.remove(entry)
+            self.updateDataToDisplay()
             # if the entry is in edit cache, it is not in the db
             # check if anything in the editing cache
             if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
@@ -268,6 +271,7 @@ class DataCache(QObject):
         # if not in edit cache, try to remove from the main cache
         try:
             self._data.remove(entry)
+            self.updateDataToDisplay()
             # add to delete cache
             self._dataToDelete.append(entry)
             # data now differs from the db
@@ -287,7 +291,7 @@ class DataCache(QObject):
         """
         if index < 0 or index >= len(self._data):
             return False
-        entry = self._data[index]
+        entry = self._dataToDisplay[index]
         return self.remove(entry)
         
     # editing means replacing the entry with a new one
@@ -305,6 +309,7 @@ class DataCache(QObject):
             # if the entry is in the add cache, just replace it
             self._dataToAdd[self._dataToAdd.index(oldEntry)] = newEntry
             self._data[self._data.index(oldEntry)] = newEntry
+            self.updateDataToDisplay()
             # entry in add cache does not have an id
             self.diverged = True
             return True
@@ -313,6 +318,7 @@ class DataCache(QObject):
         # if the entry is not in the add cache, try to replace it in the main cache
         try:
             self._data[self._data.index(oldEntry)] = newEntry
+            self.updateDataToDisplay()
             # entry in the main cache has and not in add cache has an id
             newEntry.id = oldEntry.id
             self._dataToEdit.append(newEntry)
@@ -332,7 +338,7 @@ class DataCache(QObject):
         """
         if index < 0 or index >= len(self._data):
             return False
-        return self.edit(self._data[index], newEntry)
+        return self.edit(self._dataToDisplay[index], newEntry)
     
     def resetChangeCache(self):
         """ 
@@ -343,6 +349,12 @@ class DataCache(QObject):
         self._dataToAdd = []
         self.diverged = False
                 
+    def updateDataToDisplay(self):
+        """ 
+        Update the data to display.
+        """
+        self._dataToDisplay = self._filter.apply(self._data)
+    
 class AMTModel(QAbstractTableModel):
     """
     Model to manage the articles, books, etc.
@@ -382,6 +394,7 @@ class AMTModel(QAbstractTableModel):
         openExistingDB(self, filePath: str) -> bool
         saveDBAs(self, filePath: str) -> bool
         createNewTempDB(self) -> bool
+        getDataAt(self, index: int) -> EntryData
     """
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
@@ -562,9 +575,21 @@ class AMTModel(QAbstractTableModel):
     
     # manioulate data
     # all changes are stored in cache
+    def getDataAt(self, index : int) -> EntryData:
+        """
+        returns the entry at given index
+
+        Args:
+            index (int): index
+
+        Returns:
+            EntryData: entry
+        """
+        return self.dataCache.dataToDisplay[index]
+    
     def removeEntriesAt(self, rows : list[int]) -> bool:
         """
-        removes entry at given row
+        removes entry at given rows
 
         Args:
             row (int): row number
@@ -572,10 +597,9 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
-        entriesToRemove = [self.dataCache.data[row] for row in rows]
         self.beginResetModel()
-        for entry in entriesToRemove:
-            self.dataCache.remove(entry)
+        for row in rows:
+            self.dataCache.removeByIndex(row)
         self.endResetModel()
         return True
     
