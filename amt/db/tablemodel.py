@@ -113,6 +113,12 @@ class AMTFilter:
             if self.escape:
                 regex = re.compile(re.escape(pattern))
             else: 
+                # catch error if pattern is not a valid regex
+                try:
+                    regex = re.compile(pattern)
+                except re.error:
+                    # let everything pass if pattern is not valid
+                    return True
                 regex = re.compile(pattern)
             if self._caseIndependent:
                 return any([regex.search(entry.getDisplayData(field).lower()) for field in self.fields])
@@ -164,9 +170,11 @@ class DataCache(QObject):
         self._dataToDelete : list[EntryData] = []
         self._dataToEdit : list[EntryData] = []
         self._dataToAdd : list[EntryData] = []
+        self._dataToDisplay : list[EntryData] = []
         self._diverged: bool = False
-        self._filter: AMTFilter = AMTFilter()
+        self._filter: AMTFilter = None
         self.dataReset.connect(self.resetChangeCache)
+        self.filter = AMTFilter()
         
     @property
     def diverged(self) -> bool:
@@ -184,11 +192,12 @@ class DataCache(QObject):
     @filter.setter
     def filter(self, value: AMTFilter):
         self._filter = value
-        logger.debug(f"filter set to {value.pattern} {value.fields}")
+        self._dataToDisplay = self._filter.apply(self._data)
+        logger.debug(f"filter set to {value.pattern} {value.fields} {value.escape} ")
         
     @property
     def dataToDisplay(self) -> list[EntryData]:
-        return self._filter.apply(self._data)
+        return self._dataToDisplay
         
     @property
     def data(self) -> list[EntryData]:
@@ -196,6 +205,7 @@ class DataCache(QObject):
     @data.setter
     def data(self, value: list[EntryData]):
         self._data = value
+        self._dataToDisplay = self._filter.apply(self._data)
         self.dataReset.emit()
     
     @property
@@ -352,7 +362,26 @@ class AMTModel(QAbstractTableModel):
         dataCache (DataCache): cache of data
         db (AMTDatabase): database
     Methods:
-    
+        __init__(self, dbFile: str = "", *args: object) -> None
+        columnCount(self, parent: QModelIndex = None) -> int
+        rowCount(self, parent: QModelIndex = None) -> int
+        data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any
+        headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any
+        sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None
+        flags(self, index: QModelIndex) -> Qt.ItemFlags
+        prepareTables(self) -> bool
+        entryToDisplayData(cls, entry: EntryData, column: int) -> str
+        removeEntriesAt(self, rows: list[int]) -> bool
+        editEntryAt(self, row: int, newEntry: EntryData) -> bool
+        addEntry(self, entry: EntryData) -> bool
+        openEntryExternally(self, row: int) -> bool
+        extractEntries(self) -> list[EntryData]
+        update(self) -> bool
+        filter(self, filter: AMTFilter) -> bool
+        saveDB(self) -> bool
+        openExistingDB(self, filePath: str) -> bool
+        saveDBAs(self, filePath: str) -> bool
+        createNewTempDB(self) -> bool
     """
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
