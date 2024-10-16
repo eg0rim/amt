@@ -18,7 +18,7 @@
 
 """main window for the app"""
 
-import sys
+import sys, subprocess
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -52,7 +52,7 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTInfoMessageBox,
     AMTQuestionMessageBox
 )
-from amt.file_utils.filehandler import ExternalEntryHandler
+from amt.file_utils.filehandler import ExternalEntryHandler, ApplicationNotSetError
 
 logger = getLogger(__name__)
 
@@ -106,6 +106,8 @@ class MainWindow(QMainWindow):
         self.model: AMTModel = None
         # file handler
         self.fileHandler = ExternalEntryHandler()
+        #self.fileHandler.setApp("pdf", "okular")
+        #self.fileHandler.setApp("djvu", "evince")
         # load settings
         self.readSettings()
         # setup ui
@@ -219,7 +221,7 @@ class MainWindow(QMainWindow):
         # hide unused widgets
         self.ui.actionSettings.setVisible(False)
         self.ui.menuRecent.setVisible(False)
-        self.ui.actionDebug.setVisible(False)
+        #self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """
@@ -394,12 +396,25 @@ class MainWindow(QMainWindow):
         # open each entry in the cycle
         for row in rows:
             entry = self.model.getDataAt(row)
-            if not self.fileHandler.openEntry(entry):
+            msgBox = None
+            try:
+                self.fileHandler.openEntry(entry)
+            except FileNotFoundError as e:
                 msgBox = AMTErrorMessageBox(self)
                 msgBox.setText("Can not open the entry.")
-                msgBox.setInformativeText("Check if the file name specified or the file exists.")
+                msgBox.setInformativeText(str(e))
+                state = False
+            except ApplicationNotSetError as e:
+                msgBox = AMTErrorMessageBox(self)
+                msgBox.setText(f"No application set to open {e.fileType} files.")
+            except Exception as e:
+                msgBox = AMTErrorMessageBox(self)
+                msgBox.setText("Error occurred while opening the entry.")
+                msgBox.setInformativeText(f"Error: {e}")
                 msgBox.exec()
                 state = False
+            if msgBox:
+                msgBox.exec()
         return state
                 
     def deleteSelectedRows(self) -> bool:
@@ -531,3 +546,5 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
+        for file in list(self.fileHandler.processes.keys())[1:]:
+            self.fileHandler.closeFile(file)
