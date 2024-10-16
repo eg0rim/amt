@@ -92,35 +92,35 @@ class ExternalFileHandler(FileHandler):
         setApp(self, fileExt: str, app: str)
         getApps(self) -> dict[str, str]
     """
-    def __init__(self, defaultApp: str = None):
+    def __init__(self, defaultApp: str = ""):
         """ 
         Create an instance of ExternalFileHandler.
         Args:
             defaultApp: Default application to open files.
         """
         super().__init__()
-        self.defaultApp: str = None
+        self.defaultApp: str = ""
         self.processes: dict[str,subprocess.Popen] = {}
         self.apps: dict[str,str] = {}
-        # perhaps, better to force user to set the apps
-        #self.setDefaultApp(defaultApp)
+        self.setDefaultApp(defaultApp)
             
-    def setDefaultApp(self, app = None):
+    def setDefaultApp(self, app = ""):
         """ 
-        Set the default application to open files based on the OS.
+        Set the default application to open files.
         """
         if app:
             self.defaultApp = app
-            return
-        if os.name == 'nt':  # Windows
-            self.defaultApp = "start"
-        elif os.name == 'posix':  # Unix-like (Linux, macOS, etc.)
-            if os.uname().sysname == 'Darwin': # maxOS
-                self.defaultApp = "open"
-            else:
-                self.defaultApp = "xdg-open"
-        else:
-            self.defaultApp = None
+        return
+        # perhaps, better to force user to set the apps
+        # if os.name == 'nt':  # Windows
+        #     self.defaultApp = "start"
+        # elif os.name == 'posix':  # Unix-like (Linux, macOS, etc.)
+        #     if os.uname().sysname == 'Darwin': # maxOS
+        #         self.defaultApp = "open"
+        #     else:
+        #         self.defaultApp = "xdg-open"
+        # else:
+        #     self.defaultApp = None
 
     def setApp(self, fileExt: str, app: str):
         """
@@ -130,6 +130,14 @@ class ExternalFileHandler(FileHandler):
             app: Application to be used to open the file.
         """
         self.apps[fileExt] = app
+        
+    def setApps(self, apps: dict[str, str]):
+        """
+        Set the dictionary of file extensions and associated applications.
+        Args:
+            apps: Dictionary of file extensions and associated applications.
+        """
+        self.apps = apps
         
     def getApps(self) -> dict[str, str]:
         """
@@ -199,9 +207,38 @@ class ExternalFileHandler(FileHandler):
         """
         Close all opened files.
         """
-        for file in self.processes.keys():
+        for file in list(self.processes.keys()):
             self.closeFile(file)
         self.processes = {}
+        
+    def pollFile(self, filePath: str) -> bool:
+        """
+        Check if the file is still open.
+        Args:
+            file_path: Path to the file.
+        Returns:
+            True if the file is open, False otherwise.
+        """
+        if filePath in self.processes:
+            return self.processes[filePath].poll() is None
+        else:
+            return False
+        
+    def pollAllFiles(self) -> dict[str, bool]:
+        """
+        Check if the files are still open.
+        Returns:
+            Dictionary of file paths and their status.
+        """
+        return {filePath: self.pollFile(filePath) for filePath in self.processes.keys()}
+    
+    def syncFiles(self):
+        """
+        Synchronize the file status.
+        """
+        for file in list(self.processes.keys()):
+            if not self.pollFile(file):
+                del self.processes[file]
     
 class ExternalEntryHandler(ExternalFileHandler):
     """ 
