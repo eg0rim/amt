@@ -35,6 +35,7 @@ from amt.db.datamodel import (
     BookData, 
     LecturesData
 )
+from amt.views.customWidgets.amtfiledialog import AMTOpenDBFileDialog, AMTSaveDBAsFileDialog
 
 from  .build.resources_qrc import *
 from .build.mainwindow_ui import (
@@ -490,11 +491,9 @@ class MainWindow(QMainWindow):
         Opens existing database.
         """
         # open file dialog and choose database to load
-        fileDialog = QFileDialog(self)  
-        fileDialog.setAcceptMode(QFileDialog.AcceptOpen)
-        fileDialog.setNameFilter("AMT Database Files (*.amtdb)")
+        fileDialog = AMTOpenDBFileDialog(self)  
         if fileDialog.exec() == QFileDialog.Accepted:
-            filePath = fileDialog.selectedFiles()[0]
+            filePath = fileDialog.selectedFile()
             self.model.openExistingDB(filePath)
         
     def saveLibrary(self):
@@ -513,14 +512,9 @@ class MainWindow(QMainWindow):
         """
         Saves current changes in cache to a new file.
         """
-        fileDialog = QFileDialog(self)
-        fileDialog.setAcceptMode(QFileDialog.AcceptSave)
-        fileDialog.setNameFilter("AMT Database Files (*.amtdb)")
+        fileDialog = AMTSaveDBAsFileDialog(self)
         if fileDialog.exec() == QFileDialog.Accepted:
-            filePath = fileDialog.selectedFiles()[0]
-            # force .amtdb extension
-            if not filePath.endswith(".amtdb"):
-                filePath += ".amtdb"
+            filePath = fileDialog.selectedFile()
             if not self.model.saveDBAs(filePath):
                 logger.error("failed to save changes in new file")
                 msgBox = AMTErrorMessageBox(self)
