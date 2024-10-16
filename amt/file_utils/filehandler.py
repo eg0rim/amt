@@ -56,7 +56,13 @@ class FileHandler:
 
 class ApplicationNotSetError(Exception):
     """Exception raised when no application is set for a file type."""
-    def __init__(self, message="Application not specified and default application not found.", fileType:str = None):
+    def __init__(self, message: str ="Application not specified and default application not found.", fileType:str = None):
+        """ 
+        Create an instance of ApplicationNotSetError.
+        Args:
+            message (str): Error message.
+            fileType (str): File type.
+        """ 
         self.fileType = fileType
         super().__init__(message)
     
@@ -72,17 +78,19 @@ class ExternalFileHandler(FileHandler):
     Class to handle files with external applications. Logic:
     - keep track of the processes of the opened files.
     - filetypes are associated with a particular program
-    - default app might not be able to close the file
+    - the ability to close is not guaranteed
     Attributes:
         defaultApp (str): Default external application to open files.
         process (dict[str, str]): process of the opened file.
-        alls (dict[str, str]): file extensions and the associated application.
+        apps (dict[str, str]): file extensions and the associated application.
     Methods:
         __init__(self, defaultApp: str = None)
         setDefaultApp(self)
         openFile(self, filePath: str, application: str = None) -> bool
         closeFile(self, filePath: str) -> bool
         fileExists(self, filePath: str) -> bool
+        setApp(self, fileExt: str, app: str)
+        getApps(self) -> dict[str, str]
     """
     def __init__(self, defaultApp: str = None):
         """ 
@@ -122,6 +130,14 @@ class ExternalFileHandler(FileHandler):
             app: Application to be used to open the file.
         """
         self.apps[fileExt] = app
+        
+    def getApps(self) -> dict[str, str]:
+        """
+        Get the dictionary of file extensions and associated applications.
+        Returns:
+            Dictionary of file extensions and associated applications.
+        """
+        return self.apps
 
     def openFile(self, filePath: str, application: str =None) -> bool:
         """
@@ -179,6 +195,14 @@ class ExternalFileHandler(FileHandler):
             logger.error(f"Failed to close file: {filePath}, Error: {e}")
             return False
         
+    def closeAllFiles(self):
+        """
+        Close all opened files.
+        """
+        for file in self.processes.keys():
+            self.closeFile(file)
+        self.processes = {}
+    
 class ExternalEntryHandler(ExternalFileHandler):
     """ 
     Class to handle entries with external applications.
