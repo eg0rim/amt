@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 import re
 
-from amt.views.customWidgets.amtfiledialog import AMTOpenEntryFileDialog
+from amt.views.customWidgets.amtfiledialog import AMTChooseEntryFileDialog
 
 class AMTDateTimeEdit(QDateTimeEdit):
     """
@@ -154,6 +154,7 @@ class AMTFileInput(QWidget):
         self.filepathEdit.setReadOnly(True)
         self.filepathButton = QPushButton("Browse")
         self.filepathButton.clicked.connect(self.browseFile)
+        self.fileDialog = AMTChooseEntryFileDialog(self)
         self.setLayout(QHBoxLayout(self))
         self.layout().addWidget(self.filepathEdit)
         self.layout().addWidget(self.filepathButton)
@@ -170,9 +171,8 @@ class AMTFileInput(QWidget):
         self.filepathEdit.setText(filepath)
         
     def browseFile(self):
-        dialog = AMTOpenEntryFileDialog(self)
-        if dialog.exec() == QFileDialog.Accepted:
-            self.filepath = dialog.selectedFile()
+        if self.fileDialog.exec() == QFileDialog.Accepted:
+            self.filepath = self.fileDialog.selectedFile()
         
     def getFilePath(self):
         if self.filepath == "":
