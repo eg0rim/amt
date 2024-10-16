@@ -18,44 +18,60 @@
 
 """custom message boxes"""
 
-from typing import List
+from pathlib import Path
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtGui import QIcon
 
 from amt.views.build.resources_qrc import *
+from amt.logger import getLogger
 
-class AMTOpenDBFileDialog(QFileDialog):
+logger = getLogger(__name__)
+
+class AMTDBFileDialog(QFileDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setNameFilter("AMT Database Files (*.amtdb)")
-        self.setAcceptMode(QFileDialog.AcceptOpen)
-        self.setWindowTitle("Open AMT Database")
-        self.setFileMode(QFileDialog.ExistingFile)
+        self.setDefaultSuffix("amtdb")
         
     def selectedFile(self) -> str:
-        return self.selectedFiles()[0]
-    
-class AMTSaveDBAsFileDialog(QFileDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setNameFilter("AMT Database Files (*.amtdb)")
-        self.setAcceptMode(QFileDialog.AcceptSave)
-        self.setWindowTitle("Save AMT Database")
-        self.setFileMode(QFileDialog.AnyFile)
-        
-    def selectedFile(self) -> str:
-        file =  self.selectedFiles()[0]   
-        # force correct extension 
-        if not file.endswith(".amtdb"):
-            file += ".amtdb"
+        file = self.selectedFiles()[0]
         return file
     
-class AMTOpenEntryFileDialog(QFileDialog):
+    def setAcceptMode(self, mode: QFileDialog.AcceptMode):
+        """ 
+        Modified setAcceptMode to set the window title and file mode.
+        Args:
+            mode (QFileDialog.AcceptMode): The mode to set
+        Raises:
+            ValueError: If mode is not QFileDialog.AcceptOpen or QFileDialog.AcceptSave
+        """
+        if mode == QFileDialog.AcceptOpen:
+            self.setWindowTitle("Open AMT Database")
+            self.setFileMode(QFileDialog.ExistingFile)
+        elif mode == QFileDialog.AcceptSave:
+            self.setWindowTitle("Save AMT Database")
+            self.setFileMode(QFileDialog.AnyFile)
+        else:
+            raise ValueError("Invalid mode")
+        super().setAcceptMode(mode)
+        
+    # TODO: I do not understand why this is not working to preserve the state of the last directory
+    def exec(self) -> int:
+        #logger.debug(f"executing AMTDBFileDialog: cur dir {self.directory().absolutePath()}")
+        return super().exec()
+        
+    def accept(self) -> None:
+        super().accept()
+        #logger.debug(f"accepted AMTDBFileDialog: dir : {self.directory().absolutePath()}")
+        #self.setDirectory(self.directory().absolutePath())
+    
+       
+class AMTChooseEntryFileDialog(QFileDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setNameFilter("Entry Files (*.pdf *.djvu);;All Files (*)")
         self.setAcceptMode(QFileDialog.AcceptOpen)
-        self.setWindowTitle("Open Entry File")
+        self.setWindowTitle("Choose Entry File")
         self.setFileMode(QFileDialog.ExistingFile)
         
     def selectedFile(self) -> str:
