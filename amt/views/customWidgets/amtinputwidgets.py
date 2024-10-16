@@ -28,11 +28,12 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QComboBox,
     QLabel,
-    QVBoxLayout,
     QGridLayout
 )
 from PySide6.QtCore import Signal
 import re
+
+from amt.views.customWidgets.amtfiledialog import AMTOpenEntryFileDialog
 
 class AMTDateTimeEdit(QDateTimeEdit):
     """
@@ -169,7 +170,9 @@ class AMTFileInput(QWidget):
         self.filepathEdit.setText(filepath)
         
     def browseFile(self):
-        self.filepath, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*)")
+        dialog = AMTOpenEntryFileDialog(self)
+        if dialog.exec() == QFileDialog.Accepted:
+            self.filepath = dialog.selectedFile()
         
     def getFilePath(self):
         if self.filepath == "":
