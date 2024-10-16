@@ -231,6 +231,7 @@ class DataCache(QObject):
         """
         self.data.append(entry)
         self.dataToAdd.append(entry)
+        self.updateDataToDisplay()
         self.diverged = True      
         return True
     
