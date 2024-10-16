@@ -105,9 +105,7 @@ class MainWindow(QMainWindow):
         # model for the table view
         self.model: AMTModel = None
         # file handler
-        self.fileHandler = ExternalEntryHandler()
-        #self.fileHandler.setApp("pdf", "okular")
-        #self.fileHandler.setApp("djvu", "evince")
+        self.fileHandler: ExternalEntryHandler = ExternalEntryHandler()
         # load settings
         self.readSettings()
         # setup ui
@@ -123,8 +121,12 @@ class MainWindow(QMainWindow):
         else:
             self.setTemporary(True)
         logger.info("Main window is initialized.")
+        # temorary solution to set default applications
+        self.fileHandler.setApp("pdf", "evince")
+        self.fileHandler.setApp("djvu", "evince")
     
     # read and write settings
+    # TODO: split settings and state
     def readSettings(self):
         """
         Reads and restores the application settings from the QSettings storage.
@@ -145,6 +147,29 @@ class MainWindow(QMainWindow):
         self.currentFile = settings.value("lastUsedFile", "")
         settings.endGroup()
         
+        settings.beginGroup("FileHandler")
+        # retrieve supported types and applications
+        # TODO: clean up here
+        supportedTypes = settings.value("supportedTypes", []) 
+        supportedTypes = supportedTypes if supportedTypes != "EMPTY_LIST" else []
+        if not isinstance(supportedTypes, list):
+            supportedTypes = [supportedTypes]
+        applications = settings.value("applications", [])
+        applications = applications if applications != "EMPTY_LIST" else []
+        if not isinstance(applications, list):
+            applications = [applications]
+        defaultApp = settings.value("defaultApp", "")
+        self.fileHandler.setApps(dict(zip(supportedTypes, applications)))
+        self.fileHandler.setDefaultApp(defaultApp)
+        # open files opened last time
+        openFiles = settings.value("openFiles", [])
+        openFiles = openFiles if openFiles != "EMPTY_LIST" else []
+        if not isinstance(openFiles, list):
+            openFiles = [openFiles]
+        for file in openFiles:
+            self.fileHandler.openFile(file)
+        settings.endGroup()
+        
     def writeSettings(self):
         settings = QSettings()
         settings.beginGroup("MainWindow")
@@ -154,6 +179,13 @@ class MainWindow(QMainWindow):
         
         settings.beginGroup("Database")
         settings.setValue("lastUsedFile", self.currentFile)
+        settings.endGroup()
+        
+        settings.beginGroup("FileHandler")
+        settings.setValue("supportedTypes", list(self.fileHandler.apps.keys()) or "EMPTY_LIST")
+        settings.setValue("applications", list(self.fileHandler.apps.values()) or "EMPTY_LIST")
+        settings.setValue("defaultApp", self.fileHandler.defaultApp)
+        settings.setValue("openFiles", list(self.fileHandler.processes.keys()) or "EMPTY_LIST")
         settings.endGroup()
  
     # setup methods        
@@ -320,8 +352,13 @@ class MainWindow(QMainWindow):
             elif ret == QMessageBox.Cancel:
                 event.ignore()
                 return
+        # check if there are open files
+        # and update the dictionary of open files
+        self.fileHandler.syncFiles()
         # save settings
         self.writeSettings()
+        # close all open files
+        self.fileHandler.closeAllFiles()
         logger.info("Exiting app.")
         event.accept()
         
