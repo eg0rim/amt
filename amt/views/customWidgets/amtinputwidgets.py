@@ -28,11 +28,12 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QComboBox,
     QLabel,
-    QVBoxLayout,
     QGridLayout
 )
 from PySide6.QtCore import Signal
 import re
+
+from amt.views.customWidgets.amtfiledialog import AMTChooseFileDialog
 
 class AMTDateTimeEdit(QDateTimeEdit):
     """
@@ -153,6 +154,8 @@ class AMTFileInput(QWidget):
         #self.filepathEdit.setReadOnly(True) # allow users to input file path manually
         self.filepathButton = QPushButton("Browse")
         self.filepathButton.clicked.connect(self.browseFile)
+        self.fileDialog = AMTChooseFileDialog(self)
+        self.fileDialog.setNameFilters(("Entry Files (*.pdf *.djvu)", "All Files (*)"))
         self.setLayout(QHBoxLayout(self))
         self.layout().addWidget(self.filepathEdit)
         self.layout().addWidget(self.filepathButton)
@@ -170,7 +173,8 @@ class AMTFileInput(QWidget):
         self.filepathEdit.setText(filepath)
         
     def browseFile(self):
-        self.filepath, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*)")
+        if self.fileDialog.exec() == QFileDialog.Accepted:
+            self.filepath = self.fileDialog.selectedFile()
         
     def getFilePath(self) -> str | None:
         """ 
