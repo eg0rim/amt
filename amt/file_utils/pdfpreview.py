@@ -30,8 +30,8 @@ logger = getLogger(__name__)
 class PdfPreviewer:
     def __init__(self, size: tuple[int, int] = (210,297)):
         self._cache: dict[EntryData, QPixmap | None] = {}
-        #self._dpr = QApplication.primaryScreen().devicePixelRatio()
-        self._dpr = 1.
+        self._dpr = QApplication.primaryScreen().devicePixelRatio()
+        #self._dpr = 1.
         self._size = (int(size[0] * self._dpr), int(size[1] * self._dpr))
         
     @property
