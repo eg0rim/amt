@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 import re
 
-from amt.views.customWidgets.amtfiledialog import AMTChooseFileDialog
+from amt.views.customWidgets.amtfiledialog import AMTChooseFileDialog, AMTChooseEntryFileDialog, AMTChooseAppFileDialog
 
 class AMTDateTimeEdit(QDateTimeEdit):
     """
@@ -155,7 +155,6 @@ class AMTFileInput(QWidget):
         self.filepathButton = QPushButton("Browse")
         self.filepathButton.clicked.connect(self.browseFile)
         self.fileDialog = AMTChooseFileDialog(self)
-        self.fileDialog.setNameFilters(("Entry Files (*.pdf *.djvu)", "All Files (*)"))
         self.setLayout(QHBoxLayout(self))
         self.layout().addWidget(self.filepathEdit)
         self.layout().addWidget(self.filepathButton)
@@ -188,7 +187,25 @@ class AMTFileInput(QWidget):
     
     def onTextChanged(self, text):
         self._filepath = text
-    
+        
+class AMTEntryFileInput(AMTFileInput):
+    """ 
+    Composite widget for entry file input. Contains a QLineEdit and a QPushButton to browse for a file.
+    If no file is selected, the filepath is an empty string. getFilePath returns None if no file is selected.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.fileDialog = AMTChooseEntryFileDialog(self)
+        
+class AMTAppFileInput(AMTFileInput):
+    """ 
+    Composite widget for executable file input. Contains a QLineEdit and a QPushButton to browse for a file.
+    If no file is selected, the filepath is an empty string. getFilePath returns None if no file is selected.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.fileDialog = AMTChooseAppFileDialog(self)        
+
 class AMTLineEdit(QLineEdit):
     """ 
     Custom QLineEdit widget for the Article Management Tool (AMT). Inherits from QLineEdit.

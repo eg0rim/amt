@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>315</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,7 +45,7 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="AMTFileInput" name="defaultAppFileInput" native="true"/>
+              <widget class="AMTAppFileInput" name="defaultAppFileInput" native="true"/>
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="pdfLabel">
@@ -55,7 +55,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="AMTFileInput" name="pdfFileInput" native="true"/>
+              <widget class="AMTAppFileInput" name="pdfFileInput" native="true"/>
              </item>
              <item row="2" column="0">
               <widget class="QLabel" name="djvuLabel">
@@ -65,7 +65,7 @@
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="AMTFileInput" name="djvuFileInput" native="true"/>
+              <widget class="AMTAppFileInput" name="djvuFileInput" native="true"/>
              </item>
             </layout>
            </widget>
@@ -86,7 +86,7 @@
           <item>
            <widget class="QCheckBox" name="entryOpenOnStartup">
             <property name="text">
-             <string>Open last opened entries on startup</string>
+             <string>Open last opened entries on startup (experimental)</string>
             </property>
            </widget>
           </item>
@@ -121,7 +121,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>AMTFileInput</class>
+   <class>AMTAppFileInput</class>
    <extends>QWidget</extends>
    <header>amt/views/customWidgets/amtinputwidgets</header>
    <container>1</container>

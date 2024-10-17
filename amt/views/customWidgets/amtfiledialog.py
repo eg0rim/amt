@@ -75,3 +75,14 @@ class AMTChooseFileDialog(QFileDialog):
         
     def selectedFile(self) -> str:
         return self.selectedFiles()[0]
+    
+class AMTChooseEntryFileDialog(AMTChooseFileDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setNameFilters(("Entry Files (*.pdf *.djvu)", "All Files (*)"))
+        self.setWindowTitle("Choose Entry File")
+        
+class AMTChooseAppFileDialog(AMTChooseFileDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Choose Executable File")        
