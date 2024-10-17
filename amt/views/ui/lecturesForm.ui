@@ -74,6 +74,20 @@
    <item row="5" column="1">
     <widget class="AMTEntryFileInput" name="fileInput" native="true"/>
    </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="previewPageLabel">
+     <property name="text">
+      <string>Preview page:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QSpinBox" name="previewPageSpinBox">
+     <property name="maximum">
+      <number>10000</number>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>

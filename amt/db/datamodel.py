@@ -466,6 +466,7 @@ class EntryData(AbstractData):
         self._fileName: str = None
         self._summary: str = None
         self._comment: str = None
+        self._previewPage: int = 0
         
     @property
     def summary(self) -> str:
@@ -507,6 +508,13 @@ class EntryData(AbstractData):
     def comment(self, value : str):
         self._comment = value
         
+    @property
+    def previewPage(self) -> int:
+        return self._previewPage
+    @previewPage.setter
+    def previewPage(self, value : int):
+        self._previewPage = value
+        
     @classmethod
     def createTable(cls, db : AMTDatabase) -> bool:
         if not super().createTable(db):
@@ -544,6 +552,7 @@ class EntryData(AbstractData):
         data["summary"] = self.summary
         data["file_name"] = self.fileName
         data["comment"] = self.comment
+        data["preview_page"] = str(self.previewPage)
         return data
     
     def insert(self, db: AMTDatabase) -> bool:
@@ -598,6 +607,8 @@ class EntryData(AbstractData):
             return self.summary or ""
         elif field == "comment":
             return self.comment or ""
+        elif field == "previewPage":
+            return str(self.previewPage)
         return super().getDisplayData(field)
     
 class PublishableData(EntryData):
@@ -655,7 +666,7 @@ class ArticleData(PublishableData):
     Data type to store article data.
     """
     tableName = "articles"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}    
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}    
     tableAddLines = [] #["UNIQUE(title, doi)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -730,6 +741,7 @@ class ArticleData(PublishableData):
         article.summary = row[11]
         article.fileName = row[12]
         article.comment = row[13]
+        article.previewPage = int(row[14])
         return article
         
     def getDataToInsert(self) -> dict[str, str]:
@@ -763,7 +775,7 @@ class BookData(PublishableData):
     Data type to store book data.
     """
     tableName = "books"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}
     tableAddLines = [] #["UNIQUE(title, doi, edition)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -808,6 +820,7 @@ class BookData(PublishableData):
         book.summary = row[8]
         book.fileName = row[9]
         book.comment = row[10]
+        book.previewPage = int(row[11])
         return book
     
     def getDataToInsert(self) -> dict[str, str]:
@@ -831,7 +844,7 @@ class LecturesData(PublishableData):
     Data type to store lecture notes data.
     """
     tableName = "lectures"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "school": "TEXT", "course": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT"}
+    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "school": "TEXT", "course": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}
     tableAddLines = [] #["UNIQUE(title, course, school)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -866,6 +879,7 @@ class LecturesData(PublishableData):
         lecture.summary = row[7]
         lecture.fileName = row[8]
         lecture.comment = row[9]
+        lecture.previewPage = int(row[10])
         return lecture
     
     def getDataToInsert(self) -> dict[str, str]:

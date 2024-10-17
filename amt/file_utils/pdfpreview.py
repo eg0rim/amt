@@ -83,8 +83,9 @@ class PdfPreviewer:
         """
         try:
             fileName = entry.fileName
+            pageNum = entry.previewPage
             pdfDoc = fitz.open(fileName)
-            page = pdfDoc.load_page(0)
+            page = pdfDoc.load_page(pageNum)
             origSize = (page.rect.width, page.rect.height)
             zoomX = self._size[0] / origSize[0]
             zoomY = self._size[1] / origSize[1]
