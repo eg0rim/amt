@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Settings</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="tabFiles">
+      <attribute name="title">
+       <string>Entry files</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QWidget" name="apps" native="true">
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QLabel" name="appsLabel">
+            <property name="text">
+             <string>Applications to open files:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="appsSettings" native="true">
+            <layout class="QFormLayout" name="formLayout">
+             <item row="0" column="0">
+              <widget class="QLabel" name="defaultAppLabel">
+               <property name="text">
+                <string>default app</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="AMTFileInput" name="defaultAppFileInput" native="true"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="pdfLabel">
+               <property name="text">
+                <string>pdf</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="AMTFileInput" name="pdfFileInput" native="true"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="djvuLabel">
+               <property name="text">
+                <string>djvu</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="AMTFileInput" name="djvuFileInput" native="true"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="autoOpenClose" native="true">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QCheckBox" name="entryOpenOnStartup">
+            <property name="text">
+             <string>Open last opened entries on startup</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="entryCloseOnExit">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Close opened entries on exit (experimental)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AMTFileInput</class>
+   <extends>QWidget</extends>
+   <header>amt/views/customWidgets/amtinputwidgets</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>Dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>entryOpenOnStartup</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>entryCloseOnExit</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>196</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>226</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>entryOpenOnStartup</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>entryCloseOnExit</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>196</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>226</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
