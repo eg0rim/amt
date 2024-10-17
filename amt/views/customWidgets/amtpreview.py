@@ -29,10 +29,21 @@ from amt.logger import getLogger
 logger = getLogger(__name__)
 
 class AMTPreviewLabel(QLabel):
+    """ 
+    Widget to display a preview of an entry.
+    Properties:
+        pdfPreviewer: PdfPreviewer object to generate the preview
+    Methods:
+        setEntry(entry: EntryData)
+        clear()
+        reset()
+        setPreviewSize(width: int, height: int)
+        toggleVisibility()
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.pdfPreviewer: PdfPreviewer = PdfPreviewer(size=(self.width(), self.height()))
-        self.entry: EntryData = None
+        self._pdfPreviewer: PdfPreviewer = PdfPreviewer(size=(self.width(), self.height()))
+        self._entry: EntryData = None
         self.setFixedSize(300,400)
         self.setScaledContents(False)
         self.setFrameShape(QLabel.Box)
@@ -42,8 +53,17 @@ class AMTPreviewLabel(QLabel):
         self.clear()
         self.setVisible(False)
         
+    @property
+    def pdfPreviewer(self) -> PdfPreviewer:
+        return self._pdfPreviewer
+        
     def setEntry(self, entry: EntryData ):
-        self.entry = entry
+        """ 
+        Display the preview of the entry.
+        Args:
+            entry: EntryData object to display the preview for
+        """
+        self._entry = entry
         # if not visible, do not generate preview
         if not self.isVisible():
             return
@@ -57,7 +77,7 @@ class AMTPreviewLabel(QLabel):
             return
         # if file name is not among supported formats, display "Unsupported file format"
         if entry.fileName.lower().endswith('.pdf'):
-            qPixmap = self.pdfPreviewer.getPreview(entry) 
+            qPixmap = self._pdfPreviewer.getPreview(entry) 
         else:
             self.setText("Unsupported file format")
             return
@@ -67,20 +87,36 @@ class AMTPreviewLabel(QLabel):
         self.setPixmap(qPixmap)
             
     def clear(self):
+        """ 
+        Clear the preview.
+        """
         self.setPixmap(QPixmap())
         self.setText("No preview")
         
     def reset(self):
+        """
+        Reset the preview to the initial state. And clear the cache.
+        """
         self.clear()
-        self.pdfPreviewer.clearCache()
+        self._pdfPreviewer.clearCache()
            
-    def setFixedSize(self, width, height):
-        super().setFixedSize(width, height)
-        self.pdfPreviewer.size = (width, height)
-        self.setEntry(self.entry)
+    def setPreviewSize(self, width: int, height: int):
+        """ 
+        Set the size of the preview.
+        Args:
+            width: width of the preview in pixels
+            height: height of the preview in pixels
+        """
+        self.setFixedSize(width, height)
+        # update the size of the previewer
+        self._pdfPreviewer.size = (width, height)
+        self.setEntry(self._entry)
         
     def toggleVisibility(self):
+        """ 
+        Toggle the visibility of the preview widget.
+        """
         self.setVisible(not self.isVisible())
-        self.setEntry(self.entry)
+        self.setEntry(self._entry)
         
     

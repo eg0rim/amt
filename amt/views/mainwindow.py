@@ -68,10 +68,15 @@ class MainWindow(QMainWindow):
         currentFile (str): The current database file name.
         ui (Ui_MainWindow): The user interface object for the main window. Generated from the .ui file. Contains all the widgets and actions.
         model (AMTModel): The model for the table view.
+        fileHandler (ExternalEntryHandler): The file handler object for opening external files.
+        openEntriesOnStartup (bool): The flag indicating whether to open entries on startup.
+        closeEntriesOnExit (bool): The flag indicating whether to close entries on exit.
+        dbFileDialog (AMTDBFileDialog): The file dialog for opening and saving database files.
     Methods:
         __init__(self, parent=None):
         readSettings(self):
-        writeSettings(self):
+        readState(self):
+        writeState(self):
         setupUI(self):
         setTemporary(self, status: bool):
         setEdited(self, status: bool):
@@ -85,9 +90,11 @@ class MainWindow(QMainWindow):
         deleteSelectedRows(self) -> bool:
         editSelectedRow(self) -> bool:
         openAddDialog(self):
+        openSettingsDialog(self):
         openAboutDialog(self):
-        setCurrentFile(self, file: str):
         updatePreview(self, selected: QItemSelection, deselected: QItemSelection):
+        onDatabaseConnected(self, name: str):
+        setCurrentFile(self, file: str):
         newLibrary(self):
         openLibrary(self):
         saveLibrary(self):
@@ -159,7 +166,7 @@ class MainWindow(QMainWindow):
         settings.beginGroup("Preview")
         width = settings.value("previewWidth", 300, type = int)
         height = settings.value("previewHeight", 400, type = int)
-        self.ui.previewLabel.setFixedSize(width, height)
+        self.ui.previewLabel.setPreviewSize(width, height)
         self.ui.previewLabel.setVisible(settings.value("showPreviewOnStartup", False, type = bool))
         settings.endGroup()
         
