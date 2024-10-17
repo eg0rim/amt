@@ -150,7 +150,7 @@ class AMTFileInput(QWidget):
         super().__init__(parent)
         self._filepath = ""
         self.filepathEdit = QLineEdit()
-        self.filepathEdit.setReadOnly(True)
+        #self.filepathEdit.setReadOnly(True) # allow users to input file path manually
         self.filepathButton = QPushButton("Browse")
         self.filepathButton.clicked.connect(self.browseFile)
         self.setLayout(QHBoxLayout(self))
@@ -158,6 +158,7 @@ class AMTFileInput(QWidget):
         self.layout().addWidget(self.filepathButton)
         self.layout().setStretch(0, 1)
         self.layout().setStretch(1, 0)
+        self.filepathEdit.textChanged.connect(self.onTextChanged)
     
     @property
     def filepath(self):
@@ -171,10 +172,18 @@ class AMTFileInput(QWidget):
     def browseFile(self):
         self.filepath, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*)")
         
-    def getFilePath(self):
+    def getFilePath(self) -> str | None:
+        """ 
+        Returns the filepath from the QLineEdit. Returns None if the filepath is an empty string.
+        Returns:
+            str | None: The filepath from the QLineEdit.
+        """
         if self.filepath == "":
             return None
         return self.filepath
+    
+    def onTextChanged(self, text):
+        self._filepath = text
     
 class AMTLineEdit(QLineEdit):
     """ 
