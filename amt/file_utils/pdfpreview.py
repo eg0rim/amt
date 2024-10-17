@@ -28,14 +28,29 @@ from amt.logger import getLogger
 logger = getLogger(__name__)
 
 class PdfPreviewer:
+    """ 
+    Class to generate PDF previews. 
+    It uses PyMuPDF to render the PDF pages and then converts the rendered image to QPixmap.
+    Provides a cache to store the generated previews.
+    Properties:
+        size: tuple with the width and height of the preview in pixels
+    Methods:
+        getPreview(entry: EntryData) -> QPixmap | None
+        clearCache()
+    """
     def __init__(self, size: tuple[int, int] = (210,297)):
+        """ 
+        Creates a PdfPreviewer generator object.
+        Args:
+            size: tuple with the width and height of the preview in pixels
+        """
         self._cache: dict[EntryData, QPixmap | None] = {}
         #self._dpr = QApplication.primaryScreen().devicePixelRatio()
         self._dpr = 1.
         self._size = (int(size[0] * self._dpr), int(size[1] * self._dpr))
         
     @property
-    def size(self):
+    def size(self) -> tuple[int, int]:
         return self._size
     @size.setter
     def size(self, size: tuple[int, int]):
@@ -43,6 +58,13 @@ class PdfPreviewer:
         self.clearCache()
 
     def getPreview(self, entry: EntryData) -> QPixmap | None:
+        """ 
+        Get preview for the entry. If the preview is not in the cache, generate it.
+        Args:
+            entry: EntryData object
+        Returns:
+            QPixmap object with the preview or None if the preview could not be generated
+        """
         try:
             qPixmap = self._cache[entry]
             return qPixmap
@@ -52,6 +74,13 @@ class PdfPreviewer:
             return qPixmap
         
     def _generatePreview(self, entry: EntryData) -> QPixmap | None:
+        """ 
+        Generate preview for the entry.
+        Args:
+            entry: EntryData object
+        Returns:
+            QPixmap object with the preview or None if the preview could not be generated
+        """
         try:
             fileName = entry.fileName
             pdfDoc = fitz.open(fileName)
@@ -72,4 +101,7 @@ class PdfPreviewer:
             return None
         
     def clearCache(self):
+        """ 
+        Empty the cache
+        """
         self._cache.clear()

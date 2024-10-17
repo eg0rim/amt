@@ -98,7 +98,7 @@ class AMTSettingsDialog(QDialog):
         
     def accept(self):
         """
-        Accept the changes and close the settings dialog window.
+        Accept the changes, save settings and close the settings dialog window.
         """
         self.writeSettings()
         super().accept()
