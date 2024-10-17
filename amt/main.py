@@ -20,9 +20,11 @@
 
 import sys
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import QCoreApplication
 from amt.views.mainwindow import MainWindow
 import qdarktheme 
+from amt.views.build.resources_qrc import *
 
 def main():
     """
@@ -30,10 +32,11 @@ def main():
     """
     # create the app
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(":/logo"))
     # set the app properties
-    QCoreApplication.setOrganizationName("Egor-Im-Soft")
     QCoreApplication.setOrganizationDomain("egorim.win")
-    QCoreApplication.setApplicationName("Article-Management-Tool")
+    QCoreApplication.setApplicationName("Article Management Tool")
+    QCoreApplication.setApplicationVersion("0.0.9")
     # fix light theme 
     qdarktheme.setup_theme("light")
     # create the main window

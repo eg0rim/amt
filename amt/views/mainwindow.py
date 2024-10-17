@@ -19,14 +19,15 @@
 """main window for the app"""
 
 import sys, subprocess
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, QSize
 from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QDialog,
-    QFileDialog
+    QFileDialog,
+    QLabel
 )
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
 from amt.db.tablemodel import AMTModel, AMTFilter
 from amt.db.database import AMTDatabaseError
 from amt.db.datamodel import (
@@ -208,6 +209,8 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         # set icons
+        self.setWindowIcon(QIcon(":/logo")) # does not work
+        #self.setIconSize(QSize(16, 16))
         self.ui.actionAdd.setIcon(QIcon(":/icons/add"))
         self.ui.actionDel.setIcon(QIcon(":/icons/remove"))
         self.ui.actionEdit.setIcon(QIcon(":/icons/edit"))
