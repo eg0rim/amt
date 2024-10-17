@@ -123,17 +123,25 @@ class MainWindow(QMainWindow):
         self.closeEntriesOnExit: bool = False
         # file dialogs
         self.dbFileDialog = AMTDBFileDialog(self)    
+        # setup main window
         # setup ui
         self.setupUI()      
+        # create model
+        self.setupModelView()    
+        # setup searchbar
+        self.setupSearchBar()
+        # if no filename is loaded, set temporary status
+        if self.currentFile:
+            self.setTemporary(False)
+        else:
+            self.setTemporary(True)
+        # final setup
         # load settings
         self.readSettings()
         # reproduce the state of the app before last closing
         self.readState()
         # at the start no changes are made
         self.setEdited(False)
-        # create model
-        self.setupModelView()        
-        self.setupSearchBar()
         # if no filename is loaded, set temporary status
         if self.currentFile:
             self.setTemporary(False)
@@ -182,6 +190,8 @@ class MainWindow(QMainWindow):
         settings.beginGroup("Database")
         # retrieve last used filename; if empty, set empty filename => temporary status
         self.currentFile = settings.value("lastUsedFile", "")
+        if self.currentFile:
+            self.model.openExistingDB(self.currentFile)
         settings.endGroup()
         settings.beginGroup("FileHandler")
         # open files opened last time
