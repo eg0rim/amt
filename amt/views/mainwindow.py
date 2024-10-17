@@ -43,6 +43,7 @@ from .build.mainwindow_ui import (
 
 from .aboutdialog import AboutDialog
 from .adddialog import AddDialog
+from .settingsdialog import AMTSettingsDialog
 
 from amt.logger import getLogger
 from amt.views.customWidgets.amtmessagebox import (
@@ -89,6 +90,7 @@ class MainWindow(QMainWindow):
         saveLibrary(self):
         saveAsLibrary(self):
     """
+    stateFile = "AMT/AMTState"
     def __init__(self, parent=None):
         """
         Initializes the main window.
@@ -106,8 +108,13 @@ class MainWindow(QMainWindow):
         self.model: AMTModel = None
         # file handler
         self.fileHandler: ExternalEntryHandler = ExternalEntryHandler()
+        # settings atrbiutes
+        self.openEntriesOnStartup: bool = False
+        self.closeEntriesOnExit: bool = False
         # load settings
         self.readSettings()
+        # reproduce the state of the app before last closing
+        self.readState()
         # setup ui
         self.setupUI()        
         # at the start no changes are made
@@ -121,12 +128,9 @@ class MainWindow(QMainWindow):
         else:
             self.setTemporary(True)
         logger.info("Main window is initialized.")
-        # temorary solution to set default applications
-        self.fileHandler.setApp("pdf", "evince")
-        self.fileHandler.setApp("djvu", "evince")
+
     
     # read and write settings
-    # TODO: split settings and state
     def readSettings(self):
         """
         Reads and restores the application settings from the QSettings storage.
@@ -135,46 +139,48 @@ class MainWindow(QMainWindow):
         geometry and state, as well as the last used database file. If no settings
         are found, default values are used.
         """
-        settings = QSettings()
+        settings = QSettings(AMTSettingsDialog.settingsFileName)       
+        settings.beginGroup("FileHandler")
+        defAppFile = settings.value("defaultAppFile", "")
+        self.fileHandler.defaultApp = defAppFile
+        pdfApp = settings.value("pdfApp", "")
+        self.fileHandler.setApp("pdf", pdfApp)
+        djvuApp = settings.value("djvuApp", "")
+        self.fileHandler.setApp("djvu", djvuApp)
+        self.openEntriesOnStartup = settings.value("openEntriesOnStartup", False, type = bool)
+        self.closeEntriesOnExit = settings.value("closeEntriesOnExit", False,type = bool)
+        
+    def readState(self):
+        settings = QSettings(self.stateFile)
         # read window settings
         settings.beginGroup("MainWindow")
         self.restoreGeometry(settings.value("geometry"))
         self.restoreState(settings.value("state"))
+        self.resize(settings.value("windowSize", self.size()))
         settings.endGroup()
         # read database settings
         settings.beginGroup("Database")
         # retrieve last used filename; if empty, set empty filename => temporary status
         self.currentFile = settings.value("lastUsedFile", "")
         settings.endGroup()
-        
         settings.beginGroup("FileHandler")
-        # retrieve supported types and applications
-        # TODO: clean up here
-        supportedTypes = settings.value("supportedTypes", []) 
-        supportedTypes = supportedTypes if supportedTypes != "EMPTY_LIST" else []
-        if not isinstance(supportedTypes, list):
-            supportedTypes = [supportedTypes]
-        applications = settings.value("applications", [])
-        applications = applications if applications != "EMPTY_LIST" else []
-        if not isinstance(applications, list):
-            applications = [applications]
-        defaultApp = settings.value("defaultApp", "")
-        self.fileHandler.apps = dict(zip(supportedTypes, applications))
-        self.fileHandler.defaultApp = defaultApp
         # open files opened last time
-        openFiles = settings.value("openFiles", [])
-        openFiles = openFiles if openFiles != "EMPTY_LIST" else []
-        if not isinstance(openFiles, list):
-            openFiles = [openFiles]
-        for file in openFiles:
-            self.fileHandler.openFile(file)
+        if self.openEntriesOnStartup:
+            openFiles = settings.value("openFiles", [], type = list)
+            #openFiles = openFiles if openFiles != "EMPTY_LIST" else []
+            #if not isinstance(openFiles, list):
+            #    openFiles = [openFiles]
+            for file in openFiles:
+                self.fileHandler.openFile(file)
         settings.endGroup()
         
-    def writeSettings(self):
-        settings = QSettings()
+    def writeState(self):
+        settings = QSettings(self.stateFile)
         settings.beginGroup("MainWindow")
+        # TODO: size does not save
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("state", self.saveState())
+        settings.setValue("windowSize", self.size())
         settings.endGroup()
         
         settings.beginGroup("Database")
@@ -182,10 +188,9 @@ class MainWindow(QMainWindow):
         settings.endGroup()
         
         settings.beginGroup("FileHandler")
-        settings.setValue("supportedTypes", list(self.fileHandler.apps.keys()) or "EMPTY_LIST")
-        settings.setValue("applications", list(self.fileHandler.apps.values()) or "EMPTY_LIST")
-        settings.setValue("defaultApp", self.fileHandler.defaultApp)
-        settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()) or "EMPTY_LIST")
+        # "EMPTY_LIST" is used to store empty lists in QSettings
+#        settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()) or "EMPTY_LIST")
+        settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()))
         settings.endGroup()
  
     # setup methods        
@@ -241,6 +246,8 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveLibrary.triggered.connect(self.saveLibrary)
         # save current database as another file
         self.ui.actionSaveAs.triggered.connect(self.saveAsLibrary)
+        # settings 
+        self.ui.actionSettings.triggered.connect(self.openSettingsDialog)
         # actions in table
         # open entry on double click
         self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
@@ -251,7 +258,7 @@ class MainWindow(QMainWindow):
         # delete entry on context menu
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)    
         # hide unused widgets
-        self.ui.actionSettings.setVisible(False)
+        
         self.ui.menuRecent.setVisible(False)
         #self.ui.actionDebug.setVisible(False)
                
@@ -356,9 +363,10 @@ class MainWindow(QMainWindow):
         # and update the dictionary of open files
         self.fileHandler.syncFiles()
         # save settings
-        self.writeSettings()
+        self.writeState()
         # close all open files
-        self.fileHandler.closeAllFiles()
+        if self.closeEntriesOnExit:
+            self.fileHandler.closeAllFiles()
         logger.info("Exiting app.")
         event.accept()
         
@@ -510,6 +518,14 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             self.model.addEntry(dialog.data)
             
+    def openSettingsDialog(self):
+        """ 
+        Opens settings dialog.
+        """
+        dialog = AMTSettingsDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self.readSettings()
+         
     # open additional dialog windows
     def openAboutDialog(self):
         """

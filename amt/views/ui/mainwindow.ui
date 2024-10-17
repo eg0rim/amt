@@ -63,8 +63,6 @@
     <addaction name="actionSaveAs"/>
     <addaction name="menuRecent"/>
     <addaction name="separator"/>
-    <addaction name="actionSettings"/>
-    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -78,8 +76,15 @@
     <addaction name="actionSearch"/>
     <addaction name="actionUpdate"/>
    </widget>
+   <widget class="QMenu" name="menu_Window">
+    <property name="title">
+     <string>&amp;Window</string>
+    </property>
+    <addaction name="actionSettings"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menu_Window"/>
    <addaction name="menuMenu"/>
   </widget>
   <widget class="QToolBar" name="toolBar">

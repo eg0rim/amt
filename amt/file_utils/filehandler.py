@@ -180,6 +180,8 @@ class ExternalFileHandler(FileHandler):
             except KeyError:
                 app = self._defaultApp
         if not app:
+            app = self._defaultApp
+        if not app:
             logger.error(f"Application not specified for {ext} and default application not found.")
             raise ApplicationNotSetError(fileType=ext)
         try:
