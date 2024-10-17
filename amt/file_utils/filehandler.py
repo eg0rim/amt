@@ -186,9 +186,11 @@ class ExternalFileHandler(FileHandler):
             raise ApplicationNotSetError(fileType=ext)
         try:
             process = subprocess.Popen([app, filePath], stderr=subprocess.PIPE, stdout=subprocess.DEVNULL)
+            logger.debug(f"Opened file: {filePath} with application: {app},  process: {process}, pid: {process.pid}")   
             if process:
                 self._processes[0].append(filePath)
                 self._processes[1].append(process)
+                logger.debug(f"_processes: {self._processes}")
                 return True
             else:
                 return False
@@ -220,30 +222,13 @@ class ExternalFileHandler(FileHandler):
         except Exception as e:
             logger.error(f"Failed to close file: {file} at index: {index}, Error: {e}")
             return False
-
-    def closeFile(self, filePath: str) -> bool:
-        """
-        Close the file by name.        
-        Args:  
-            file_path: Path to the file to be closed.
-        Returns:
-            True if the file was closed successfully, False otherwise.
-        """
-        # Implement specific logic to close the file if possible
-        try:
-            index = self._processes[0].index(filePath)
-        except ValueError:
-            logger.error(f"File not opened: {filePath}")
-            return False
-        return self.closeByIndex(index)
         
     def closeAllFiles(self):
         """
         Close all opened files.
         """
-        for file in self._processes[0][:]:
-            self.closeFile(file)
-        self._processes = ()
+        while len(self._processes[0]) > 0:
+            self.closeByIndex(0)
         
     def pollByIndex(self, index: int) -> bool: 
         """
@@ -258,39 +243,30 @@ class ExternalFileHandler(FileHandler):
             return False
         return self._processes[1][index].poll() is None
         
-    def pollFile(self, filePath: str) -> bool:
-        """
-        Check if the file is still open.
-        Args:
-            file_path: Path to the file.
-        Returns:
-            True if the file is open, False otherwise.
-        """
-        try:
-            index = self._processes[0].index(filePath)
-        except ValueError:
-            logger.error(f"File not opened: {filePath}")
-            return False
-        return self.pollByIndex(index)
-        
-    def pollAllFiles(self) -> dict[str, bool]:
+    def pollAllFiles(self) -> tuple[list[str], list[bool]]:
         """
         Check if the files are still open.
         Returns:
-            Dictionary of file paths and their status.
+            tuple of lists: List of opened files and list of booleans indicating if the files are open.
         """
-        return {file: self.pollFile(file) for file in self._processes[0]}
+        ret = ([],[])
+        for i in range(len(self._processes[0])):
+            poll = self.pollByIndex(i)
+            ret[0].append(self._processes[0][i])
+            ret[1].append(poll)
+        return ret
     
     def syncFiles(self):
         """
         Synchronize the file status.
         """
-        for file in self._processes[0][:]:
-            if not self.pollFile(file):
-                i = self._processes[0].index(file)
-                self._processes[0].pop(i)
-                self._processes[1].pop(i)
-    
+        newProcesses = ([],[])
+        for i in range(len(self._processes[0])):
+            if self.pollByIndex(i):
+                newProcesses[0].append(self._processes[0][i])
+                newProcesses[1].append(self._processes[1][i])
+        self._processes = newProcesses
+        
 class ExternalEntryHandler(ExternalFileHandler):
     """ 
     Class to handle entries with external applications.

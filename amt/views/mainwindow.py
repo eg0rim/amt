@@ -598,5 +598,4 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        for file in list(self.fileHandler.processes.keys())[1:]:
-            self.fileHandler.closeFile(file)
+        logger.debug(f"Poll files: {self.fileHandler.pollAllFiles()}")
