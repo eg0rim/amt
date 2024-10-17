@@ -41,6 +41,7 @@ This package was tested on
 - `python3.12.3`
 - `PySide6==6.7.3`
 - `pyqtdarktheme==2.1.0`
+- `pymupdf==1.24.11`
 
 ## License
 

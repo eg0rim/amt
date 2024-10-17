@@ -23,7 +23,8 @@ setup(
     python_requires=">=3.12.3",
     install_requires=[
         "PySide6==6.7.3",
-        "pyqtdarktheme==2.1.0"
+        "pyqtdarktheme==2.1.0",
+        "pymupdf==1.24.11"
     ],
     entry_points={
         "console_scripts": [
