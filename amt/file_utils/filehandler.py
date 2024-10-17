@@ -81,7 +81,7 @@ class ExternalFileHandler(FileHandler):
     - the ability to close is not guaranteed
     Attributes:
         defaultApp (str): Default external application to open files.
-        process (dict[str, str]): process of the opened file.
+        _processes (list[tuple[str, subprocess.Popen]]): process of the opened file.
         apps (dict[str, str]): file extensions and the associated application.
     Methods:
         __init__(self, defaultApp: str = None)
@@ -99,28 +99,29 @@ class ExternalFileHandler(FileHandler):
             defaultApp: Default application to open files.
         """
         super().__init__()
-        self.defaultApp: str = ""
-        self.processes: dict[str,subprocess.Popen] = {}
-        self.apps: dict[str,str] = {}
-        self.setDefaultApp(defaultApp)
+        self._defaultApp: str = ""
+        self._processes: tuple[list[str], list[subprocess.Popen]] = ([],[])
+        self._apps: dict[str,str] = {}
             
-    def setDefaultApp(self, app = ""):
+    @property
+    def defaultApp(self) -> str:
+        return self._defaultApp
+    @defaultApp.setter
+    def defaultApp(self, app: str):
         """ 
         Set the default application to open files.
         """
-        if app:
-            self.defaultApp = app
-        return
+        self._defaultApp = app
         # perhaps, better to force user to set the apps
         # if os.name == 'nt':  # Windows
-        #     self.defaultApp = "start"
+        #     self._defaultApp = "start"
         # elif os.name == 'posix':  # Unix-like (Linux, macOS, etc.)
         #     if os.uname().sysname == 'Darwin': # maxOS
-        #         self.defaultApp = "open"
+        #         self._defaultApp = "open"
         #     else:
-        #         self.defaultApp = "xdg-open"
+        #         self._defaultApp = "xdg-open"
         # else:
-        #     self.defaultApp = None
+        #     self._defaultApp = None
 
     def setApp(self, fileExt: str, app: str):
         """
@@ -129,23 +130,32 @@ class ExternalFileHandler(FileHandler):
             fileExt: File extension.
             app: Application to be used to open the file.
         """
-        self.apps[fileExt] = app
+        self._apps[fileExt] = app
         
-    def setApps(self, apps: dict[str, str]):
-        """
-        Set the dictionary of file extensions and associated applications.
-        Args:
-            apps: Dictionary of file extensions and associated applications.
-        """
-        self.apps = apps
-        
-    def getApps(self) -> dict[str, str]:
+    @property
+    def apps(self) -> dict[str, str]:
         """
         Get the dictionary of file extensions and associated applications.
         Returns:
             Dictionary of file extensions and associated applications.
         """
-        return self.apps
+        return self._apps
+    @apps.setter
+    def apps(self, apps: dict[str, str]):
+        """
+        Set the dictionary of file extensions and associated applications.
+        Args:
+            apps: Dictionary of file extensions and associated applications.
+        """
+        self._apps = apps
+    
+    def getOpenedFiles(self) -> list[str]:
+        """
+        Get the list of opened files.
+        Returns:
+            List of opened files.
+        """
+        return self._processes[0]
 
     def openFile(self, filePath: str, application: str =None) -> bool:
         """
@@ -166,50 +176,85 @@ class ExternalFileHandler(FileHandler):
             try:
                 ext = os.path.splitext(filePath)[1][1:]
                 logger.debug(f"File extension: {ext}")
-                app = self.apps[ext]
+                app = self._apps[ext]
             except KeyError:
-                app = self.defaultApp
+                app = self._defaultApp
         if not app:
             logger.error(f"Application not specified for {ext} and default application not found.")
             raise ApplicationNotSetError(fileType=ext)
         try:
             process = subprocess.Popen([app, filePath], stderr=subprocess.PIPE, stdout=subprocess.DEVNULL)
-            self.processes[filePath] = process
-            return True
+            if process:
+                self._processes[0].append(filePath)
+                self._processes[1].append(process)
+                return True
+            else:
+                return False
         except Exception as e:
             logger.error(f"Failed to open file: {filePath}, Error: {e}")
             return False
 
-    def closeFile(self, filePath: str) -> bool:
+    def closeByIndex(self, index: int) -> bool:
         """
-        Close the file if the application supports it.
+        Close the file by index.
         NOTE: This method is not guaranteed to work for all applications. 
         E.g. it does not work for xdg-open on Linux.
+        Args:
+            index: Index of the file in the list of opened files.
+        Returns:
+            True if the file was closed successfully, False otherwise.
+        """
+        if index >= len(self._processes[0]) or index < 0:
+            logger.error(f"Index out of range: {index}")
+            return False
+        try:
+            process = self._processes[1][index]
+            file = self._processes[0][index]
+            process.terminate()
+            self._processes[0].pop(index)
+            self._processes[1].pop(index)
+            logger.info(f"Closed file: {file} at index: {index}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to close file: {file} at index: {index}, Error: {e}")
+            return False
+
+    def closeFile(self, filePath: str) -> bool:
+        """
+        Close the file by name.        
         Args:  
             file_path: Path to the file to be closed.
         Returns:
             True if the file was closed successfully, False otherwise.
         """
         # Implement specific logic to close the file if possible
-        if filePath not in self.processes:
+        try:
+            index = self._processes[0].index(filePath)
+        except ValueError:
             logger.error(f"File not opened: {filePath}")
             return False
-        try:
-            self.processes[filePath].terminate()
-            del self.processes[filePath]
-            logger.info(f"Closed file: {filePath}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to close file: {filePath}, Error: {e}")
-            return False
+        return self.closeByIndex(index)
         
     def closeAllFiles(self):
         """
         Close all opened files.
         """
-        for file in list(self.processes.keys()):
+        for file in self._processes[0][:]:
             self.closeFile(file)
-        self.processes = {}
+        self._processes = ()
+        
+    def pollByIndex(self, index: int) -> bool: 
+        """
+        Check if the file is still open.
+        Args:
+            index: Index of the file in the list of opened files.
+        Returns:
+            True if the file is open, False otherwise.
+        """
+        if index >= len(self._processes[0]) or index < 0:
+            logger.error(f"Index out of range: {index}")
+            return False
+        return self._processes[1][index].poll() is None
         
     def pollFile(self, filePath: str) -> bool:
         """
@@ -219,10 +264,12 @@ class ExternalFileHandler(FileHandler):
         Returns:
             True if the file is open, False otherwise.
         """
-        if filePath in self.processes:
-            return self.processes[filePath].poll() is None
-        else:
+        try:
+            index = self._processes[0].index(filePath)
+        except ValueError:
+            logger.error(f"File not opened: {filePath}")
             return False
+        return self.pollByIndex(index)
         
     def pollAllFiles(self) -> dict[str, bool]:
         """
@@ -230,15 +277,17 @@ class ExternalFileHandler(FileHandler):
         Returns:
             Dictionary of file paths and their status.
         """
-        return {filePath: self.pollFile(filePath) for filePath in self.processes.keys()}
+        return {file: self.pollFile(file) for file in self._processes[0]}
     
     def syncFiles(self):
         """
         Synchronize the file status.
         """
-        for file in list(self.processes.keys()):
+        for file in self._processes[0][:]:
             if not self.pollFile(file):
-                del self.processes[file]
+                i = self._processes[0].index(file)
+                self._processes[0].pop(i)
+                self._processes[1].pop(i)
     
 class ExternalEntryHandler(ExternalFileHandler):
     """ 
