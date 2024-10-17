@@ -115,13 +115,13 @@ class MainWindow(QMainWindow):
         self.openEntriesOnStartup: bool = False
         self.closeEntriesOnExit: bool = False
         # file dialogs
-        self.dbFileDialog = AMTDBFileDialog(self)        
+        self.dbFileDialog = AMTDBFileDialog(self)    
+        # setup ui
+        self.setupUI()      
         # load settings
         self.readSettings()
         # reproduce the state of the app before last closing
         self.readState()
-        # setup ui
-        self.setupUI()        
         # at the start no changes are made
         self.setEdited(False)
         # create model
@@ -154,6 +154,14 @@ class MainWindow(QMainWindow):
         self.fileHandler.setApp("djvu", djvuApp)
         self.openEntriesOnStartup = settings.value("openEntriesOnStartup", False, type = bool)
         self.closeEntriesOnExit = settings.value("closeEntriesOnExit", False,type = bool)
+        settings.endGroup()
+        
+        settings.beginGroup("Preview")
+        width = settings.value("previewWidth", 300, type = int)
+        height = settings.value("previewHeight", 400, type = int)
+        self.ui.previewLabel.setFixedSize(width, height)
+        self.ui.previewLabel.setVisible(settings.value("showPreviewOnStartup", False, type = bool))
+        settings.endGroup()
         
     def readState(self):
         settings = QSettings(self.stateFile)
@@ -172,9 +180,6 @@ class MainWindow(QMainWindow):
         # open files opened last time
         if self.openEntriesOnStartup:
             openFiles = settings.value("openFiles", [], type = list)
-            #openFiles = openFiles if openFiles != "EMPTY_LIST" else []
-            #if not isinstance(openFiles, list):
-            #    openFiles = [openFiles]
             for file in openFiles:
                 self.fileHandler.openFile(file)
         settings.endGroup()
@@ -193,8 +198,6 @@ class MainWindow(QMainWindow):
         settings.endGroup()
         
         settings.beginGroup("FileHandler")
-        # "EMPTY_LIST" is used to store empty lists in QSettings
-#        settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()) or "EMPTY_LIST")
         settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()))
         settings.endGroup()
  
@@ -427,7 +430,7 @@ class MainWindow(QMainWindow):
                 return
         # retrieve data from database
         self.model.update()
-        self.ui.previewLabel.clear()
+        self.ui.previewLabel.reset()
         
     def openSelectedRowsExternally(self) -> bool:
         """
