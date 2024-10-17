@@ -159,8 +159,8 @@ class MainWindow(QMainWindow):
         if not isinstance(applications, list):
             applications = [applications]
         defaultApp = settings.value("defaultApp", "")
-        self.fileHandler.setApps(dict(zip(supportedTypes, applications)))
-        self.fileHandler.setDefaultApp(defaultApp)
+        self.fileHandler.apps = dict(zip(supportedTypes, applications))
+        self.fileHandler.defaultApp = defaultApp
         # open files opened last time
         openFiles = settings.value("openFiles", [])
         openFiles = openFiles if openFiles != "EMPTY_LIST" else []
@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
         settings.setValue("supportedTypes", list(self.fileHandler.apps.keys()) or "EMPTY_LIST")
         settings.setValue("applications", list(self.fileHandler.apps.values()) or "EMPTY_LIST")
         settings.setValue("defaultApp", self.fileHandler.defaultApp)
-        settings.setValue("openFiles", list(self.fileHandler.processes.keys()) or "EMPTY_LIST")
+        settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()) or "EMPTY_LIST")
         settings.endGroup()
  
     # setup methods        
