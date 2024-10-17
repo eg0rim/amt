@@ -35,6 +35,7 @@ from amt.db.datamodel import (
     BookData, 
     LecturesData
 )
+from amt.views.customWidgets.amtfiledialog import AMTDBFileDialog
 
 from  .build.resources_qrc import *
 from .build.mainwindow_ui import (
@@ -111,6 +112,8 @@ class MainWindow(QMainWindow):
         # settings atrbiutes
         self.openEntriesOnStartup: bool = False
         self.closeEntriesOnExit: bool = False
+        # file dialogs
+        self.dbFileDialog = AMTDBFileDialog(self)        
         # load settings
         self.readSettings()
         # reproduce the state of the app before last closing
@@ -558,11 +561,9 @@ class MainWindow(QMainWindow):
         Opens existing database.
         """
         # open file dialog and choose database to load
-        fileDialog = QFileDialog(self)  
-        fileDialog.setAcceptMode(QFileDialog.AcceptOpen)
-        fileDialog.setNameFilter("AMT Database Files (*.amtdb)")
-        if fileDialog.exec() == QFileDialog.Accepted:
-            filePath = fileDialog.selectedFiles()[0]
+        self.dbFileDialog.setAcceptMode(QFileDialog.AcceptOpen)
+        if self.dbFileDialog.exec() == QFileDialog.Accepted:
+            filePath = self.dbFileDialog.selectedFile()
             self.model.openExistingDB(filePath)
         
     def saveLibrary(self):
@@ -581,14 +582,9 @@ class MainWindow(QMainWindow):
         """
         Saves current changes in cache to a new file.
         """
-        fileDialog = QFileDialog(self)
-        fileDialog.setAcceptMode(QFileDialog.AcceptSave)
-        fileDialog.setNameFilter("AMT Database Files (*.amtdb)")
-        if fileDialog.exec() == QFileDialog.Accepted:
-            filePath = fileDialog.selectedFiles()[0]
-            # force .amtdb extension
-            if not filePath.endswith(".amtdb"):
-                filePath += ".amtdb"
+        self.dbFileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        if self.dbFileDialog.exec() == QFileDialog.Accepted:
+            filePath = self.dbFileDialog.selectedFile()
             if not self.model.saveDBAs(filePath):
                 logger.error("failed to save changes in new file")
                 msgBox = AMTErrorMessageBox(self)
