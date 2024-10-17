@@ -19,7 +19,7 @@
 """main window for the app"""
 
 import sys, subprocess
-from PySide6.QtCore import QSettings, QSize
+from PySide6.QtCore import QSettings, QSize, QItemSelection
 from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
@@ -87,6 +87,7 @@ class MainWindow(QMainWindow):
         openAddDialog(self):
         openAboutDialog(self):
         setCurrentFile(self, file: str):
+        updatePreview(self, selected: QItemSelection, deselected: QItemSelection):
         newLibrary(self):
         openLibrary(self):
         saveLibrary(self):
@@ -327,7 +328,9 @@ class MainWindow(QMainWindow):
         # if cache diverged, set edited status
         self.model.dataCache.cacheDiverged.connect(self.setEdited)
         # if db is connected, set current file
-        self.model.databaseConnected.connect(self.setCurrentFile)
+        self.model.databaseConnected.connect(self.onDatabaseConnected)
+        # if selection changed
+        self.ui.tableView.selectionModel().selectionChanged.connect(self.updatePreview)
         
     def setupSearchBar(self):
         """
@@ -538,7 +541,29 @@ class MainWindow(QMainWindow):
         Opens about dialog. Attributions and license information are displayed.
         """
         AboutDialog(self).exec()
+        
+    def updatePreview(self, selected: QItemSelection, deselected: QItemSelection):
+        """     
+        Updates the preview label with the selected entry.
+        Args:
+            selected (QItemSelection): The selected items in the table view.
+            deselected (QItemSelection): The deselected items in the table view.
+        """
+        try:
+            row = selected.indexes()[0].row()
+        except IndexError:
+            row = deselected.indexes()[0].row()
+        entry = self.model.getDataAt(row)
+        if entry:
+             self.ui.previewLabel.setEntry(entry)
                 
+    def onDatabaseConnected(self, name: str):
+        """
+        Updates the current file name and clears the preview cache.
+        """
+        self.setCurrentFile(name)
+        self.ui.previewLabel.pdfPreviewer.clearCache()
+    
     # file operations
     def setCurrentFile(self, file: str):
         """
