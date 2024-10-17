@@ -61,6 +61,12 @@ class AMTSettingsDialog(QDialog):
             settings.setValue("closeEntriesOnExit", False)
         settings.endGroup()
         
+        settings.beginGroup("Preview")
+        settings.setValue("previewWidth", self.ui.previewWidthBox.value())
+        settings.setValue("previewHeight", self.ui.previewHeightBox.value())
+        settings.setValue("showPreviewOnStartup", self.ui.showPreviewOnStartCheckBox.isChecked())
+        settings.endGroup()
+        
     def readSettings(self):
         """
         Read settings from the settings file.
@@ -79,6 +85,15 @@ class AMTSettingsDialog(QDialog):
         logger.debug(f"Open entries on startup: {openEntriesOnStartup}, Close entries on exit: {closeEntriesOnExit}")
         self.ui.entryOpenOnStartup.setChecked(openEntriesOnStartup)
         self.ui.entryCloseOnExit.setChecked(closeEntriesOnExit)
+        settings.endGroup()
+        
+        settings.beginGroup("Preview")
+        previewWidth = settings.value("previewWidth", 300, type=int)
+        previewHeight = settings.value("previewHeight", 400, type=int)
+        self.ui.previewWidthBox.setValue(previewWidth)
+        self.ui.previewHeightBox.setValue(previewHeight)
+        showPreviewOnStartup = settings.value("showPreviewOnStartup", False, type=bool)
+        self.ui.showPreviewOnStartCheckBox.setChecked(showPreviewOnStartup)
         settings.endGroup()
         
     def accept(self):

@@ -69,6 +69,9 @@ class AMTPreviewLabel(QLabel):
     def clear(self):
         self.setPixmap(QPixmap())
         self.setText("No preview")
+        
+    def reset(self):
+        self.clear()
         self.pdfPreviewer.clearCache()
            
     def setFixedSize(self, width, height):
