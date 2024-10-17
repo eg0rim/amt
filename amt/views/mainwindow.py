@@ -226,6 +226,7 @@ class MainWindow(QMainWindow):
         self.ui.actionDebug.setIcon(QIcon(":/icons/bug"))
         self.ui.actionUpdate.setIcon(QIcon(":/icons/update"))
         self.ui.actionSettings.setIcon(QIcon(":/icons/settings"))
+        self.ui.actionPreview.setIcon(QIcon(":/icons/preview"))
         # connect signals
         # actions in toolbar
         # add entry
@@ -240,6 +241,8 @@ class MainWindow(QMainWindow):
         self.ui.actionEdit.triggered.connect(self.editSelectedRow)
         # show search bar
         self.ui.actionSearch.triggered.connect(self.toggleSearchBar)
+        # show preview
+        self.ui.actionPreview.triggered.connect(self.ui.previewLabel.toggleVisibility)
         # actions in menu
         # quit application
         self.ui.actionQuit.triggered.connect(self.close)
@@ -263,10 +266,8 @@ class MainWindow(QMainWindow):
         # edit entry on context menu
         self.ui.tableView.contextMenu.editAction.triggered.connect(self.editSelectedRow)
         # delete entry on context menu
-        self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)    
+        self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
         # hide unused widgets
-        
-        self.ui.menuRecent.setVisible(False)
         #self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
@@ -426,6 +427,7 @@ class MainWindow(QMainWindow):
                 return
         # retrieve data from database
         self.model.update()
+        self.ui.previewLabel.clear()
         
     def openSelectedRowsExternally(self) -> bool:
         """
@@ -623,4 +625,3 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        logger.debug(f"Poll files: {self.fileHandler.pollAllFiles()}")

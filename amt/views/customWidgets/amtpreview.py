@@ -31,36 +31,53 @@ logger = getLogger(__name__)
 class AMTPreviewLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setScaledContents(False)
+        self.pdfPreviewer: PdfPreviewer = PdfPreviewer(size=(self.width(), self.height()))
+        self.entry: EntryData = None
         self.setFixedSize(300,400)
+        self.setScaledContents(False)
         self.setFrameShape(QLabel.Box)
         self.setFrameShadow(QLabel.Sunken)
         self.setAlignment(Qt.AlignCenter)
         self.setStyleSheet("background-color: white;")
-        self.setText("No preview")
-        self.pdfPreviewer: PdfPreviewer = PdfPreviewer(size=(self.width(), self.height()))
-        self.entry: EntryData = None
-        self.dpr = QApplication.primaryScreen().devicePixelRatio()
+        self.clear()
+        self.setVisible(False)
         
     def setEntry(self, entry: EntryData ):
+        self.entry = entry
+        # if not visible, do not generate preview
+        if not self.isVisible():
+            return
+        # if entry is None, clear the preview
+        if not entry:
+            self.clear()
+            return
+        # if no file name, display "No preview"
         if not entry.fileName:
             self.setText("No preview")
             return
-        if not entry.fileName.lower().endswith('.pdf'):
+        # if file name is not among supported formats, display "Unsupported file format"
+        if entry.fileName.lower().endswith('.pdf'):
+            qPixmap = self.pdfPreviewer.getPreview(entry) 
+        else:
             self.setText("Unsupported file format")
             return
-        qPixmap = self.pdfPreviewer.getPreview(entry)  
         if not qPixmap:
             self.setText("Failed to generate preview")
             return
         self.setPixmap(qPixmap)
             
     def clear(self):
-        self.setText("No preview")
         self.setPixmap(QPixmap())
-        
+        self.setText("No preview")
+        self.pdfPreviewer.clearCache()
+           
     def setFixedSize(self, width, height):
         super().setFixedSize(width, height)
         self.pdfPreviewer.size = (width, height)
+        self.setEntry(self.entry)
+        
+    def toggleVisibility(self):
+        self.setVisible(not self.isVisible())
+        self.setEntry(self.entry)
         
     

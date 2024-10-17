@@ -18,6 +18,7 @@
         <file alias="error">files/icons/icons8-error.svg</file>
         <file alias="question">files/icons/icons8-question-100.png</file>
         <file alias="critical">files/icons/icons8-error-red.svg</file>
+        <file alias="preview">files/icons/icons8-preview-100.png</file>
     </qresource>
     <qresource>
         <file alias="logo">files/logo.ico</file>
