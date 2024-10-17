@@ -209,6 +209,7 @@ class ArticleForm(AbstractForm):
         data.dateArxivUploaded = ui.arxivUploadDatetimeInput.dateTimeEdit.dateTime()
         data.dateArxivUpdated = ui.arxivUpdateDateTimeInput.dateTimeEdit.dateTime()
         data.fileName = ui.fileInput.getFilePath()
+        data.previewPage = ui.previewPageSpinBox.value()
         return data
 
     def setData(self, data: ArticleData):
@@ -224,6 +225,7 @@ class ArticleForm(AbstractForm):
         ui.arxivUploadDatetimeInput.setDateTime(data.dateArxivUploaded)
         ui.arxivUpdateDateTimeInput.setDateTime(data.dateArxivUpdated)
         ui.fileInput.filepath = data.fileName
+        ui.previewPageSpinBox.setValue(data.previewPage)
         
     def getMetadataFromArxiv(self):
         """
@@ -255,6 +257,7 @@ class BookForm(AbstractForm):
         data.publisher = ui.publisherLineEdit.text()
         data.datePublished = ui.publishedDateInput.dateEdit.date()
         data.fileName = ui.fileInput.getFilePath()
+        data.previewPage = ui.previewPageSpinBox.value()
         return data
     
     def setData(self, data: BookData):
@@ -265,6 +268,7 @@ class BookForm(AbstractForm):
         ui.publisherLineEdit.setText(data.publisher)
         ui.publishedDateInput.setDate(data.datePublished)
         ui.fileInput.filepath = data.fileName
+        ui.previewPageSpinBox.setValue(data.previewPage)
         
 class LecturesForm(AbstractForm):
     """
@@ -286,6 +290,7 @@ class LecturesForm(AbstractForm):
         data.school = ui.uniLineEdit.text()
         data.datePublished = ui.dateInput.dateEdit.date()
         data.fileName = ui.fileInput.getFilePath()
+        data.previewPage = ui.previewPageSpinBox.value()
         return data
 
     def setData(self, data: LecturesData):
@@ -296,3 +301,4 @@ class LecturesForm(AbstractForm):
         ui.uniLineEdit.setText(data.school)
         ui.dateInput.setDate(data.datePublished)
         ui.fileInput.filepath = data.fileName
+        ui.previewPageSpinBox.setValue(data.previewPage)
