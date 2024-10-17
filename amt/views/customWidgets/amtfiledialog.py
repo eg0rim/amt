@@ -65,13 +65,12 @@ class AMTDBFileDialog(QFileDialog):
         #logger.debug(f"accepted AMTDBFileDialog: dir : {self.directory().absolutePath()}")
         #self.setDirectory(self.directory().absolutePath())
     
-       
-class AMTChooseEntryFileDialog(QFileDialog):
+class AMTChooseFileDialog(QFileDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setNameFilter("Entry Files (*.pdf *.djvu);;All Files (*)")
+        self.setNameFilter("All Files (*)")
         self.setAcceptMode(QFileDialog.AcceptOpen)
-        self.setWindowTitle("Choose Entry File")
+        self.setWindowTitle("Choose File")
         self.setFileMode(QFileDialog.ExistingFile)
         
     def selectedFile(self) -> str:

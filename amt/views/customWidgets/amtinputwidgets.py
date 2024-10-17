@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 import re
 
-from amt.views.customWidgets.amtfiledialog import AMTChooseEntryFileDialog
+from amt.views.customWidgets.amtfiledialog import AMTChooseFileDialog
 
 class AMTDateTimeEdit(QDateTimeEdit):
     """
@@ -154,7 +154,8 @@ class AMTFileInput(QWidget):
         self.filepathEdit.setReadOnly(True)
         self.filepathButton = QPushButton("Browse")
         self.filepathButton.clicked.connect(self.browseFile)
-        self.fileDialog = AMTChooseEntryFileDialog(self)
+        self.fileDialog = AMTChooseFileDialog(self)
+        self.fileDialog.setNameFilters(("Entry Files (*.pdf *.djvu)", "All Files (*)"))
         self.setLayout(QHBoxLayout(self))
         self.layout().addWidget(self.filepathEdit)
         self.layout().addWidget(self.filepathButton)
