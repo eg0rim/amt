@@ -15,9 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="AMTSearchInput" name="searchInput" native="true"/>
-    </item>
     <item row="1" column="0">
      <widget class="AMTTableWidget" name="tableView">
       <property name="alternatingRowColors">
@@ -35,6 +32,16 @@
      <widget class="AMTPreviewLabel" name="previewLabel">
       <property name="text">
        <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="AMTSearchInput" name="searchInput" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
       </property>
      </widget>
     </item>
@@ -109,6 +116,7 @@
    <addaction name="actionEdit"/>
    <addaction name="actionSearch"/>
    <addaction name="actionUpdate"/>
+   <addaction name="actionPreview"/>
    <addaction name="actionDebug"/>
   </widget>
   <action name="actionAbout">
@@ -213,6 +221,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="actionPreview">
+   <property name="text">
+    <string>Preview</string>
+   </property>
+   <property name="toolTip">
+    <string>Preview entry</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>
