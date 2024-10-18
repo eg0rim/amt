@@ -299,7 +299,7 @@ class MainWindow(QMainWindow):
         # delete entry on context menu
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
         # hide unused widgets
-        #self.ui.actionDebug.setVisible(False)
+        self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """
