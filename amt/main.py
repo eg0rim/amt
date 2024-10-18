@@ -23,7 +23,6 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QCoreApplication
 from amt.views.mainwindow import MainWindow
-import qdarktheme 
 from amt.views.build.resources_qrc import *
 
 def main():
@@ -36,9 +35,7 @@ def main():
     # set the app properties
     QCoreApplication.setOrganizationDomain("egorim.win")
     QCoreApplication.setApplicationName("Article Management Tool")
-    QCoreApplication.setApplicationVersion("0.0.9")
-    # fix light theme 
-    qdarktheme.setup_theme("light")
+    QCoreApplication.setApplicationVersion("0.1.0")
     # create the main window
     win = MainWindow()
     # show main window
