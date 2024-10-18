@@ -36,6 +36,8 @@ from amt.db.datamodel import (
     BookData, 
     LecturesData
 )
+from PySide6.QtNetwork import QNetworkRequest, QNetworkAccessManager
+
 from amt.views.customWidgets.amtfiledialog import AMTDBFileDialog
 
 from  .build.resources_qrc import *
@@ -56,6 +58,7 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTQuestionMessageBox
 )
 from amt.file_utils.filehandler import ExternalEntryHandler, ApplicationNotSetError
+from amt.network.arxiv import ArxivRequest
 
 logger = getLogger(__name__)
 
@@ -299,7 +302,7 @@ class MainWindow(QMainWindow):
         # delete entry on context menu
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
         # hide unused widgets
-        self.ui.actionDebug.setVisible(False)
+        #self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """
@@ -656,3 +659,11 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
+        am = QNetworkAccessManager(self)
+        am.finished.connect(lambda: print("finished"))
+        req = ArxivRequest()
+        req.addArxivId("2210.11150")
+        logger.debug(req.url().toString())
+        rep = am.get(req)
+        rep.readyRead.connect(lambda: print(rep.readAll()))
+        rep.errorOccurred.connect(lambda: print(rep.errorString()))
