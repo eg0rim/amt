@@ -341,6 +341,18 @@ class DataCache(QObject):
             return False
         return self.edit(self._dataToDisplay[index], newEntry)
     
+    def sort(self, field : str, order : Qt.SortOrder = Qt.AscendingOrder):
+        """ 
+        Sorting of the data base on a field of the entries.
+        Args:
+            column (int): column number
+            order (Qt.SortOrder, optional): sorting order. Defaults to Qt.AscendingOrder
+        """
+        self._data.sort(key=lambda x: x.getDisplayData(field))
+        if order == Qt.DescendingOrder:
+            self._data.reverse()
+        self.updateDataToDisplay()
+    
     def resetChangeCache(self):
         """ 
         Reset data in change cache.
@@ -507,11 +519,9 @@ class AMTModel(QAbstractTableModel):
             column (int): column number
             order (Qt.SortOrder, optional): sorting order. Defaults to Qt.AscendingOrder
         """
-        logger.debug(f"sorting by column {column} order")
+        logger.debug(f"sorting by column {column} order {order}")
         self.beginResetModel()
-        self.dataCache.data.sort(key=lambda x: self.entryToDisplayData(x, column))
-        if order == Qt.DescendingOrder:
-            self.dataCache.data.reverse()
+        self.dataCache.sort(self._columnToField[column], order)
         self.endResetModel()
     
     # the code is not needed as we do not allow editing from QTableView        
