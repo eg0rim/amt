@@ -41,12 +41,15 @@ class AbstractData(ABC):
     Properties:
         id: int - id of the data. Must be specified only to existing data in database. For new data it is must be None. Insertion must assign id.
     Methods:
+        createEmptyInstance() -> 'AbstractData'
         createTable(db: AMTDatabase) -> bool
+        extendTableColumns(db: AMTDatabase) -> bool
         select(db: AMTDatabase, filter: str = "") -> bool
         getDataToInsert() -> dict[str, str]
         insert(db: AMTDatabase) -> bool
         delete(db: AMTDatabase) -> bool
         update(db: AMTDatabase) -> bool
+        fillFromRow(row: list[str]) -> list[str]
         fromRow(row: list[str]) -> 'AbstractData'
         extractData(db: AMTDatabase, filter: str = "") -> list['AbstractData']
         toString() -> str
