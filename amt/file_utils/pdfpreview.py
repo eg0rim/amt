@@ -82,6 +82,7 @@ class PdfPreviewer:
             QPixmap object with the preview or None if the preview could not be generated
         """
         try:
+            logger.debug(f"Generating preview for {entry.fileName}")
             fileName = entry.fileName
             pageNum = entry.previewPage
             pdfDoc = fitz.open(fileName)
