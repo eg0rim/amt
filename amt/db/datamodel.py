@@ -18,6 +18,7 @@
 
 """objects to store various data"""
 
+from abc import ABC, abstractmethod
 from PySide6.QtCore import (
     QDate,
     QDateTime,
@@ -30,12 +31,12 @@ from amt.logger import getLogger
 logger = getLogger(__name__)
 
 
-class AbstractData(object):
+class AbstractData(ABC):
     """
     Abstract class for data storage and its insertion, deletion, update, etc. to specified database.
     Class attributes: 
         tableName: str - table name corresponding to the data type. Must be specified in subclasses
-        tableColumns: dict[str, str] - table columns must be specified in the order of their appearance in the table with type and constraints. Must be specified in subclasses
+        tableColumns: dict[str, str] - table columns must be specified in the order of their appearance in the table with type and constraints.
         tableAddLines: list[str] - additional lines needed for create query. 
     Properties:
         id: int - id of the data. Must be specified only to existing data in database. For new data it is must be None. Insertion must assign id.
@@ -57,7 +58,7 @@ class AbstractData(object):
     # table columns must be specified in the order of their appearance in the table
     # with type and constraints
     # for example: {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "name": "TEXT NOT NULL"}
-    tableColumns: dict[str, str] = None
+    tableColumns: dict[str, str] = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT"}
     # additional lines needed for create query
     # for example: ["UNIQUE(name)"]
     tableAddLines: list[str] = []
@@ -75,6 +76,15 @@ class AbstractData(object):
     @id.setter
     def id(self, value : int):
         self._id = value
+        
+    @classmethod    
+    @abstractmethod
+    def createEmptyInstance(cls) -> 'AbstractData':
+        """
+        Create empty instance of the data object.
+        Must be implemented in subclasses.
+        """
+        pass
            
     @classmethod
     def createTable(cls, db : AMTDatabase) -> bool:
@@ -203,19 +213,32 @@ class AbstractData(object):
             return False
         return True     
     
+    def fillFromRow(self, row : list[str]) -> list[str]:
+        """
+        Fill data object from row returned by select query.
+        The trailing elements of the row that are not used by the data object are returned.
+        Args:
+            row (list[str]): row returned by select query
+        Returns:
+            list[str]: trailing elements of the row that are not used by the data object
+        """
+        self.id = row[0]
+        return row[1:]
+    
     @classmethod
     def fromRow(cls, row : list[str]) -> 'AbstractData':
         """
         Create data object from row returned by select query.
-        Must be implemented in subclasses.
-
         Args:
             row (list[str]): row returned by select query
-
         Returns:
             AbstractData: data object
         """
-        pass
+        obj = cls.createEmptyInstance()
+        rrow = obj.fillFromRow(row)
+        if rrow:
+            logger.warning(f"{cls.__name__} did not use all row elements: {rrow}")
+        return obj
     
     @classmethod 
     def extractData(cls, db : AMTDatabase, filter : str = "") -> list['AbstractData']:
@@ -277,7 +300,8 @@ class OrganizationData(AbstractData):
     Data type to store organization data like universities, research centers, etc.
     """
     tableName = "organizations"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "name": "TEXT NOT NULL", "short_name": "TEXT", "address": "TEXT", "info": "TEXT"}
+    tableColumns = AbstractData.tableColumns.copy()
+    tableColumns.update({"name": "TEXT NOT NULL", "short_name": "TEXT", "address": "TEXT", "info": "TEXT"})
     def __init__(self, orgName : str):
         super().__init__()
         self._name: str = orgName
@@ -317,6 +341,18 @@ class OrganizationData(AbstractData):
     def info(self, value : str):
         self._info = value
         
+    @classmethod    
+    def createEmptyInstance(cls) -> 'OrganizationData':
+        return OrganizationData("")
+    
+    def fillFromRow(self, row: list[str]) -> None:
+        nrow = super().fillFromRow(row)
+        self.name = nrow[0]
+        self.shortName = nrow[1]
+        self.address = nrow[2]
+        self.info = nrow[3] 
+        return nrow[4:]
+        
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
         data["name"] = self.name
@@ -324,15 +360,6 @@ class OrganizationData(AbstractData):
         data["address"] = self.address
         data["info"] = self.info
         return data
-    
-    @classmethod
-    def fromRow(cls, row: list[str]) -> 'OrganizationData':
-        org = OrganizationData(row[1])
-        org.id = row[0]
-        org.shortName = row[2]
-        org.address = row[3]
-        org.info = row[4]
-        return org
         
     def toString(self):
         return self.name or ""
@@ -357,7 +384,8 @@ class AuthorData(AbstractData):
     Data type to store author data.
     """
     tableName = "authors"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "first_name": "TEXT NOT NULL", "middle_name": "TEXT NOT NULL", "last_name": "TEXT NOT NULL", "birth_date": "TEXT", "death_date": "TEXT", "bio": "TEXT"}
+    tableColumns = AbstractData.tableColumns.copy()
+    tableColumns.update({"first_name": "TEXT NOT NULL", "middle_name": "TEXT NOT NULL", "last_name": "TEXT NOT NULL", "birth_date": "TEXT", "death_date": "TEXT", "bio": "TEXT"})
     tableAddLines = []#["UNIQUE(first_name, middle_name, last_name)"]
     def __init__(self, name : str):
         # name is space separated string
@@ -440,6 +468,10 @@ class AuthorData(AbstractData):
     def comment(self, value : str):
         self._comment = value
         
+    @classmethod
+    def createEmptyInstance(cls) -> 'AuthorData':
+        return AuthorData("")
+    
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
         data["first_name"] = self.firstName
@@ -450,14 +482,15 @@ class AuthorData(AbstractData):
         data["bio"] = self.bio
         return data
     
-    @classmethod
-    def fromRow(cls, row: list[str]) -> 'AuthorData':
-        author = AuthorData(' '.join(row[1:4]))
-        author.id = row[0]
-        author.birthDate = QDate.fromString(row[4], Qt.ISODate) if row[4] else None
-        author.deathDate = QDate.fromString(row[5], Qt.ISODate) if row[5] else None
-        author.bio = row[6] 
-        return author
+    def fillFromRow(self, row: list[str]) -> list[str]:
+        nrow = super().fillFromRow(row)
+        self.firstName = nrow[0]
+        self.middleNames = nrow[1].split(" ")
+        self.lastName = nrow[2]
+        self.birthDate = QDate.fromString(nrow[3], Qt.ISODate) if nrow[3] else None
+        self.deathDate = QDate.fromString(nrow[4], Qt.ISODate) if nrow[4] else None
+        self.bio = nrow[5]  
+        return nrow[6:]
     
     def toString(self):
         return ' '.join([self.firstName] + self.middleNames + [self.lastName])
@@ -489,6 +522,8 @@ class EntryData(AbstractData):
     Abstract Data type to store entry data like articles, books, lecture notes, etc.
     createTable creates also additional tables to keep reference to authors.
     """    
+    tableColumns = AbstractData.tableColumns.copy()
+    tableColumns.update({"title": "TEXT NOT NULL", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"})
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__()
         self._title: str = title
@@ -606,6 +641,15 @@ class EntryData(AbstractData):
                 logger.error(f"Failed to insert author-entry reference")
                 state = False
         return state
+    
+    def fillFromRow(self, row: list[str]) -> list[str]:
+        nrow = super().fillFromRow(row)
+        self.title = nrow[0]
+        self.summary = nrow[1]
+        self.fileName = nrow[2]
+        self.comment = nrow[3]
+        self.previewPage = int(nrow[4])
+        return nrow[5:]
         
     def toString(self):
         s = ""
@@ -645,6 +689,8 @@ class PublishableData(EntryData):
     """
     Abstract Data type to store publishable data like articles, books, lecture notes, etc. that have DOI, link, date published.
     """
+    tableColumns = EntryData.tableColumns.copy()
+    tableColumns.update({"doi": "TEXT", "link": "TEXT", "date_published": "TEXT"})
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._doi: str = None
@@ -682,6 +728,13 @@ class PublishableData(EntryData):
         data["date_published"] = self.datePublished.toString(Qt.ISODate) if self.datePublished else None
         return data
         
+    def fillFromRow(self, row: list[str]) -> list[str]:
+        nrow = super().fillFromRow(row)
+        self.doi = nrow[0]
+        self.link = nrow[1]
+        self.datePublished = QDate.fromString(nrow[2], Qt.ISODate) if nrow[2] else None
+        return nrow[3:]
+        
     def getDisplayData(self, field: str) -> str:
         if field == "doi":
             return self.doi or ""
@@ -696,7 +749,8 @@ class ArticleData(PublishableData):
     Data type to store article data.
     """
     tableName = "articles"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}    
+    tableColumns = PublishableData.tableColumns.copy()
+    tableColumns.update({"arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT"})  
     tableAddLines = [] #["UNIQUE(title, doi)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -754,25 +808,20 @@ class ArticleData(PublishableData):
     @dateArxivUpdated.setter
     def dateArxivUpdated(self, value : QDateTime):
         self._dateArxivUpdated = value
-    
+        
     @classmethod
-    def fromRow(cls, row: list[str]) -> 'ArticleData':
-        article = ArticleData(row[1], [])
-        article.id = row[0]
-        article.doi = row[2]
-        article.link = row[3]
-        article.datePublished = QDate.fromString(row[4], Qt.ISODate) if row[4] else None
-        article.arxivid = row[5]
-        article.version = row[6]
-        article.journal = row[7]
-        article.dateArxivUploaded = QDateTime.fromString(row[8], Qt.ISODate)  if row[8] else None
-        article.dateArxivUpdated = QDateTime.fromString(row[9], Qt.ISODate)  if row[9] else None
-        article.primeCategory = row[10]
-        article.summary = row[11]
-        article.fileName = row[12]
-        article.comment = row[13]
-        article.previewPage = int(row[14])
-        return article
+    def createEmptyInstance(cls) -> 'ArticleData':
+        return ArticleData("", [])
+    
+    def fillFromRow(self, row: list[str]) -> list[str]:
+        nrow = super().fillFromRow(row)
+        self.arxivid = nrow[0]
+        self.version = int(nrow[1]) if nrow[1] else None
+        self.journal = nrow[2]
+        self.dateArxivUploaded = QDateTime.fromString(nrow[3], Qt.ISODate) if nrow[3] else None
+        self.dateArxivUpdated = QDateTime.fromString(nrow[4], Qt.ISODate) if nrow[4] else None
+        self.primeCategory = nrow[5]
+        return nrow[6:]
         
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
@@ -805,7 +854,9 @@ class BookData(PublishableData):
     Data type to store book data.
     """
     tableName = "books"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}
+    tableColumns = PublishableData.tableColumns.copy()
+    tableColumns.update({"isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT"})
+    #tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}
     tableAddLines = [] #["UNIQUE(title, doi, edition)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -836,22 +887,17 @@ class BookData(PublishableData):
     @edition.setter
     def edition(self, value: str):
         self._edition = value
-    
+        
     @classmethod
-    def fromRow(cls, row: list[str]) -> 'BookData':
-        book = BookData(row[1], [])
-        book.id = row[0]
-        book.doi = row[2]
-        book.link = row[3]
-        book.datePublished = QDate.fromString(row[4], Qt.ISODate) if row[4] else None
-        book.isbn = row[5]
-        book.publisher = row[6]
-        book.edition = row[7]
-        book.summary = row[8]
-        book.fileName = row[9]
-        book.comment = row[10]
-        book.previewPage = int(row[11])
-        return book
+    def createEmptyInstance(cls) -> 'BookData':
+        return BookData("", [])
+    
+    def fillFromRow(self, row: list[str]) -> list[str]:
+        nrow = super().fillFromRow(row)
+        self.isbn = nrow[0]
+        self.publisher = nrow[1]
+        self.edition = nrow[2]
+        return nrow[3:]
     
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
@@ -874,7 +920,8 @@ class LecturesData(PublishableData):
     Data type to store lecture notes data.
     """
     tableName = "lectures"
-    tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "school": "TEXT", "course": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}
+    tableColumns= PublishableData.tableColumns.copy()
+    tableColumns.update({"school": "TEXT", "course": "TEXT"})
     tableAddLines = [] #["UNIQUE(title, course, school)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -896,21 +943,16 @@ class LecturesData(PublishableData):
     @school.setter
     def school(self, value : str):
         self._school = value
-
+        
     @classmethod
-    def fromRow(cls, row: list[str]) -> 'LecturesData':
-        lecture = LecturesData(row[1], [])
-        lecture.id = row[0]
-        lecture.doi = row[2]
-        lecture.link = row[3]
-        lecture.datePublished = QDate.fromString(row[4], Qt.ISODate) if row[4] else None
-        lecture.school = row[5]
-        lecture.course = row[6]
-        lecture.summary = row[7]
-        lecture.fileName = row[8]
-        lecture.comment = row[9]
-        lecture.previewPage = int(row[10])
-        return lecture
+    def createEmptyInstance(cls) -> 'LecturesData':
+        return LecturesData("", [])
+
+    def fillFromRow(self, row: list[str]) -> list[str]:
+        nrow = super().fillFromRow(row)
+        self.school = nrow[0]
+        self.course = nrow[1]
+        return nrow[2:]
     
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
