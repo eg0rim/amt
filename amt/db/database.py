@@ -129,9 +129,10 @@ class AMTQuery(QSqlQuery):
             "select": False,
             "insert": False,
             "delete": False,
-            "update": False
+            "update": False,
+            "alter": False
         }
-        # TODO: perhaps add drop, alter
+        # TODO: perhaps add drop
         self._execStatus: bool = False
     
     @property  
@@ -308,3 +309,42 @@ class AMTQuery(QSqlQuery):
         self._queryString = f"UPDATE {table} SET {', '.join([f"{col} = {"NULL" if val is None else f"'{val}'"}" for col, val in values.items()])} WHERE {filter}"
         self._setState("update", True)
         return True
+    
+    def alterTable(self, table : str, action : str, column : str, type : str) -> bool:
+        """
+        Constructs query:
+            ALTER TABLE table action column type
+
+        Args:
+            table (str): table to alter
+            action (str): action to perform
+            column (str): column to alter
+            type (str): new type of the column
+
+        Returns:
+            bool: returns True if alter table query construction is successful
+        """
+        self._execStatus = False
+        self._queryString = f"ALTER TABLE {table} {action} {column} {type}"
+        self._setState("alter", True)
+        return True
+    
+    def getTableInfo(self, table : str) -> dict[str, str]:
+        """
+        Returns information about the table
+
+        Args:
+            table (str): table to get info about
+
+        Returns:
+            dict[str, str]: dictionary of column names and types
+        """
+        self._queryString = f"PRAGMA table_info({table})"
+        if not self.exec():
+            return {}
+        self._execStatus = True
+        info = {}
+        while self.next():
+            info[self.value(1)] = self.value(2)
+        return info
+    

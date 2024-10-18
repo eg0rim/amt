@@ -383,11 +383,11 @@ class AMTModel(QAbstractTableModel):
         sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None
         flags(self, index: QModelIndex) -> Qt.ItemFlags
         prepareTables(self) -> bool
+        updateTableColumns(self) -> bool
         entryToDisplayData(cls, entry: EntryData, column: int) -> str
         removeEntriesAt(self, rows: list[int]) -> bool
         editEntryAt(self, row: int, newEntry: EntryData) -> bool
         addEntry(self, entry: EntryData) -> bool
-        openEntryExternally(self, row: int) -> bool
         extractEntries(self) -> list[EntryData]
         update(self) -> bool
         filter(self, filter: AMTFilter) -> bool
@@ -552,12 +552,26 @@ class AMTModel(QAbstractTableModel):
     def prepareTables(self) -> bool:
         """ 
         Prepare tables in the database for all supported data types.
+        Create table or update them with new columns if needed.
         Returns:
             bool: True if successful
         """
         state = True
         for cls in self._supportedDataTypes.values():
             if not cls.createTable(self.db):
+                state = False
+        return state
+    
+    # update table columns
+    def updateTableColumns(self) -> bool:
+        """ 
+        Update table columns for all supported data types.
+        Returns:
+            bool: True if successful
+        """
+        state = True
+        for cls in self._supportedDataTypes.values():
+            if not cls.extendTableColumns(self.db):
                 state = False
         return state
         
@@ -752,6 +766,7 @@ class AMTModel(QAbstractTableModel):
         #self.prepareTables()
         self.db.open()
         self.temporary = False
+        self.updateTableColumns()
         self.update()
         self.databaseConnected.emit(filePath)
         logger.info(f"database opened: {filePath}")
