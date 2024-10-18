@@ -90,6 +90,7 @@ class AddDialog(QDialog):
         if entryToEdit:
             # impossible to change type of entry as for different types different database tables are used
             self.ui.entryTypeComboBox.setVisible(False)
+            self.setWindowTitle("Edit entry")
             if isinstance(entryToEdit, ArticleData):
                 self.ui.entryTypeComboBox.setCurrentText("Article")
             elif isinstance(entryToEdit, BookData):
