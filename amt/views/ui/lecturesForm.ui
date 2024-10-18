@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>217</width>
-    <height>188</height>
+    <height>221</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -55,14 +55,14 @@
     <widget class="AMTLineEdit" name="uniLineEdit"/>
    </item>
    <item row="4" column="0">
-    <widget class="QLabel" name="dateLabel">
+    <widget class="QLabel" name="publishedDateLabel">
      <property name="text">
-      <string>Date:</string>
+      <string>Published:</string>
      </property>
     </widget>
    </item>
    <item row="4" column="1">
-    <widget class="AMTDateInput" name="dateInput" native="true"/>
+    <widget class="AMTDateInput" name="publishedDateInput" native="true"/>
    </item>
    <item row="5" column="0">
     <widget class="QLabel" name="fileLabel">

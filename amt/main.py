@@ -35,7 +35,7 @@ def main():
     # set the app properties
     QCoreApplication.setOrganizationDomain("egorim.win")
     QCoreApplication.setApplicationName("Article Management Tool")
-    QCoreApplication.setApplicationVersion("0.1.0")
+    QCoreApplication.setApplicationVersion("0.1.1")
     # create the main window
     win = MainWindow()
     # show main window

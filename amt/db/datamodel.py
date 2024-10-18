@@ -19,6 +19,7 @@
 """objects to store various data"""
 
 from abc import ABC, abstractmethod
+from typing import Type, TypeVar
 from PySide6.QtCore import (
     QDate,
     QDateTime,
@@ -30,6 +31,7 @@ from amt.logger import getLogger
 
 logger = getLogger(__name__)
 
+T = TypeVar('T', bound='AbstractData')
 
 class AbstractData(ABC):
     """
@@ -82,7 +84,7 @@ class AbstractData(ABC):
         
     @classmethod    
     @abstractmethod
-    def createEmptyInstance(cls) -> 'AbstractData':
+    def createEmptyInstance(cls: Type[T]) -> T:
         """
         Create empty instance of the data object.
         Must be implemented in subclasses.

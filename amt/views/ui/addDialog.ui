@@ -18,9 +18,7 @@
     <widget class="QComboBox" name="entryTypeComboBox"/>
    </item>
    <item>
-    <widget class="QWidget" name="formWidget" native="true">
-     <layout class="QVBoxLayout" name="verticalLayout_2"/>
-    </widget>
+    <widget class="QStackedWidget" name="formStackedWidget"/>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
