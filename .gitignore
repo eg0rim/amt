@@ -1,7 +1,7 @@
 # ignore
 *.sqlite
 __pycache__
-/todo.txt
+/TODO.*
 /amt/views/build/
 /run
 *.log
