@@ -1,14 +1,18 @@
-# Article Management Tool
+# Article Management Tool v0.1.0
 
 Manage articles, books, lecture notes, etc for research.
 
 ## Features
 
-- Store research related references.
-- Search within the references.
+Currently this tool supports:
+- Storing of research related references.
+- Opening entries in an external application.
+- Searching within the references.
+- Previews.
 
 ### Soon to be implemented
 
+For the next release v0.2.0:
 - Pull metadata from various sources (with the focus on arxiv.org).
 - Download and store pdf/djvu/etc files from open sources.
 - Compose bibtex files.
@@ -16,6 +20,9 @@ Manage articles, books, lecture notes, etc for research.
 ## Installing (for Linux)
 
 1. Clone this repository.
+```bash
+    git clone git@github.com:eg0rim/amt.git
+```
 2. Create virtual environment and activate (recommended)
 ```bash
     python3 -m venv /path/to/venv
@@ -23,7 +30,7 @@ Manage articles, books, lecture notes, etc for research.
 ```
 3. Install (currently, there is an issue with `pyqrdarktheme`, so `--ignore-requires-python` is required; to be resolved in a future release)
 ```bash
-    cd /path/to/article-management-tool
+    cd /path/to/amt
     pip install --ignore-requires-python .
 ```
 2. Compile `.qrc` and `.ui` files
@@ -44,5 +51,7 @@ This package was tested on
 - `pymupdf==1.24.11`
 
 ## License
+
+Copyright (c) 2024 Egor Im
 
 This software is licensed under the GNU General Public License v3.0. See the COPYING.txt file for details.
