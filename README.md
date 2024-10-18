@@ -28,10 +28,10 @@ For the next release v0.2.0:
     python3 -m venv /path/to/venv
     source /path/to/venv/bin/activate
 ```
-3. Install (currently, there is an issue with `pyqrdarktheme`, so `--ignore-requires-python` is required; to be resolved in a future release)
+3. Install 
 ```bash
     cd /path/to/amt
-    pip install --ignore-requires-python .
+    pip install .
 ```
 2. Compile `.qrc` and `.ui` files
 ```bash 
@@ -46,9 +46,8 @@ For the next release v0.2.0:
 
 This package was tested on 
 - `python3.12.3`
-- `PySide6==6.7.3`
-- `pyqtdarktheme==2.1.0`
-- `pymupdf==1.24.11`
+- `PySide6>=6.7.3`
+- `pymupdf>=1.24.11`
 
 ## License
 

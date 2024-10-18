@@ -49,7 +49,6 @@ class AMTPreviewLabel(QLabel):
         self.setFrameShape(QLabel.Box)
         self.setFrameShadow(QLabel.Sunken)
         self.setAlignment(Qt.AlignCenter)
-        self.setStyleSheet("background-color: white;")
         self.clear()
         self.setVisible(False)
         
