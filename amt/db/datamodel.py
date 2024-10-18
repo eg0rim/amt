@@ -86,9 +86,39 @@ class AbstractData(object):
             bool: True if table created successfully, False otherwise
         """
         query = AMTQuery(db)
-        if not query.createTable(cls.tableName, cls.tableColumns): #, addLines=cls.tableAddLines):
+        if not query.createTable(cls.tableName, cls.tableColumns, ifNotExists=True): #, addLines=cls.tableAddLines):
             return False
         return query.exec()
+    
+    @classmethod
+    def extendTableColumns(cls, db : AMTDatabase) -> bool:
+        """ 
+        Extend existing table corresponding to the data type in the database with the new columns.
+        Args:
+            db (AMTDatabase): database object
+        Returns:
+            bool: True if table columns updated successfully, False otherwise
+        """
+        state = True
+        query = AMTQuery(db)
+        currentColumns = query.getTableInfo(cls.tableName)
+        newColumns = cls.tableColumns
+        newColumnsToAdd = {k: v for k, v in newColumns.items() if k not in currentColumns.keys()}
+        if not newColumnsToAdd:
+            return True
+        logger.warning(f"The database has missing columns in the table {cls.tableName}: {newColumnsToAdd}")
+        logger.warning(f"Trying to add missing columns")
+        for col, colType in newColumnsToAdd.items():
+            if not query.alterTable(cls.tableName, "ADD", col, colType):
+                state = False
+            if not query.exec():
+                state = False
+        if state:
+            logger.warning(f"Added missing columns to the table {cls.tableName}")
+        return state
+        # if not query.updateTableColumns(cls.tableName, cls.tableColumns):
+        #     return False
+        # return query.exec()
     
     @classmethod
     def select(cls, db : AMTDatabase, filter : str = "") -> bool:
