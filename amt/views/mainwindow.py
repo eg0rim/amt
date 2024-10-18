@@ -19,7 +19,7 @@
 """main window for the app"""
 
 import sys, subprocess
-from PySide6.QtCore import QSettings, QSize, QItemSelection
+from PySide6.QtCore import QSettings, QSize, QItemSelection, Qt
 from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
@@ -201,6 +201,12 @@ class MainWindow(QMainWindow):
                 self.fileHandler.openFile(file)
         settings.endGroup()
         
+        settings.beginGroup("TableView")
+        sortingColumn = settings.value("sortingColumn", 0, type = int)
+        sortingOrder = settings.value("sortingOrder", Qt.AscendingOrder)
+        self.ui.tableView.horizontalHeader().setSortIndicator(sortingColumn, sortingOrder)
+        settings.endGroup()
+        
     def writeState(self):
         settings = QSettings(self.stateFile)
         settings.beginGroup("MainWindow")
@@ -218,9 +224,10 @@ class MainWindow(QMainWindow):
         settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()))
         settings.endGroup()
         
-        # settings.beginGroup("TableView")
-        # settings.setValue("sortingColumn", self.ui.tableView.columnWidths())
-        # settings.endGroup()
+        settings.beginGroup("TableView")
+        settings.setValue("sortingColumn", self.ui.tableView.horizontalHeader().sortIndicatorSection())
+        settings.setValue("sortingOrder", self.ui.tableView.horizontalHeader().sortIndicatorOrder())
+        settings.endGroup()
  
     # setup methods        
     def setupUI(self):
@@ -649,5 +656,3 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        logger.debug(f"Current sorting column: {self.ui.tableView.horizontalHeader().sortIndicatorSection()}")
-        logger.debug(f"Current sorting order: {self.ui.tableView.horizontalHeader().sortIndicatorOrder()}")
