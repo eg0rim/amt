@@ -217,6 +217,10 @@ class MainWindow(QMainWindow):
         settings.beginGroup("FileHandler")
         settings.setValue("openFiles", list(self.fileHandler.getOpenedFiles()))
         settings.endGroup()
+        
+        # settings.beginGroup("TableView")
+        # settings.setValue("sortingColumn", self.ui.tableView.columnWidths())
+        # settings.endGroup()
  
     # setup methods        
     def setupUI(self):
@@ -645,3 +649,5 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
+        logger.debug(f"Current sorting column: {self.ui.tableView.horizontalHeader().sortIndicatorSection()}")
+        logger.debug(f"Current sorting order: {self.ui.tableView.horizontalHeader().sortIndicatorOrder()}")
