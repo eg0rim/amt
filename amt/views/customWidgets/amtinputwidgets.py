@@ -185,6 +185,17 @@ class AMTFileInput(QWidget):
             return None
         return self.filepath
     
+    def setFilePath(self, filepath: str | None):
+        """ 
+        Sets the filepath in the QLineEdit.
+        Args:
+            filepath (str): The filepath to set.
+        """
+        if filepath:
+            self.filepath = filepath
+        else:
+            self.filepath = ""
+    
     def onTextChanged(self, text):
         self._filepath = text
         
