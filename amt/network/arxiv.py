@@ -26,6 +26,7 @@ from PySide6.QtCore import QUrl, QObject, Signal
    
 from amt.logger import getLogger
 from amt.db.datamodel import ArticleData, BookData, LecturesData, AuthorData, PublishableData
+from amt.parser.arxiv import ArxivParser
 
 logger = getLogger(__name__)
    
@@ -43,7 +44,7 @@ class ArxivRequest(QNetworkRequest):
         
     def prepareHeaders(self):
         self.setHeader(QNetworkRequest.UserAgentHeader, "Article Management Tool")
-        self.setRawHeader(b"Accept", b"application/xml")
+        self.setRawHeader(b"Accept", b"application/atom+xml")
         
     def addParams(self, params: Dict['AQP', Union[str,'AQSortBy','AQSortOrder','ASP']]):
         """add a parameter to the query"""
@@ -192,7 +193,6 @@ class ArxivClient(QObject):
             self.errorEncountered.emit()
             return
         logger.debug("no error")
-        logger.debug(reply.readAll().data().decode())
-        reply.deleteLater()
-        ret = [ArticleData.createEmptyInstance()]
-        self.finished.emit(ret)
+        xmlReply = reply.readAll().data().decode()
+        returnData = ArxivParser.parse(xmlReply)
+        self.finished.emit(returnData)

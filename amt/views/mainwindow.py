@@ -659,8 +659,10 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
+        def onFinished(x):
+            for e in x:
+                logger.debug(e.toString())
         ac = ArxivClient(self)
+        ac.finished.connect(onFinished)
         ac.getById(["2210.11150","2406.10051"])
         ac.send()   
-        ac.search(ArxivSearchQuery(prefix=ASP.AUTHOR,value="Egor Im"))
-        ac.send()
