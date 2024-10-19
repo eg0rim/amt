@@ -75,7 +75,6 @@ class AMTClient(QObject):
             self._error = errmsg
             self.errorEncountered.emit(errmsg)
             return 
-        logger.debug("no error")
         parsedData = self.parseResponse(reply)
         self.finished.emit(parsedData)
         reply.deleteLater()
