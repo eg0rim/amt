@@ -58,7 +58,8 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTQuestionMessageBox
 )
 from amt.file_utils.filehandler import ExternalEntryHandler, ApplicationNotSetError
-from amt.network.arxiv import *
+from amt.network.arxiv_aux import *
+from amt.network.client import ArxivClient
 
 logger = getLogger(__name__)
 
@@ -666,5 +667,6 @@ class MainWindow(QMainWindow):
                     logger.debug(f"{k}: {v}")
         ac = ArxivClient(self)
         ac.finished.connect(onFinished)
-        ac.getById(["2210.11150","2406.10051"])
+        #ac.getById(["2210.11150","2406.10051"])
+        ac.search(ArxivSearchQuery(ASP.AUTHOR, "Egor Im"), max_results=5)
         ac.send()   
