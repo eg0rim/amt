@@ -665,8 +665,12 @@ class MainWindow(QMainWindow):
                 # loop over each attribute of e
                 for k,v in e.__dict__.items():
                     logger.debug(f"{k}: {v}")
+        def onError(x):
+            logger.error(x)
         ac = ArxivClient(self)
         ac.finished.connect(onFinished)
+        ac.errorEncountered.connect(onError)
         #ac.getById(["2210.11150","2406.10051"])
         ac.search(ArxivSearchQuery(ASP.AUTHOR, "Egor Im"), max_results=5)
+        #ac.getById(["1234.1234"])
         ac.send()   

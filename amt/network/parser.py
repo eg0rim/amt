@@ -57,30 +57,55 @@ def getAttr( element: ET.Element, tag: str, attr: str) -> str | None:
         return elementTag.get(attr)
     else:
         return None
-
-class ArxivParser:
-    """class for parsing arxiv api replies"""
-    def __init__(self) -> None:
-        pass
     
-    @classmethod
-    def parse(cls, xml: str) -> list[ArticleData]:
-        """parse xml reply from arxiv
-        
+class AMTParser:
+    """ 
+    Base class for parsing replies from metadata servers.
+    Attributes:
+        parsedData (list): parsed data
+    """
+    def __init__(self):
+        self.parsedData = []
+
+    def parse(self, data: str) -> tuple[bool, str]:
+        """
+        Parses data given by string from the metadata server.
+        Must be implemented in the derived classes.
+        Args:
+            data (str): string representation of data from the metadata server
+        Returns:
+            tuple[bool, str]: success, error message
+        """
+        raise NotImplementedError
+
+class ArxivParser(AMTParser):
+    """
+    Class for parsing arxiv api replies
+    """
+    def __init__(self):
+        super().__init__()
+    
+    def parse(self, xml: str) -> tuple[bool, str]:
+        """
+        parse xml reply from arxiv
         Args:
             xml (str): xml reply from arxiv
         Returns:    
-            list[ArticleData]: list of ArticleData objects
+            tuple[bool, str]: success, error message
         """
         root = ET.fromstring(xml)
         entriesData = []
         entries = root.findall('{http://www.w3.org/2005/Atom}entry')
+        logger.debug(f"Parsing {xml}")
         logger.debug(f"Found {len(entries)} entries")
-        for entry in root.findall('{http://www.w3.org/2005/Atom}entry'):
+        for entry in entries:
             logger.debug(f"Parsing entry: {entry.text}")
             # title
             title  = getText(entry, '{http://www.w3.org/2005/Atom}title')
             logger.debug(f"Title: {title}")
+            if title is None:
+                logger.error("Title is None")
+                continue
             # authors
             authors = []
             for author in entry.findall('{http://www.w3.org/2005/Atom}author'):
@@ -94,9 +119,6 @@ class ArxivParser:
                     # TODO: implement several affiliations
                     authorData.affiliation = affiliation.text
                 authors.append(AuthorData(name))
-            if title is None:
-                logger.error("Title is None")
-                continue
             entryData = ArticleData(title, authors)
             # get arxiv id and version
             rawId = getText(entry, '{http://www.w3.org/2005/Atom}id')
@@ -139,6 +161,8 @@ class ArxivParser:
                 # TODO: all categories
                 pass
             entriesData.append(entryData)
-        return entriesData
+        if not entriesData:
+            return (False, "No entries found")
+        self.parsedData = entriesData
+        return (True, "")
             
-    # TODO: Error handling
