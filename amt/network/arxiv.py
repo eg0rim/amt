@@ -21,19 +21,29 @@
 from enum import Enum
 from typing import Union, Dict
 
-from PySide6.QtNetwork import QNetworkRequest
-from PySide6.QtCore import QUrl
+from PySide6.QtNetwork import QNetworkRequest, QNetworkAccessManager, QNetworkReply
+from PySide6.QtCore import QUrl, QObject, Signal
+   
+from amt.logger import getLogger
+from amt.db.datamodel import ArticleData, BookData, LecturesData, AuthorData, PublishableData
+
+logger = getLogger(__name__)
    
 class ArxivRequest(QNetworkRequest):
     """class of http requests to arXiv metadata server"""
     baseUrl = "http://export.arxiv.org/api/query"
     def __init__(self, params: Dict['AQP', Union[str,'AQSortBy','AQSortOrder','ASP']] = {}):
         super().__init__(self.baseUrl)
+        self.prepareHeaders()
         query = "&".join([f"{key}={value}" for key, value in params.items()])
         if query:
             self.setUrl(QUrl(f"{self.baseUrl}?{query}"))
         else:
             self.setUrl(QUrl(self.baseUrl))
+        
+    def prepareHeaders(self):
+        self.setHeader(QNetworkRequest.UserAgentHeader, "Article Management Tool")
+        self.setRawHeader(b"Accept", b"application/xml")
         
     def addParams(self, params: Dict['AQP', Union[str,'AQSortBy','AQSortOrder','ASP']]):
         """add a parameter to the query"""
@@ -141,4 +151,48 @@ class ArxivSearchQuery:
     def __truediv__(self, other: 'ArxivSearchQuery'):
         return ArxivSearchQuery(query=f"%28{self.query}+ANDNOT+{other.query}%29")
     
-    
+class ArxivClient(QObject):
+    """class for arXiv creating arxiv api requests and parsing responses"""
+    finished = Signal(list)
+    errorEncountered = Signal()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.manager = QNetworkAccessManager(self)
+        self.request: ArxivRequest = ArxivRequest()
+        self.manager.finished.connect(self.onFinished)
+        
+    def search(self, query: 'ArxivSearchQuery', start: int = 0, max_results: int = 10, sort_by: AQSortBy = AQSortBy.REL, sort_order: AQSortOrder = AQSortOrder.DESC):
+        """search arXiv metadata"""
+        request = ArxivRequest()
+        request.addSearch(query)
+        request.addStart(start)
+        request.addMaxResults(max_results)
+        request.addSortBy(sort_by)
+        request.addSortOrder(sort_order)
+        self.request = request
+        
+    def getById(self, arxiv_id: str | list[str]):
+        """get arXiv metadata by id"""
+        request = ArxivRequest()
+        request.addArxivId(arxiv_id)
+        self.request = request
+        
+    def send(self):
+        """send the request"""
+        logger.debug(f"Sending request: {self.request.url().toString()}")
+        logger.debug(f"Request headers: {self.request.rawHeaderList()}")
+        self.manager.get(self.request)
+        
+    def onFinished(self, reply: QNetworkReply):
+        """slot for request finished signal"""
+        # must parse the response and emit it 
+        if not reply.error() == QNetworkReply.NoError:
+            logger.error(f"Error: {reply.error()}: {reply.errorString()}")
+            reply.deleteLater()
+            self.errorEncountered.emit()
+            return
+        logger.debug("no error")
+        logger.debug(reply.readAll().data().decode())
+        reply.deleteLater()
+        ret = [ArticleData.createEmptyInstance()]
+        self.finished.emit(ret)
