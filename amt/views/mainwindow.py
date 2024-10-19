@@ -661,6 +661,8 @@ class MainWindow(QMainWindow):
     def debug(self):
         logger.debug("Debug button pressed")
         def onFinished(x):
+            logger.debug("Finished")
+            logger.debug(f"Error: {ac.error}")
             for e in x:
                 # loop over each attribute of e
                 for k,v in e.__dict__.items():
@@ -671,6 +673,6 @@ class MainWindow(QMainWindow):
         ac.finished.connect(onFinished)
         ac.errorEncountered.connect(onError)
         #ac.getById(["2210.11150","2406.10051"])
-        ac.search(ArxivSearchQuery(ASP.AUTHOR, "Egor Im"), max_results=5)
-        #ac.getById(["1234.1234"])
+        #ac.search(ArxivSearchQuery(ASP.AUTHOR, "Egor Im"), max_results=5)
+        ac.getById(["1234.1234"])
         ac.send()   
