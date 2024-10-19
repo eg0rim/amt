@@ -130,9 +130,9 @@ class ArxivParser:
             entryData.dateArxivUpdated = QDateTime.fromString(dateUpdated, Qt.ISODate)
             # summary, doi, journal, comment
             entryData.summary = entry.find('{http://www.w3.org/2005/Atom}summary').text
-            entryData.doi = getText(entry, '{http://arxiv.org/schemas/atom}arxiv:doi')
-            entryData.journal = getText(entry, '{http://arxiv.org/schemas/atom}arxiv:journal_ref')
-            entryData.comment = getText(entry, '{http://arxiv.org/schemas/atom}arxiv:comment')
+            entryData.doi = getText(entry, '{http://arxiv.org/schemas/atom}doi')
+            entryData.journal = getText(entry, '{http://arxiv.org/schemas/atom}journal_ref')
+            entryData.comment = getText(entry, '{http://arxiv.org/schemas/atom}comment')
             # categories
             entryData.primeCategory = getAttr(entry, '{http://arxiv.org/schemas/atom}primary_category', 'term') 
             for category in entry.findall('{http://arxiv.org/schemas/atom}category'):
