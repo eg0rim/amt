@@ -96,13 +96,9 @@ class ArxivParser(AMTParser):
         root = ET.fromstring(xml)
         entriesData = []
         entries = root.findall('{http://www.w3.org/2005/Atom}entry')
-        logger.debug(f"Parsing {xml}")
-        logger.debug(f"Found {len(entries)} entries")
         for entry in entries:
-            logger.debug(f"Parsing entry: {entry.text}")
             # title
             title  = getText(entry, '{http://www.w3.org/2005/Atom}title')
-            logger.debug(f"Title: {title}")
             if title is None:
                 logger.error("Title is None")
                 continue
@@ -113,7 +109,6 @@ class ArxivParser(AMTParser):
                     logger.error("Author is None")
                     continue
                 name = getText(author, '{http://www.w3.org/2005/Atom}name')
-                logger.debug(f"Author: {name}")
                 authorData = AuthorData(name)
                 for affiliation in author.findall('{http://www.w3.org/2005/Atom}arxiv:affiliation'):
                     # TODO: implement several affiliations
