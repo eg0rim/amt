@@ -257,21 +257,36 @@ class AMTQuery(QSqlQuery):
             self._queryString += f" WHERE {filter}"
         self._setState("select", True)
         return True
-        
-    def insert(self, table : str, values : dict[str, str], orIgnore: bool = False) -> bool:
+
+    def insert(self, table: str, values: dict[str, list] | dict[str,str], orIgnore: bool = False) -> bool:
         """
         Constructs query:
-            INSERT INTO [OR IGNORE] table (columns) VALUES (values)
+            INSERT INTO [OR IGNORE] table (columns) VALUES (values), (values), ...
         Insertion values can be str or None. If None, NULL is inserted.
         Args:
             table (str): table to insert into
-            values (dict[str, str]): dictionary of column names and values
+            values (dict[str, list] | dict[str, str]) : dictionary of column names and lists of values or single values
 
         Returns:
             bool: returns True if insertion query construction is successful
         """
         self._execStatus = False
-        self._queryString = f"INSERT{' OR IGNORE' if orIgnore else ''} INTO {table} ({', '.join(values.keys())}) VALUES ({', '.join([f"'{val}'" if not val is None else "NULL" for val in values.values()])})"
+        columns = ', '.join(values.keys())
+        if all([isinstance(v, list) for v in values.values()]):
+            # Verify that all lists have the same length
+            lengths = [len(v) for v in values.values()]
+            if len(set(lengths)) != 1:
+                logger.error("Values do not have the same length")
+                return False
+            numRows = lengths[0]
+            valuesList = []
+            for i in range(numRows):
+                rowValues = ', '.join([f"'{values[col][i]}'" if values[col][i] is not None else "NULL" for col in values.keys()])
+                valuesList.append(f"({rowValues})")
+            valuesStr = ', '.join(valuesList)
+        else:
+            valuesStr = f"({', '.join([f"'{val}'" if not val is None else "NULL" for val in values.values()])})"
+        self._queryString = f"INSERT{' OR IGNORE' if orIgnore else ''} INTO {table} ({columns}) VALUES {valuesStr}"
         self._setState("insert", True)
         return True
     
