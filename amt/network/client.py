@@ -45,6 +45,13 @@ class AMTClient(QObject):
         self.manager = QNetworkAccessManager(self)
         self.request: AMTRequest = None
         self.manager.finished.connect(self._onFinished)
+        self._error: str | None = None
+        
+    @property   
+    def error(self) -> str | None:
+        if self.request is None:
+            return "Request is not set"
+        return self._error
         
     def parseResponse(self, reply: QNetworkReply) -> list:
         """
@@ -65,6 +72,7 @@ class AMTClient(QObject):
             errmsg = f"Error: {reply.error()}: {reply.errorString()}"
             logger.error(errmsg)
             reply.deleteLater()
+            self._error = errmsg
             self.errorEncountered.emit(errmsg)
             return 
         logger.debug("no error")
@@ -80,8 +88,12 @@ class AMTClient(QObject):
         """
         logger.debug(f"Sending request: {self.request.url().toString()}")
         logger.debug(f"Request headers: {self.request.rawHeaderList()}")
+        self._error = None
         if self.request is None:
-            logger.error("Request is not set")
+            errmsg = "Request is not set"
+            logger.error(errmsg)
+            self._error = errmsg
+            self.errorEncountered.emit(errmsg)
             return None
         return self.manager.get(self.request)
 
@@ -128,9 +140,11 @@ class ArxivClient(AMTClient):
         xmlReply = reply.readAll().data().decode()
         status, msg = self._parser.parse(xmlReply)
         if status:
+            self._error = None
             return self._parser.parsedData[:]
         else:
             errmsg = f"Error: {msg}"
+            self._error = errmsg
             logger.error(errmsg)
             self.errorEncountered.emit(errmsg)
             return []
