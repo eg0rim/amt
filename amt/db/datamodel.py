@@ -161,6 +161,29 @@ class AbstractData(ABC):
         if self.id:
             data["id"] = str(self.id)
         return data
+    
+    @classmethod
+    def insertMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
+        """ 
+        Insert multiple data objects into the table corresponding to the data type.
+        WARNING: list of data objects must be of the same type.
+        Args:
+            db (AMTDatabase): database object
+            data (list[AbstractData]): list of data objects
+        Returns:
+            bool: True if insert query executed successfully, False otherwise
+        """
+        query = AMTQuery(db)
+        dataToInsert = [d.getDataToInsert() for d in data]
+        if not query.insert(cls.tableName, dataToInsert):
+            return False
+        if not query.exec():
+            return False
+        # get ids of the inserted data
+        lastId = query.lastInsertId()
+        for i, d in enumerate(data):
+            d.id = lastId + i - len(data) + 1
+        return True
         
     def insert(self, db : AMTDatabase) -> bool:
         """ 
@@ -625,6 +648,36 @@ class EntryData(AbstractData):
         data["preview_page"] = str(self.previewPage)
         return data
     
+    @classmethod
+    def insertMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
+        if not super().insertMultiple(db, data):
+            return False
+        state = True
+        logger.debug(f"State: {state}")
+        query = AMTQuery(db)    
+        refTable = f"{cls.tableName}_{AuthorData.tableName}"
+        refId = f"{cls.tableName}_id"
+        refAuthorId = f"{AuthorData.tableName}_id"
+        # insert authors
+        authorsToInsert = [author for sublist in [d.authors for d in data] for author in sublist]
+        if not AuthorData.insertMultiple(db, authorsToInsert):
+            state = False
+        
+        logger.debug(f"State: {state}")
+        # insert reference
+        refsToInsert = []
+        for entry in data:
+            for author in entry.authors:
+                refsToInsert.append({refAuthorId: str(author.id), refId: str(entry.id)})
+        if not query.insert(refTable, refsToInsert):
+            state = False
+        
+        logger.debug(f"State: {state}")
+        if not query.exec():
+            state = False
+        logger.debug(f"State: {state}")
+        return state
+    
     def insert(self, db: AMTDatabase) -> bool:
         # if insertion of entry failed, do not insert authors and reference
         if not super().insert(db):
@@ -635,6 +688,7 @@ class EntryData(AbstractData):
         refTable = f"{self.tableName}_{AuthorData.tableName}"
         refId = f"{self.tableName}_id"
         refAuthorId = f"{AuthorData.tableName}_id"
+        # TODO: replace by insertMultiple for authors and reference
         for author in self.authors:
             if not author.insert(db):
                 logger.error(f"Failed to insert author")

@@ -711,12 +711,26 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        for entry in self.dataCache.dataToAdd[:]:
-            #logger.debug(f"insert entry {entry}")
-            if not entry.insert(self.db):
-                logger.error(f"failed to insert entry {entry}")
-                status = False
-            self.dataCache.dataToAdd.remove(entry)
+        if len(self.dataCache.dataToAdd) == 0:
+            return status
+        elif len(self.dataCache.dataToAdd) < 10: 
+            for entry in self.dataCache.dataToAdd[:]:
+                #logger.debug(f"insert entry {entry}")
+                if not entry.insert(self.db):
+                    logger.error(f"failed to insert entry {entry}")
+                    status = False
+                self.dataCache.dataToAdd.remove(entry)
+        else:
+            for entryType in self._entryTypes:
+                entryCls = self._supportedDataTypes[entryType]
+                dataToInsert = [entry for entry in self.dataCache.dataToAdd if isinstance(entry, entryCls)]
+                if len(dataToInsert) == 0:
+                    continue
+                if not entryCls.insertMultiple(self.db, dataToInsert):
+                    logger.error(f"failed to insert multiple entries {dataToInsert}")
+                    status = False        
+            self.dataCache.dataToAdd.clear()
+        logger.debug(f"Status of submitAdd: {status}")
         return status
     
     def _submitDelete(self) -> bool:
@@ -757,9 +771,13 @@ class AMTModel(QAbstractTableModel):
         Returns:
             bool: True if successful
         """
-        logger.debug(f"save changes in cache")
-        status =  self._submitAdd() and self._submitDelete() and self._submitEdit()   
-        self.dataCache.diverged = False
+        try: 
+            logger.debug(f"save changes in cache")
+            status =  self._submitAdd() and self._submitDelete() and self._submitEdit()   
+            self.dataCache.diverged = False
+        except Exception as e:
+            logger.error(f"failed to save changes: {e}")
+            status = False
         return status
     
     def openExistingDB(self, filePath : str) -> bool:
