@@ -652,7 +652,6 @@ class EntryData(AbstractData):
     def insertMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
         if not super().insertMultiple(db, data):
             return False
-        state = True
         query = AMTQuery(db)    
         refTable = f"{cls.tableName}_{AuthorData.tableName}"
         refId = f"{cls.tableName}_id"
@@ -660,42 +659,43 @@ class EntryData(AbstractData):
         # insert authors
         authorsToInsert = [author for sublist in [d.authors for d in data] for author in sublist]
         if len(authorsToInsert) == 0:
-            return state
+            return True
         if not AuthorData.insertMultiple(db, authorsToInsert):
-            state = False
+            return False
         # insert reference
         refsToInsert = []
         for entry in data:
             for author in entry.authors:
                 refsToInsert.append({refAuthorId: str(author.id), refId: str(entry.id)})
         if not query.insert(refTable, refsToInsert):
-            state = False
+            return False
         if not query.exec():
-            state = False
-        return state
+            return False
+        return True
     
     def insert(self, db: AMTDatabase) -> bool:
         # if insertion of entry failed, do not insert authors and reference
         if not super().insert(db):
             return False
         # insert authors and reference
-        state = True # becomes False if any insertion fails of authors or reference
         query = AMTQuery(db)
         refTable = f"{self.tableName}_{AuthorData.tableName}"
         refId = f"{self.tableName}_id"
         refAuthorId = f"{AuthorData.tableName}_id"
-        # TODO: replace by insertMultiple for authors and reference
+        authorsToInsert = self.authors
+        if len(authorsToInsert) == 0:
+            return True
+        if not AuthorData.insertMultiple(db, authorsToInsert):
+            logger.error(f"Failed to insert authors")
+            return False
+        refsToInsert = []
         for author in self.authors:
-            if not author.insert(db):
-                logger.error(f"Failed to insert author")
-                state = False
-                # do not insert reference if author insertion failed
-                continue
-            query.insert(refTable, {refAuthorId: str(author.id), refId: str(self.id)})
-            if not query.exec():
-                logger.error(f"Failed to insert author-entry reference")
-                state = False
-        return state
+            refsToInsert.append({refAuthorId: str(author.id), refId: str(self.id)})
+        if not query.insert(refTable, refsToInsert):
+            return False
+        if not query.exec():
+            return False
+        return True
     
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
