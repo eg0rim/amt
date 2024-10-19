@@ -661,7 +661,9 @@ class MainWindow(QMainWindow):
         logger.debug("Debug button pressed")
         def onFinished(x):
             for e in x:
-                logger.debug(e.toString())
+                # loop over each attribute of e
+                for k,v in e.__dict__.items():
+                    logger.debug(f"{k}: {v}")
         ac = ArxivClient(self)
         ac.finished.connect(onFinished)
         ac.getById(["2210.11150","2406.10051"])
