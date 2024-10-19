@@ -653,17 +653,16 @@ class EntryData(AbstractData):
         if not super().insertMultiple(db, data):
             return False
         state = True
-        logger.debug(f"State: {state}")
         query = AMTQuery(db)    
         refTable = f"{cls.tableName}_{AuthorData.tableName}"
         refId = f"{cls.tableName}_id"
         refAuthorId = f"{AuthorData.tableName}_id"
         # insert authors
         authorsToInsert = [author for sublist in [d.authors for d in data] for author in sublist]
+        if len(authorsToInsert) == 0:
+            return state
         if not AuthorData.insertMultiple(db, authorsToInsert):
             state = False
-        
-        logger.debug(f"State: {state}")
         # insert reference
         refsToInsert = []
         for entry in data:
@@ -671,11 +670,8 @@ class EntryData(AbstractData):
                 refsToInsert.append({refAuthorId: str(author.id), refId: str(entry.id)})
         if not query.insert(refTable, refsToInsert):
             state = False
-        
-        logger.debug(f"State: {state}")
         if not query.exec():
             state = False
-        logger.debug(f"State: {state}")
         return state
     
     def insert(self, db: AMTDatabase) -> bool:

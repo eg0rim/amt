@@ -677,5 +677,5 @@ class MainWindow(QMainWindow):
         # ac.getById(["1234.1234"])
         # ac.send()   
         for i in range(100):
-            self.model.addEntry(ArticleData(f"Titles {i}", [AuthorData(f"Author {i}"), AuthorData(f"Author {i+1}")]))
+            self.model.addEntry(ArticleData(f"Titles {i}", []))
         
