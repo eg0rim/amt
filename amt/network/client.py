@@ -22,7 +22,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply
 from PySide6.QtCore import QObject, Signal
    
 from amt.logger import getLogger
-from amt.parser.arxiv import ArxivParser
+from amt.network.parser import ArxivParser
 from amt.network.request import ArxivRequest, AMTRequest
 from amt.network.arxiv_aux import *
 
@@ -36,7 +36,7 @@ class AMTClient(QObject):
         errorEncountered: signal emitted when an error is encountered
     """
     finished = Signal(list)
-    errorEncountered = Signal()
+    errorEncountered = Signal(str)
     def __init__(self, parent=None):
         """
         Constructs the client object.
@@ -62,9 +62,10 @@ class AMTClient(QObject):
         Slot for request finished signal. Parses the response and emits the finished signal.
         """
         if not reply.error() == QNetworkReply.NoError:
-            logger.error(f"Error: {reply.error()}: {reply.errorString()}")
+            errmsg = f"Error: {reply.error()}: {reply.errorString()}"
+            logger.error(errmsg)
             reply.deleteLater()
-            self.errorEncountered.emit()
+            self.errorEncountered.emit(errmsg)
             return 
         logger.debug("no error")
         parsedData = self.parseResponse(reply)
@@ -93,6 +94,7 @@ class ArxivClient(AMTClient):
         Constructs the arXiv client object.
         """
         super().__init__(parent)
+        self._parser = ArxivParser()
         
     def search(self, query: 'ArxivSearchQuery', start: int = 0, max_results: int = 10, sort_by: AQSortBy = AQSortBy.REL, sort_order: AQSortOrder = AQSortOrder.DESC):
         """
@@ -124,6 +126,12 @@ class ArxivClient(AMTClient):
         
     def parseResponse(self, reply: QNetworkReply) -> list:
         xmlReply = reply.readAll().data().decode()
-        parsedData = ArxivParser.parse(xmlReply)
-        return parsedData
+        status, msg = self._parser.parse(xmlReply)
+        if status:
+            return self._parser.parsedData[:]
+        else:
+            errmsg = f"Error: {msg}"
+            logger.error(errmsg)
+            self.errorEncountered.emit(errmsg)
+            return []
         
