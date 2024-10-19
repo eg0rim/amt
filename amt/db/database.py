@@ -258,34 +258,40 @@ class AMTQuery(QSqlQuery):
         self._setState("select", True)
         return True
 
-    def insert(self, table: str, values: dict[str, list] | dict[str,str], orIgnore: bool = False) -> bool:
+    def insert(self, table: str, values: dict[str, str] | list[dict[str,str]], orIgnore: bool = False) -> bool:
         """
         Constructs query:
             INSERT INTO [OR IGNORE] table (columns) VALUES (values), (values), ...
         Insertion values can be str or None. If None, NULL is inserted.
         Args:
             table (str): table to insert into
-            values (dict[str, list] | dict[str, str]) : dictionary of column names and lists of values or single values
+            values (dict[str, str] | list[dict[str, str]]) : dictionary of column names and values or list of dictionaries for multiple rows
 
         Returns:
             bool: returns True if insertion query construction is successful
         """
         self._execStatus = False
-        columns = ', '.join(values.keys())
-        if all([isinstance(v, list) for v in values.values()]):
-            # Verify that all lists have the same length
-            lengths = [len(v) for v in values.values()]
-            if len(set(lengths)) != 1:
-                logger.error("Values do not have the same length")
+        if isinstance(values, list):
+            if len(values) < 1:
+                logger.error("Values list is empty. Nothing to insert.")
                 return False
-            numRows = lengths[0]
+            columns = ', '.join(values[0].keys())
+            # Check if all dictionaries have the same keys
+            keys = values[0].keys()
+            if not all(d.keys() == keys for d in values):
+                logger.error("Not all dictionaries have the same keys")
+                return False
             valuesList = []
-            for i in range(numRows):
-                rowValues = ', '.join([f"'{values[col][i]}'" if values[col][i] is not None else "NULL" for col in values.keys()])
+            for row in values:
+                rowValues = ', '.join([f"'{val}'" if not val is None else "NULL" for val in row.values()])
                 valuesList.append(f"({rowValues})")
             valuesStr = ', '.join(valuesList)
-        else:
+        elif isinstance(values, dict):
+            columns = ', '.join(values.keys())
             valuesStr = f"({', '.join([f"'{val}'" if not val is None else "NULL" for val in values.values()])})"
+        else:
+            logger.error("Values must be a dictionary or a list of dictionaries")
+            return False
         self._queryString = f"INSERT{' OR IGNORE' if orIgnore else ''} INTO {table} ({columns}) VALUES {valuesStr}"
         self._setState("insert", True)
         return True
