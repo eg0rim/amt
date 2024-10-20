@@ -26,7 +26,6 @@ from PySide6.QtGui import *
 
 import amt.views.build.addDialog_ui as addDialog_ui
 
-
 from amt.logger import getLogger
 from amt.db.datamodel import (
     ArticleData,

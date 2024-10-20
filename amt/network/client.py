@@ -20,6 +20,7 @@
 
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply
 from PySide6.QtCore import QObject, Signal
+import time
    
 from amt.logger import getLogger
 from amt.network.parser import ArxivParser
@@ -75,6 +76,7 @@ class AMTClient(QObject):
             reply.deleteLater()
             self._error = errmsg
             self.errorEncountered.emit(errmsg)
+            self.finished.emit([])
             return 
         parsedData = self.parseResponse(reply)
         self.finished.emit(parsedData)
@@ -94,6 +96,7 @@ class AMTClient(QObject):
             logger.error(errmsg)
             self._error = errmsg
             self.errorEncountered.emit(errmsg)
+            self.finished.emit([])
             return None
         return self.manager.get(self.request)
 

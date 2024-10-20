@@ -41,6 +41,7 @@ from amt.views.customWidgets.amtmessagebox import (
 )
 from amt.network.parser import ArxivParser
 from amt.network.client import ArxivClient
+from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog
 
 logger = getLogger(__name__)
 
@@ -198,7 +199,10 @@ class ArticleForm(PublishableForm):
             msgBox.exec()
             return
         self._arxivClient.getById(arxivId)
+        progressDialog = ArxivSearchProgressDialog(self)
+        self._arxivClient.finished.connect(progressDialog.cancel)
         self._arxivClient.send()
+        progressDialog.exec()
 
         
 class BookForm(PublishableForm):
