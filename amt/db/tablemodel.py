@@ -384,48 +384,27 @@ class DataCache(QObject):
     
 class AMTModel(QAbstractTableModel):
     """
-    Model to manage the articles, books, etc.
+    Base model to manage the articles, books, etc.
+    In the base model data is kept in the cache.
     Inherits from QAbstractTableModel.
-    Signals:
-        temporaryStatusChanged (bool): emitted when the temporary status of the model changes. Emits True if the model is temporary
-        databaseConnected (str): emitted when the database is connected. Emits the path to the database
     Class attributes:
         _columnNames (list[str]): list of column names
         _columnCount (int): number of columns
         _columnToField (dict[int, str]): mapping of columns to fields in the data model
         _supportedDataTypes (dict[str, EntryData]): supported data types
         _entryTypes (list[str]): data types that are shown in the corresponding table view
-    Properties:
-        temporary (bool): True if the model is temporary
     Attributes:
-        dataCache (DataCache): cache of data
-        db (AMTDatabase): database
+        dataCache (DataCache): cache of data, where all data are stored
     Methods:
         __init__(self, dbFile: str = "", *args: object) -> None
-        columnCount(self, parent: QModelIndex = None) -> int
-        rowCount(self, parent: QModelIndex = None) -> int
-        data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any
-        headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any
-        sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None
-        flags(self, index: QModelIndex) -> Qt.ItemFlags
-        prepareTables(self) -> bool
-        updateTableColumns(self) -> bool
+        _resort(self) -> None
         entryToDisplayData(cls, entry: EntryData, column: int) -> str
+        getDataAt(self, index: int) -> EntryData
         removeEntriesAt(self, rows: list[int]) -> bool
         editEntryAt(self, row: int, newEntry: EntryData) -> bool
         addEntry(self, entry: EntryData) -> bool
-        extractEntries(self) -> list[EntryData]
-        update(self) -> bool
         filter(self, filter: AMTFilter) -> bool
-        saveDB(self) -> bool
-        openExistingDB(self, filePath: str) -> bool
-        saveDBAs(self, filePath: str) -> bool
-        createNewTempDB(self) -> bool
-        getDataAt(self, index: int) -> EntryData
     """
-    # signal to notify about changes in the model
-    temporaryStatusChanged = Signal(bool)
-    databaseConnected = Signal(str)
     # specify columns
     _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID"]
     _columnCount: int = len(_columnNames)
@@ -441,7 +420,7 @@ class AMTModel(QAbstractTableModel):
     # data types that are shown in the corresponding table view
     _entryTypes = ["articles", "books", "lectures"]
     
-    def __init__(self, dbFile : str = "", *args : object):
+    def __init__(self, *args : object):
         """
         Constructor for the model.
         Args:
@@ -449,30 +428,12 @@ class AMTModel(QAbstractTableModel):
             *args (object): arguments for the parent class
         """
         super().__init__(*args)          
-        # cache of data; any non-saved changes to the data are stored here
+        # cache of data; in the base model data
+        # is kept here
         self.dataCache : DataCache = DataCache(self)      
-        # keep track whether the database is temporary; on change must emit signal
-        self._temporary: bool = False
-        # if no db file is provided, create a temp file
-        self.db : AMTDatabase = None
         # remeber sorting state 
         self._currentSortColumn = -1
         self._currentSortOrder = Qt.AscendingOrder
-        # create empty db if dbfile is not provided
-        if not dbFile:
-            self.createNewTempDB()
-        else:
-            self.openExistingDB(dbFile)       
-            
-    @property
-    def temporary(self) -> bool:
-        return self._temporary
-    @temporary.setter
-    def temporary(self, value: bool):
-        if value == self._temporary:
-            return
-        self._temporary = value
-        self.temporaryStatusChanged.emit(value)
         
     # implement abstract methods from QAbstractTableModel     
     def columnCount(self, parent : QModelIndex = None) -> int:
@@ -542,13 +503,6 @@ class AMTModel(QAbstractTableModel):
         self.beginResetModel()
         self.dataCache.sort(self._columnToField[column], order)
         self.endResetModel()
-        
-    def _resort(self):
-        """
-        Resort the data after a change in the data.
-        """
-        if self._currentSortColumn >= 0:
-            self.sort(self._currentSortColumn, self._currentSortOrder)
     
     # the code is not needed as we do not allow editing from QTableView        
     # def removeRows(self, row : int, count : int, parent : QModelIndex = QModelIndex()) -> bool:
@@ -584,33 +538,13 @@ class AMTModel(QAbstractTableModel):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled 
     
     # custom methods
-    # prepare tabels 
-    def prepareTables(self) -> bool:
-        """ 
-        Prepare tables in the database for all supported data types.
-        Create table or update them with new columns if needed.
-        Returns:
-            bool: True if successful
+    def _resort(self):
         """
-        state = True
-        for cls in self._supportedDataTypes.values():
-            if not cls.createTable(self.db):
-                state = False
-        return state
+        Resort the data after a change in the data.
+        """
+        if self._currentSortColumn >= 0:
+            self.sort(self._currentSortColumn, self._currentSortOrder)
     
-    # update table columns
-    def updateTableColumns(self) -> bool:
-        """ 
-        Update table columns for all supported data types.
-        Returns:
-            bool: True if successful
-        """
-        state = True
-        for cls in self._supportedDataTypes.values():
-            if not cls.extendTableColumns(self.db):
-                state = False
-        return state
-        
     # display data
     @classmethod
     def entryToDisplayData(cls, entry : EntryData, column : int) -> str:
@@ -687,6 +621,119 @@ class AMTModel(QAbstractTableModel):
         self.endInsertRows()
         return True
     
+    def filter(self, filter : AMTFilter) -> bool:
+        """ 
+        Filters the data. 
+        Args:
+            filter (AMTFilter): filter object 
+        Returns:    
+            bool: True if successful
+        """
+        self.beginResetModel()
+        self.dataCache.filter = filter
+        self.endResetModel()
+        return True
+       
+class AMTDBModel(AMTModel):
+    """
+    Model to manage the articles, books, etc, with support for database storage.
+    Inherits from AMTModel.
+    Signals:
+        temporaryStatusChanged (bool): emitted when the temporary status of the model changes. Emits True if the model is temporary
+        databaseConnected (str): emitted when the database is connected. Emits the path to the database
+    Class attributes:
+        _columnNames (list[str]): list of column names
+        _columnCount (int): number of columns
+        _columnToField (dict[int, str]): mapping of columns to fields in the data model
+        _supportedDataTypes (dict[str, EntryData]): supported data types
+        _entryTypes (list[str]): data types that are shown in the corresponding table view
+    Properties:
+        temporary (bool): True if the model is temporary
+    Attributes:
+        dataCache (DataCache): cache of data
+        db (AMTDatabase): database
+    Methods:
+        __init__(self, dbFile: str = "", *args: object) -> None
+        columnCount(self, parent: QModelIndex = None) -> int
+        rowCount(self, parent: QModelIndex = None) -> int
+        data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any
+        headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any
+        sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None
+        flags(self, index: QModelIndex) -> Qt.ItemFlags
+        prepareTables(self) -> bool
+        updateTableColumns(self) -> bool
+        entryToDisplayData(cls, entry: EntryData, column: int) -> str
+        removeEntriesAt(self, rows: list[int]) -> bool
+        editEntryAt(self, row: int, newEntry: EntryData) -> bool
+        addEntry(self, entry: EntryData) -> bool
+        extractEntries(self) -> list[EntryData]
+        update(self) -> bool
+        filter(self, filter: AMTFilter) -> bool
+        saveDB(self) -> bool
+        openExistingDB(self, filePath: str) -> bool
+        saveDBAs(self, filePath: str) -> bool
+        createNewTempDB(self) -> bool
+        getDataAt(self, index: int) -> EntryData
+    """
+    # signal to notify about changes in the model
+    temporaryStatusChanged = Signal(bool)
+    databaseConnected = Signal(str)    
+    def __init__(self, dbFile : str = "", *args : object):
+        """
+        Constructor for the model.
+        Args:
+            dbFile (str): path to the database file. If not provided, a temporary database is created
+            *args (object): arguments for the parent class
+        """
+        super().__init__(*args)          
+        # keep track whether the database is temporary; on change must emit signal
+        self._temporary: bool = False
+        # if no db file is provided, create a temp file
+        self.db : AMTDatabase = None
+        # create empty db if dbfile is not provided
+        if not dbFile:
+            self.createNewTempDB()
+        else:
+            self.openExistingDB(dbFile)       
+            
+    @property
+    def temporary(self) -> bool:
+        return self._temporary
+    @temporary.setter
+    def temporary(self, value: bool):
+        if value == self._temporary:
+            return
+        self._temporary = value
+        self.temporaryStatusChanged.emit(value)
+        
+    # custom methods
+    # prepare tabels 
+    def prepareTables(self) -> bool:
+        """ 
+        Prepare tables in the database for all supported data types.
+        Create table or update them with new columns if needed.
+        Returns:
+            bool: True if successful
+        """
+        state = True
+        for cls in self._supportedDataTypes.values():
+            if not cls.createTable(self.db):
+                state = False
+        return state
+    
+    # update table columns
+    def updateTableColumns(self) -> bool:
+        """ 
+        Update table columns for all supported data types.
+        Returns:
+            bool: True if successful
+        """
+        state = True
+        for cls in self._supportedDataTypes.values():
+            if not cls.extendTableColumns(self.db):
+                state = False
+        return state
+    
     # extract entries from the database
     def extractEntries(self) -> list[EntryData]:
         """
@@ -713,19 +760,6 @@ class AMTModel(QAbstractTableModel):
         self.beginResetModel()
         logger.info(f"extract all entries from db")
         self.dataCache.data = self.extractEntries()
-        self.endResetModel()
-        return True
-    
-    def filter(self, filter : AMTFilter) -> bool:
-        """ 
-        Filters the data. 
-        Args:
-            filter (AMTFilter): filter object 
-        Returns:    
-            bool: True if successful
-        """
-        self.beginResetModel()
-        self.dataCache.filter = filter
         self.endResetModel()
         return True
     
