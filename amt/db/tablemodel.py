@@ -396,7 +396,7 @@ class AMTModel(QAbstractTableModel):
     Attributes:
         dataCache (DataCache): cache of data, where all data are stored
     Methods:
-        __init__(self, dbFile: str = "", *args: object) -> None
+        __init__(self, *args: object) -> None
         _resort(self) -> None
         entryToDisplayData(cls, entry: EntryData, column: int) -> str
         getDataAt(self, index: int) -> EntryData
@@ -650,30 +650,17 @@ class AMTDBModel(AMTModel):
     Properties:
         temporary (bool): True if the model is temporary
     Attributes:
-        dataCache (DataCache): cache of data
         db (AMTDatabase): database
     Methods:
         __init__(self, dbFile: str = "", *args: object) -> None
-        columnCount(self, parent: QModelIndex = None) -> int
-        rowCount(self, parent: QModelIndex = None) -> int
-        data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any
-        headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any
-        sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None
-        flags(self, index: QModelIndex) -> Qt.ItemFlags
         prepareTables(self) -> bool
         updateTableColumns(self) -> bool
-        entryToDisplayData(cls, entry: EntryData, column: int) -> str
-        removeEntriesAt(self, rows: list[int]) -> bool
-        editEntryAt(self, row: int, newEntry: EntryData) -> bool
-        addEntry(self, entry: EntryData) -> bool
         extractEntries(self) -> list[EntryData]
         update(self) -> bool
-        filter(self, filter: AMTFilter) -> bool
         saveDB(self) -> bool
         openExistingDB(self, filePath: str) -> bool
         saveDBAs(self, filePath: str) -> bool
         createNewTempDB(self) -> bool
-        getDataAt(self, index: int) -> EntryData
     """
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
