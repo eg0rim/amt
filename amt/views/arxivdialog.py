@@ -20,6 +20,7 @@
 
 from amt.logger import getLogger
 from PySide6.QtWidgets import QDialog, QProgressDialog
+from PySide6.QtCore import Qt
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
 from amt.db.datamodel import ArticleData,AuthorData
@@ -94,6 +95,8 @@ class ArxivDialog(QDialog):
         self.ui.tableView.setModel(self.model)
         # disable sorting 
         self.ui.tableView.setSortingEnabled(False)
+        # disable context menu in the table view
+        self.ui.tableView.setContextMenuPolicy(Qt.NoContextMenu)
         
     def setupClient(self):
         self.client.errorEncountered.connect(self.onClientError)
@@ -102,8 +105,10 @@ class ArxivDialog(QDialog):
     def resetUi(self):
         self.addingEntries = False
         self.ui.loadMorePushButton.setEnabled(False)
+        self.ui.addSelectedPushButton.setEnabled(False)
         
     def onClientFinished(self, data: list[ArticleData]):
+        self.ui.addSelectedPushButton.setEnabled(True)
         if self.addingEntries:
             self.model.addEntries(data)
         else:
@@ -161,4 +166,9 @@ class ArxivDialog(QDialog):
         self.client.finished.connect(waitDialog.cancel)
         waitDialog.exec()
         
-
+    def getSelectedEntries(self) -> list[ArticleData]:
+        selectedRows = self.ui.tableView.selectionModel().selectedRows()
+        selectedEntries = []
+        for row in selectedRows:
+            selectedEntries.append(self.model.getDataAt(row.row()))
+        return selectedEntries
