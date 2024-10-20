@@ -19,12 +19,13 @@
 """interface for submitting queries to arXiv"""
 
 from amt.logger import getLogger
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QProgressDialog
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
 from amt.db.datamodel import ArticleData,AuthorData
 from amt.network.client import ArxivClient
 from amt.network.arxiv_aux import *
+from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog
 
 logger = getLogger(__name__)
 
@@ -38,6 +39,9 @@ class ArxivDialog(QDialog):
         searchQuery = ArxivSearchQuery(ASP.AUTHOR, "Juan Maldacena")
         self.client.search(searchQuery, sort_by=AQSortBy.SUB, max_results=100)
         self.client.send()
+        waitDialog = ArxivSearchProgressDialog(self)
+        self.client.finished.connect(waitDialog.cancel)
+        waitDialog.exec()
         
     def setupUi(self):
         self.ui: arxivDialog_ui.Ui_Dialog = arxivDialog_ui.Ui_Dialog()
