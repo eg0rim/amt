@@ -572,6 +572,21 @@ class AMTModel(QAbstractTableModel):
         """
         return self.dataCache.dataToDisplay[index]
     
+    def setData(self, data : list[EntryData]) -> bool:
+        """
+        sets the data in the model
+
+        Args:
+            data (list[EntryData]): list of entries
+
+        Returns:
+            bool: True if successful
+        """
+        self.beginResetModel()
+        self.dataCache.data = data
+        self.endResetModel()
+        return True
+    
     def removeEntriesAt(self, rows : list[int]) -> bool:
         """
         removes entry at given rows
