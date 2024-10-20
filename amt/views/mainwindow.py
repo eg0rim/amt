@@ -676,6 +676,6 @@ class MainWindow(QMainWindow):
         # #ac.search(ArxivSearchQuery(ASP.AUTHOR, "Egor Im"), max_results=5)
         # ac.getById(["1234.1234"])
         # ac.send()   
-        for i in range(100):
+        for i in range(10):
             self.model.addEntry(ArticleData(f"Titles {i}", []))
         
