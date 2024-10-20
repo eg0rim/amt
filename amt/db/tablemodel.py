@@ -730,7 +730,6 @@ class AMTModel(QAbstractTableModel):
                     logger.error(f"failed to insert multiple entries {dataToInsert}")
                     status = False        
             self.dataCache.dataToAdd.clear()
-        logger.debug(f"Status of submitAdd: {status}")
         return status
     
     def _submitDelete(self) -> bool:
