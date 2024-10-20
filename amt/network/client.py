@@ -45,13 +45,20 @@ class AMTClient(QObject):
         """
         super().__init__(parent)
         self.manager = QNetworkAccessManager(self)
-        self.request: AMTRequest = None
+        self._request: AMTRequest = None
         self.manager.finished.connect(self._onFinished)
         self._error: str | None = None
         
+    @property
+    def request(self) -> AMTRequest:
+        return self._request
+    @request.setter
+    def request(self, request: AMTRequest):
+        self._request = request
+        
     @property   
     def error(self) -> str | None:
-        if self.request is None:
+        if self._request is None:
             return "Request is not set"
         return self._error
         
@@ -80,6 +87,7 @@ class AMTClient(QObject):
             return 
         parsedData = self.parseResponse(reply)
         self.finished.emit(parsedData)
+        self._request = None
         reply.deleteLater()
     
     def send(self) -> QNetworkReply | None:
@@ -88,21 +96,24 @@ class AMTClient(QObject):
         Returns:
             QNetworkReply | None: reply object or None if the request is not set
         """
-        logger.debug(f"Sending request: {self.request.url().toString()}")
-        logger.debug(f"Request headers: {self.request.rawHeaderList()}")
+        logger.debug(f"Sending request: {self._request.url().toString()}")
+        logger.debug(f"Request headers: {self._request.rawHeaderList()}")
         self._error = None
-        if self.request is None:
+        if self._request is None:
             errmsg = "Request is not set"
             logger.error(errmsg)
             self._error = errmsg
             self.errorEncountered.emit(errmsg)
             self.finished.emit([])
             return None
-        return self.manager.get(self.request)
+        reply =  self.manager.get(self._request)
+        return reply
 
 class ArxivClient(AMTClient):
     """
     Class for arXiv api server client.
+    Properties:
+        parser (ArxivParser): arxiv parser object
     """
     def __init__(self, parent=None):
         """
@@ -110,8 +121,12 @@ class ArxivClient(AMTClient):
         """
         super().__init__(parent)
         self._parser = ArxivParser()
+    
+    @property
+    def parser(self) -> ArxivParser:
+        return self._parser
         
-    def search(self, query: 'ArxivSearchQuery', start: int = 0, max_results: int = 10, sort_by: AQSortBy = AQSortBy.REL, sort_order: AQSortOrder = AQSortOrder.DESC):
+    def setSearch(self, query: 'ArxivSearchQuery', start: int = 0, max_results: int = 10, sort_by: AQSortBy = AQSortBy.REL, sort_order: AQSortOrder = AQSortOrder.DESC):
         """
         Prepares the request for searching arXiv metadata.
         Args:
@@ -127,9 +142,9 @@ class ArxivClient(AMTClient):
         request.addMaxResults(max_results)
         request.addSortBy(sort_by)
         request.addSortOrder(sort_order)
-        self.request = request
+        self._request = request
         
-    def getById(self, arxiv_id: str | list[str]):
+    def setGetById(self, arxiv_id: str | list[str]):
         """
         Prepares request for getting metadata by arXiv id.
         Args:
@@ -137,7 +152,7 @@ class ArxivClient(AMTClient):
         """
         request = ArxivRequest()
         request.addArxivId(arxiv_id)
-        self.request = request
+        self._request = request
         
     def parseResponse(self, reply: QNetworkReply) -> list[PublishableData]:
         xmlReply = reply.readAll().data().decode()
@@ -151,4 +166,5 @@ class ArxivClient(AMTClient):
             logger.error(errmsg)
             self.errorEncountered.emit(errmsg)
             return []
+        
         
