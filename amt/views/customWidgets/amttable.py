@@ -28,7 +28,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QAbstractItemModel, Qt
 from PySide6.QtCore import QPoint
 
-from amt.db.tablemodel import AMTModel
 from amt.logger import getLogger
 
 logger = getLogger(__name__)

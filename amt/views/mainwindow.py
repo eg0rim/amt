@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QLabel
 )
 from PySide6.QtGui import QIcon, QPixmap
-from amt.db.tablemodel import AMTModel, AMTFilter
+from amt.db.tablemodel import AMTDBModel, AMTFilter
 from amt.db.database import AMTDatabaseError
 from amt.db.datamodel import (
     ArticleData, 
@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
     Attributes:
         currentFile (str): The current database file name.
         ui (Ui_MainWindow): The user interface object for the main window. Generated from the .ui file. Contains all the widgets and actions.
-        model (AMTModel): The model for the table view.
+        model (AMTDBModel): The model for the table view.
         fileHandler (ExternalEntryHandler): The file handler object for opening external files.
         openEntriesOnStartup (bool): The flag indicating whether to open entries on startup.
         closeEntriesOnExit (bool): The flag indicating whether to close entries on exit.
@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
         # ui
         self.ui: Ui_MainWindow = None
         # model for the table view
-        self.model: AMTModel = None
+        self.model: AMTDBModel = None
         # file handler
         self.fileHandler: ExternalEntryHandler = ExternalEntryHandler()
         # settings atrbiutes
@@ -342,7 +342,7 @@ class MainWindow(QMainWindow):
         # create model based on current filename
         # if db raises error, show critical message box and close the app
         try:
-            self.model = AMTModel(self.currentFile)
+            self.model = AMTDBModel(self.currentFile)
             logger.info(f"Model is connected.")
         except AMTDatabaseError:
             logger.critical(f"Database Error: {self.model.db.lastError().text()}")
