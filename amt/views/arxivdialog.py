@@ -34,7 +34,7 @@ class ArxivDialog(QDialog):
         self.model = ArxivModel(self)
         self.client = ArxivClient(self)
         self.setupUi()
-        self.client.finished.connect(self.model.addEntries)
+        self.client.finished.connect(self.model.setData)
         searchQuery = ArxivSearchQuery(ASP.AUTHOR, "Juan Maldacena")
         self.client.search(searchQuery, sort_by=AQSortBy.SUB, max_results=100)
         self.client.send()
