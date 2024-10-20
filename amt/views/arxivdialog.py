@@ -23,20 +23,26 @@ from PySide6.QtWidgets import QDialog
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
 from amt.db.datamodel import ArticleData,AuthorData
+from amt.network.client import ArxivClient
+from amt.network.arxiv_aux import *
 
 logger = getLogger(__name__)
 
 class ArxivDialog(QDialog):
     def __init__(self, parent=None):
         super(ArxivDialog, self).__init__(parent)
-        self.model = ArxivModel()
+        self.model = ArxivModel(self)
+        self.client = ArxivClient(self)
         self.setupUi()
-        article = ArticleData("title", [AuthorData("name surname")])
-        self.model.addEntry(article)
+        self.client.finished.connect(self.model.addEntries)
+        searchQuery = ArxivSearchQuery(ASP.AUTHOR, "Juan Maldacena")
+        self.client.search(searchQuery, sort_by=AQSortBy.SUB, max_results=100)
+        self.client.send()
         
     def setupUi(self):
         self.ui: arxivDialog_ui.Ui_Dialog = arxivDialog_ui.Ui_Dialog()
         self.ui.setupUi(self)
         self.ui.tableView.setModel(self.model)
+        
         
 

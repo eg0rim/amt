@@ -601,8 +601,8 @@ class AMTModel(QAbstractTableModel):
         """
         self.beginResetModel()
         self.dataCache.editByIndex(row, newEntry)
-        self._resort()
         self.endResetModel()
+        self._resort()
         return True
     
     def addEntry(self, entry : EntryData) -> bool:
@@ -617,8 +617,25 @@ class AMTModel(QAbstractTableModel):
         """
         self.beginInsertRows(QModelIndex(), len(self.dataCache.data), len(self.dataCache.data))
         self.dataCache.add(entry)
-        self._resort()
         self.endInsertRows()
+        self._resort()
+        return True
+    
+    def addEntries(self, entries : list[EntryData]) -> bool:
+        """
+        adds multiple entries to the model
+
+        Args:
+            entries (list[EntryData]): list of entries to add
+
+        Returns:
+            bool: True if successful
+        """
+        self.beginInsertRows(QModelIndex(), len(self.dataCache.data), len(self.dataCache.data) + len(entries) - 1)
+        for entry in entries:
+            self.dataCache.add(entry)
+        self.endInsertRows()
+        self._resort()
         return True
     
     def filter(self, filter : AMTFilter) -> bool:
