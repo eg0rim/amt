@@ -660,5 +660,6 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        
+        ad = ArticleData("Title", [AuthorData("Author")])
+        logger.debug(ad.toString())
         
