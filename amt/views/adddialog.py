@@ -20,7 +20,8 @@
 
 from PySide6.QtWidgets import (
     QDialog,
-    QWidget
+    QWidget,
+    QDialogButtonBox
 )
 from PySide6.QtGui import *
 
@@ -120,7 +121,7 @@ class AddDialog(QDialog):
             self.ui.formStackedWidget.addWidget(form)
         self.ui.formStackedWidget.setCurrentWidget(self.forms[defaultForm])
         # set current form
-        self.currentForm = self.forms[defaultForm]
+        self.currentForm: EntryForm = self.forms[defaultForm]
         # change form when entry type is changed
         self.ui.entryTypeComboBox.currentTextChanged.connect(self.changeForm)
         self.ui.formStackedWidget.currentChanged.connect(self.setCurrentForm)
@@ -150,6 +151,10 @@ class AddDialog(QDialog):
         """
         Accept the data provided through the dialog and store it in the data attribute.        
         """
+        # if current form has empty title field => show warning and cancel accept
+        if not self.currentForm.ui.titleLineEdit.text():
+            AMTErrorMessageBox(self, "Title cannot be left empty!").exec()
+            return
         self.data = self.currentForm.getData()
         logger.info(f"Data accepted: {self.data.toShortString()}")
         super().accept()
