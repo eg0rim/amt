@@ -904,3 +904,38 @@ class AMTDBModel(AMTModel):
         self.databaseConnected.emit("")
         return True
         
+class ArxivModel(AMTModel):
+    """
+    Model to manage the articles from arXiv.
+    Inherits from AMTModel.
+    Class attributes:
+        _columnNames (list[str]): list of column names
+        _columnCount (int): number of columns
+        _columnToField (dict[int, str]): mapping of columns to fields in the data model
+        _supportedDataTypes (dict[str, EntryData]): supported data types
+        _entryTypes (list[str]): data types that are shown in the corresponding table view
+    Methods:
+        __init__(self, *args: object) -> None
+        addEntry(self, entry: EntryData) -> bool
+        filter(self, filter: AMTFilter) -> bool
+    """
+    # specify columns
+    _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID"]
+    _columnCount: int = len(_columnNames)
+    # map columns to fields in datamodel
+    _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid"}
+    # supported data types; if new data types are added, they should be added here
+    _supportedDataTypes: dict[str,EntryData] = {
+        "articles": ArticleData
+    }
+    # data types that are shown in the corresponding table view
+    _entryTypes = ["articles"]
+    
+    def __init__(self, *args : object):
+        """
+        Constructor for the model.
+        Args:
+            *args (object): arguments for the parent class
+        """
+        super().__init__(*args)          
+        
