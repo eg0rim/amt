@@ -103,6 +103,7 @@ class ArxivParser(AMTParser):
                 logger.error("Title is None")
                 continue
             # authors
+            title = title.strip().replace("\n", "")
             authors = []
             for author in entry.findall('{http://www.w3.org/2005/Atom}author'):
                 if author is None:
@@ -146,10 +147,16 @@ class ArxivParser(AMTParser):
             dateUpdated = getText(entry, '{http://www.w3.org/2005/Atom}updated')
             entryData.dateArxivUpdated = QDateTime.fromString(dateUpdated, Qt.ISODate)
             # summary, doi, journal, comment
-            entryData.summary = entry.find('{http://www.w3.org/2005/Atom}summary').text
+            summary = getText(entry, '{http://www.w3.org/2005/Atom}summary')
+            if summary:
+                summary = summary.strip().replace("\n", "")
+                entryData.summary = summary
             entryData.doi = getText(entry, '{http://arxiv.org/schemas/atom}doi')
             entryData.journal = getText(entry, '{http://arxiv.org/schemas/atom}journal_ref')
-            entryData.comment = getText(entry, '{http://arxiv.org/schemas/atom}comment')
+            comment = getText(entry, '{http://arxiv.org/schemas/atom}comment')
+            if comment:
+                comment = comment.strip().replace("\n", "")
+                entryData.comment = comment
             # categories
             entryData.primeCategory = getAttr(entry, '{http://arxiv.org/schemas/atom}primary_category', 'term') 
             for category in entry.findall('{http://arxiv.org/schemas/atom}category'):
