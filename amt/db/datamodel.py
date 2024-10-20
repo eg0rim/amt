@@ -545,10 +545,10 @@ class AuthorData(AbstractData):
         return nrow[6:]
     
     def toString(self):
-        return ' '.join([self.firstName] + self.middleNames + [self.lastName])
+        return ' '.join([self.firstName] + self.middleNames + [self.lastName]).strip()
     
     def toShortString(self):
-        return ' '.join([self.firstName] + [self.lastName])
+        return ' '.join([self.firstName] + [self.lastName]).strip()
     
     def getDisplayData(self, field: str) -> str:
         if field == "firstName":
@@ -761,14 +761,9 @@ class EntryData(AbstractData):
         return nrow[5:]
         
     def toString(self):
-        s = ""
-        for auth in self.authors[:-1]:
-            s += auth.toShortString()
-            s += ", "
-        s += self.authors[-1].toShortString()
-        s += " - "
-        s += self.title
-        return s
+        if len(self.authors) == 0:
+            return self.title
+        return ", ".join([auth.toShortString() for auth in self.authors]) + " - " + self.title
     
     def toShortString(self):
         return self.title
