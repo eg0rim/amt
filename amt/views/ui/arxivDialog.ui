@@ -13,7 +13,19 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="AMTTableWidget" name="tableView"/>
+   </item>
+  </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AMTTableWidget</class>
+   <extends>QTableView</extends>
+   <header>amt/views/customWidgets/amttable</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

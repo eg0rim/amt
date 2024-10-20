@@ -48,6 +48,7 @@ from .build.mainwindow_ui import (
 from .aboutdialog import AboutDialog
 from .adddialog import AddDialog
 from .settingsdialog import AMTSettingsDialog
+from .arxivdialog import ArxivDialog
 
 from amt.logger import getLogger
 from amt.views.customWidgets.amtmessagebox import (
@@ -96,6 +97,7 @@ class MainWindow(QMainWindow):
         openAddDialog(self):
         openSettingsDialog(self):
         openAboutDialog(self):
+        openArxivDialog(self):
         updatePreview(self, selected: QItemSelection, deselected: QItemSelection):
         onDatabaseConnected(self, name: str):
         setCurrentFile(self, file: str):
@@ -293,6 +295,8 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveAs.triggered.connect(self.saveAsLibrary)
         # settings 
         self.ui.actionSettings.triggered.connect(self.openSettingsDialog)
+        # arxiv
+        self.ui.actionArxiv.triggered.connect(self.openArxivDialog)
         # actions in table
         # open entry on double click
         self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
@@ -571,6 +575,13 @@ class MainWindow(QMainWindow):
         dialog = AMTSettingsDialog(self)
         if dialog.exec() == QDialog.Accepted:
             self.readSettings()
+            
+    def openArxivDialog(self):
+        """
+        Opens arXiv dialog for submitting queries.
+        """
+        dialog = ArxivDialog(self)
+        dialog.exec()
          
     # open additional dialog windows
     def openAboutDialog(self):
