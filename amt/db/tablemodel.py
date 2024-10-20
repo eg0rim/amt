@@ -294,6 +294,20 @@ class DataCache(QObject):
             return False
         entry = self._dataToDisplay[index]
         return self.remove(entry)
+    
+    def removeByIndices(self, indices : list[int]) -> bool:
+        """ 
+        Removes entries at given indices.
+        Args:
+            indices (list[int]): list of indices
+        Returns:
+            bool: True if the entries were removed
+        """
+        entriesToRemove = [self._dataToDisplay[index] for index in indices]
+        state = True
+        for entry in entriesToRemove:
+            state = state and self.remove(entry)
+        return state
         
     # editing means replacing the entry with a new one
     def edit(self, oldEntry : EntryData, newEntry : EntryData) -> bool:
@@ -623,8 +637,7 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         self.beginResetModel()
-        for row in rows:
-            self.dataCache.removeByIndex(row)
+        self.dataCache.removeByIndices(rows)
         self.endResetModel()
         return True
     
