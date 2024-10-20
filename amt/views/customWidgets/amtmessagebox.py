@@ -29,32 +29,34 @@ class AMTMessageBox(QMessageBox):
     All message box has the same title "Article Management Tool".
     Subclasses only differ by the icon.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, text: str = None):
         super().__init__(parent)
         self.setWindowTitle("Article Management Tool")
+        if text:
+            self.setText(text)
         
 class AMTInfoMessageBox(AMTMessageBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, text: str = None):
+        super().__init__(parent, text)
         self.setIconPixmap(QIcon(":/icons/information").pixmap(64, 64))
         
 class AMTWarnMessageBox(AMTMessageBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, text: str = None):
+        super().__init__(parent,text)
         self.setIconPixmap(QIcon(":/icons/warning").pixmap(64, 64))
         
 class AMTErrorMessageBox(AMTMessageBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, text: str = None):
+        super().__init__(parent, text)
         self.setIconPixmap(QIcon(":/icons/error").pixmap(64, 64))
         
 class AMTCriticalMessageBox(AMTMessageBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, text: str = None):
+        super().__init__(parent, text)
         self.setIconPixmap(QIcon(":/icons/critical").pixmap(64, 64))
         
 class AMTQuestionMessageBox(AMTMessageBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, text: str = None):
+        super().__init__(parent,text)
         self.setIconPixmap(QIcon(":/icons/question").pixmap(64, 64))
     
