@@ -198,7 +198,7 @@ class ArticleForm(PublishableForm):
             msgBox.setText("Please provide an arXiv ID.")
             msgBox.exec()
             return
-        self._arxivClient.getById(arxivId)
+        self._arxivClient.setGetById(arxivId)
         progressDialog = ArxivSearchProgressDialog(self)
         self._arxivClient.finished.connect(progressDialog.cancel)
         self._arxivClient.send()

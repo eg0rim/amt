@@ -84,6 +84,9 @@ class ArxivParser(AMTParser):
     """
     def __init__(self):
         super().__init__()
+        self.totalResults: int = 0
+        self.startIndex: int = 0
+        self.itemsPerPage: int = 0
     
     def parse(self, xml: str) -> tuple[bool, str]:
         """
@@ -93,7 +96,13 @@ class ArxivParser(AMTParser):
         Returns:    
             tuple[bool, str]: success, error message
         """
+        logger.debug(f"Parsing arxiv xml reply: {xml}")
         root = ET.fromstring(xml)
+        # parse metadata
+        self.totalResults = int(root.find('{http://a9.com/-/spec/opensearch/1.1/}totalResults').text)
+        self.startIndex = int(root.find('{http://a9.com/-/spec/opensearch/1.1/}startIndex').text)
+        self.itemsPerPage = int(root.find('{http://a9.com/-/spec/opensearch/1.1/}itemsPerPage').text)
+        # parse entries
         entriesData = []
         entries = root.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
