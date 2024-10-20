@@ -128,7 +128,9 @@ class MainWindow(QMainWindow):
         self.openEntriesOnStartup: bool = False
         self.closeEntriesOnExit: bool = False
         # file dialogs
-        self.dbFileDialog = AMTDBFileDialog(self)    
+        self.dbFileDialog = AMTDBFileDialog(self) 
+        # arxiv dialog
+        self.arxivDialog = ArxivDialog(self)   
         # setup main window
         # setup ui
         self.setupUI()      
@@ -308,6 +310,8 @@ class MainWindow(QMainWindow):
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
         # hide unused widgets
         self.ui.actionDebug.setVisible(False)
+        # arxiv dialog
+        self.arxivDialog.ui.addSelectedPushButton.clicked.connect(self.addFromArxivDialog)
                
     def setTemporary(self, status: bool):
         """
@@ -557,6 +561,11 @@ class MainWindow(QMainWindow):
             return True
         else:
             return False
+        
+    def addFromArxivDialog(self):
+        entries = self.arxivDialog.getSelectedEntries()
+        if entries:
+            self.model.addEntries(entries)
     
     def openAddDialog(self):
         """
@@ -580,8 +589,7 @@ class MainWindow(QMainWindow):
         """
         Opens arXiv dialog for submitting queries.
         """
-        dialog = ArxivDialog(self)
-        dialog.exec()
+        self.arxivDialog.exec()
          
     # open additional dialog windows
     def openAboutDialog(self):

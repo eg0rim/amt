@@ -406,10 +406,10 @@ class AMTModel(QAbstractTableModel):
         filter(self, filter: AMTFilter) -> bool
     """
     # specify columns
-    _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID"]
+    _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID", "ID"]
     _columnCount: int = len(_columnNames)
     # map columns to fields in datamodel
-    _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid"}
+    _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid", 3: "id"}
     # supported data types; if new data types are added, they should be added here
     _supportedDataTypes: dict[str,EntryData] = {
         "articles": ArticleData,
@@ -952,10 +952,10 @@ class ArxivModel(AMTModel):
         filter(self, filter: AMTFilter) -> bool
     """
     # specify columns
-    _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID"]
+    _columnNames: list[str] = ["Title", "Author(s)", "ArXiv ID", "ID"]
     _columnCount: int = len(_columnNames)
     # map columns to fields in datamodel
-    _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid"}
+    _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid", 3: "id"}
     # supported data types; if new data types are added, they should be added here
     _supportedDataTypes: dict[str,EntryData] = {
         "articles": ArticleData
