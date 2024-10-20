@@ -740,11 +740,24 @@ class AMTModel(QAbstractTableModel):
             bool: True if successful
         """
         status = True
-        for entry in self.dataCache.dataToDelete[:]:
-            if not entry.delete(self.db):
-                logger.error(f"failed to delete entry {entry}")
-                status = False
-            self.dataCache.dataToDelete.remove(entry)
+        if len(self.dataCache.dataToDelete) == 0:
+            return status
+        elif len(self.dataCache.dataToDelete) < 10: 
+            for entry in self.dataCache.dataToDelete[:]:
+                if not entry.delete(self.db):
+                    logger.error(f"failed to delete entry {entry}")
+                    status = False
+                self.dataCache.dataToDelete.remove(entry)
+        else:
+            for entryType in self._entryTypes:
+                entryCls = self._supportedDataTypes[entryType]
+                dataToDelete = [entry for entry in self.dataCache.dataToDelete if isinstance(entry, entryCls)]
+                if len(dataToDelete) == 0:
+                    continue
+                if not entryCls.deleteMultiple(self.db, dataToDelete):
+                    logger.error(f"failed to delete multiple entries {dataToDelete}")
+                    status = False        
+            self.dataCache.dataToDelete.clear()
         return status
     
     def _submitEdit(self) -> bool:
