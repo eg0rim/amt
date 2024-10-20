@@ -27,6 +27,7 @@ from amt.network.client import ArxivClient
 from amt.network.arxiv_aux import *
 from amt.network.client import ArxivRequest
 from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog
+from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox
 
 logger = getLogger(__name__)
 
@@ -48,10 +49,11 @@ class ArxivDialog(QDialog):
         super(ArxivDialog, self).__init__(parent)
         self.model = ArxivModel(self)
         self.client = ArxivClient(self)
-        self.maxNumResults = 10
+        self.maxNumResults = 50
         self.addingEntries = False
         self.setupUi()
         self.setupModel()
+        self.setupClient()
         # searchQuery = ArxivSearchQuery(ASP.AUTHOR, "Juan Maldacena")
         # self.client.search(searchQuery, sort_by=AQSortBy.SUB, max_results=2)
         # self.client.send()
@@ -76,6 +78,13 @@ class ArxivDialog(QDialog):
         self.ui.searchButton.clicked.connect(self.onSearchButtonClicked)
         self.ui.numResultsSpinBox.setValue(self.maxNumResults) # default value
         self.ui.numResultsSpinBox.valueChanged.connect(self.onNumResultsChanged)
+        # on change of any earch parameters, disable the load more button
+        self.ui.searchTypeComboBox.currentIndexChanged.connect(self.onSearchParametersChanged)
+        self.ui.searchLineEdit.textChanged.connect(self.onSearchParametersChanged)
+        self.ui.sortByComboBox.currentIndexChanged.connect(self.onSearchParametersChanged)
+        self.ui.sortOrderComboBox.currentIndexChanged.connect(self.onSearchParametersChanged)
+        self.ui.numResultsSpinBox.valueChanged.connect(self.onSearchParametersChanged)
+        self.ui.arxivIdLneEdit.textChanged.connect(self.onSearchParametersChanged)
         # action buttons
         self.ui.loadMorePushButton.setEnabled(False)
         self.ui.loadMorePushButton.clicked.connect(self.onLoadMoreButtonClicked)
@@ -83,9 +92,12 @@ class ArxivDialog(QDialog):
         
     def setupModel(self):
         self.ui.tableView.setModel(self.model)
-        self.client.finished.connect(self.onClientFinished)
         # disable sorting 
         self.ui.tableView.setSortingEnabled(False)
+        
+    def setupClient(self):
+        self.client.errorEncountered.connect(self.onClientError)
+        self.client.finished.connect(self.onClientFinished)
         
     def resetUi(self):
         self.addingEntries = False
@@ -101,9 +113,17 @@ class ArxivDialog(QDialog):
         else:
             self.ui.loadMorePushButton.setEnabled(False)
         
+    def onSearchParametersChanged(self):
+        self.ui.loadMorePushButton.setEnabled(False)
         
     def onNumResultsChanged(self, value: int):
         self.maxNumResults = value
+        
+    def onClientError(self, errmsg: str):
+        msgbox = AMTErrorMessageBox(self)
+        msgbox.setText("arxiv.org search failed.")
+        msgbox.setInformativeText(errmsg)
+        msgbox.exec()
         
     def parseRequest(self) -> ArxivRequest:
         request = ArxivRequest()
