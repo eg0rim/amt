@@ -95,13 +95,7 @@
     <property name="title">
      <string>&amp;Remote</string>
     </property>
-    <widget class="QMenu" name="menuArxiv">
-     <property name="title">
-      <string>arxiv.org</string>
-     </property>
-     <addaction name="actionPullById"/>
-    </widget>
-    <addaction name="menuArxiv"/>
+    <addaction name="actionArxiv"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -244,6 +238,11 @@
   <action name="actionPullById">
    <property name="text">
     <string>Pull by id</string>
+   </property>
+  </action>
+  <action name="actionArxiv">
+   <property name="text">
+    <string>arxiv.org</string>
    </property>
   </action>
  </widget>
