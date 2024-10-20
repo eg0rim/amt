@@ -65,7 +65,7 @@ class AMTParser:
         parsedData (list): parsed data
     """
     def __init__(self):
-        self.parsedData = []
+        self.parsedData: list[PublishableData] = []
 
     def parse(self, data: str) -> tuple[bool, str]:
         """

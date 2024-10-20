@@ -455,6 +455,9 @@ class AMTModel(QAbstractTableModel):
         self._temporary: bool = False
         # if no db file is provided, create a temp file
         self.db : AMTDatabase = None
+        # remeber sorting state 
+        self._currentSortColumn = -1
+        self._currentSortOrder = Qt.AscendingOrder
         # create empty db if dbfile is not provided
         if not dbFile:
             self.createNewTempDB()
@@ -534,9 +537,18 @@ class AMTModel(QAbstractTableModel):
             order (Qt.SortOrder, optional): sorting order. Defaults to Qt.AscendingOrder
         """
         logger.debug(f"sorting by column {column} order {order}")
+        self._currentSortColumn = column
+        self._currentSortOrder = order
         self.beginResetModel()
         self.dataCache.sort(self._columnToField[column], order)
         self.endResetModel()
+        
+    def _resort(self):
+        """
+        Resort the data after a change in the data.
+        """
+        if self._currentSortColumn >= 0:
+            self.sort(self._currentSortColumn, self._currentSortOrder)
     
     # the code is not needed as we do not allow editing from QTableView        
     # def removeRows(self, row : int, count : int, parent : QModelIndex = QModelIndex()) -> bool:
@@ -655,6 +667,7 @@ class AMTModel(QAbstractTableModel):
         """
         self.beginResetModel()
         self.dataCache.editByIndex(row, newEntry)
+        self._resort()
         self.endResetModel()
         return True
     
@@ -670,6 +683,7 @@ class AMTModel(QAbstractTableModel):
         """
         self.beginInsertRows(QModelIndex(), len(self.dataCache.data), len(self.dataCache.data))
         self.dataCache.add(entry)
+        self._resort()
         self.endInsertRows()
         return True
     

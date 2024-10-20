@@ -39,6 +39,8 @@ from amt.db.datamodel import (
 from amt.views.customWidgets.amtmessagebox import (
     AMTInfoMessageBox
 )
+from amt.network.parser import ArxivParser
+from amt.network.client import ArxivClient
 
 logger = getLogger(__name__)
 
@@ -101,10 +103,10 @@ class EntryForm(QWidget):
         Args:
             data (EntryData): data to fill in the form.
         """
-        self.ui.titleLineEdit.setText(data.title)
-        self.ui.authorLineEdit.setText(', '.join([author.toString() for author in data.authors]))
-        self.ui.previewPageSpinBox.setValue(data.previewPage)
-        self.ui.fileInput.setFilePath(data.fileName)
+        self.ui.titleLineEdit.setText(data.title or self.ui.titleLineEdit.text())
+        self.ui.authorLineEdit.setText(', '.join([author.toString() for author in data.authors]) or self.ui.authorLineEdit.text())
+        self.ui.previewPageSpinBox.setValue(data.previewPage or self.ui.previewPageSpinBox.value())
+        self.ui.fileInput.setFilePath(data.fileName or self.ui.fileInput.getFilePath())
         
 class PublishableForm(EntryForm):
     """
@@ -125,7 +127,7 @@ class PublishableForm(EntryForm):
         
     def setData(self, data: PublishableData):
         super().setData(data)
-        self.ui.publishedDateInput.setDate(data.datePublished)   
+        self.ui.publishedDateInput.setDate(data.datePublished or self.ui.publishedDateInput.getDate())   
     
 class ArticleForm(PublishableForm):
     """
@@ -140,6 +142,8 @@ class ArticleForm(PublishableForm):
         super().__init__(parent=parent)
         # connect get metadata button
         self.ui.getMetaButton.clicked.connect(self.getMetadataFromArxiv)
+        self._arxivClient = ArxivClient(self)
+        self._arxivClient.finished.connect(self._arxivClientFinished)
         
     def setupUi(self):
         self.ui = articleForm_ui.Ui_Form()
@@ -157,23 +161,45 @@ class ArticleForm(PublishableForm):
 
     def setData(self, data: ArticleData):
         super().setData(data)
-        self.ui.arXivIDLineEdit.setText(data.arxivid)
-        self.ui.versionLineEdit.setText(data.version)
-        self.ui.journalLineEdit.setText(data.journal)
-        self.ui.dOILineEdit.setText(data.doi)
-        self.ui.linkLineEdit.setText(data.link)
-        self.ui.arxivUploadDatetimeInput.setDateTime(data.dateArxivUploaded)
-        self.ui.arxivUpdateDateTimeInput.setDateTime(data.dateArxivUpdated)
-        
+        self.ui.arXivIDLineEdit.setText(data.arxivid or self.ui.arXivIDLineEdit.text())
+        self.ui.versionLineEdit.setText(data.version or self.ui.versionLineEdit.text())
+        self.ui.journalLineEdit.setText(data.journal or self.ui.journalLineEdit.text())
+        self.ui.dOILineEdit.setText(data.doi or self.ui.dOILineEdit.text())
+        self.ui.linkLineEdit.setText(data.link or self.ui.linkLineEdit.text())
+        self.ui.arxivUploadDatetimeInput.setDateTime(data.dateArxivUploaded or self.ui.arxivUploadDatetimeInput.getDateTime())
+        self.ui.arxivUpdateDateTimeInput.setDateTime(data.dateArxivUpdated or self.ui.arxivUpdateDateTimeInput.getDateTime())
+    
+    def _arxivClientFinished(self, data: list[PublishableData]):
+        """
+        Slot to handle the finished signal from the ArxivClient.
+        Args:
+            data (list[PublishableData]): list of data from the client.
+        """
+        if self._arxivClient.error:
+            msgBox = AMTInfoMessageBox(self)
+            msgBox.setText("Error encountered while getting metadata.")
+            msgBox.setInformativeText(self._arxivClient.error)
+            msgBox.exec()
+            return
+        if len(data) > 1:
+            logger.warning("More than one entry received from arXiv.")
+        self.setData(data[0])
+    
     def getMetadataFromArxiv(self):
         """
         To be implemented in 0.2.0 version.
         Must retrieve metadata from arXiv based on the provided arXiv ID.
         """ 
-        msgBox = AMTInfoMessageBox(self)
-        msgBox.setText("This feature is not implemented yet.")
-        msgBox.setInformativeText("It will be implemented in 0.2.0 version. Stay tuned!")
-        msgBox.exec()
+        arxivId = self.ui.arXivIDLineEdit.text()
+        logger.debug(f"Getting metadata for arXiv ID: {arxivId}")
+        if not arxivId:
+            msgBox = AMTInfoMessageBox(self)
+            msgBox.setText("Please provide an arXiv ID.")
+            msgBox.exec()
+            return
+        self._arxivClient.getById(arxivId)
+        self._arxivClient.send()
+
         
 class BookForm(PublishableForm):
     """
@@ -195,8 +221,8 @@ class BookForm(PublishableForm):
     
     def setData(self, data: BookData):
         super().setData(data)
-        self.ui.iSBNLineEdit.setText(data.isbn)
-        self.ui.publisherLineEdit.setText(data.publisher)
+        self.ui.iSBNLineEdit.setText(data.isbn or self.ui.iSBNLineEdit.text())
+        self.ui.publisherLineEdit.setText(data.publisher or self.ui.publisherLineEdit.text())
         
 class LecturesForm(PublishableForm):
     """
@@ -218,6 +244,6 @@ class LecturesForm(PublishableForm):
 
     def setData(self, data: LecturesData):
         super().setData(data)
-        self.ui.courseLineEdit.setText(data.course)
-        self.ui.uniLineEdit.setText(data.school)
+        self.ui.courseLineEdit.setText(data.course or self.ui.courseLineEdit.text())
+        self.ui.uniLineEdit.setText(data.school or self.ui.uniLineEdit.text())
         
