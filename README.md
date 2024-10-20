@@ -1,4 +1,4 @@
-# Article Management Tool v0.1.1
+# Article Management Tool v0.1.2
 
 Manage articles, books, lecture notes, etc for research.
 
@@ -9,6 +9,7 @@ Currently this tool supports:
 - Opening entries in an external application.
 - Searching within the references.
 - Previews.
+- Pulling metadata from arxiv.org.
 
 ### Soon to be implemented
 

@@ -303,7 +303,7 @@ class MainWindow(QMainWindow):
         # delete entry on context menu
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
         # hide unused widgets
-        #self.ui.actionDebug.setVisible(False)
+        self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """
@@ -660,6 +660,4 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        ad = ArticleData("Title", [AuthorData("Author")])
-        logger.debug(ad.toString())
-        
+
