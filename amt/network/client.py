@@ -25,6 +25,7 @@ from amt.logger import getLogger
 from amt.network.parser import ArxivParser
 from amt.network.request import ArxivRequest, AMTRequest
 from amt.network.arxiv_aux import *
+from amt.db.datamodel import PublishableData
 
 logger = getLogger(__name__)
 
@@ -32,11 +33,11 @@ class AMTClient(QObject):
     """
     Base class for metadata server clients.
     Signals:
-        finished (list): signal emitted when the request is finished, contains the parsed data in the form of a list
+        finished (list[PublishableData]): signal emitted when the request is finished, contains the parsed data in the form of a list
         errorEncountered: signal emitted when an error is encountered
     """
-    finished = Signal(list)
-    errorEncountered = Signal(str)
+    finished = Signal(list) # list[PublishableData]
+    errorEncountered = Signal(str) 
     def __init__(self, parent=None):
         """
         Constructs the client object.
@@ -135,7 +136,7 @@ class ArxivClient(AMTClient):
         request.addArxivId(arxiv_id)
         self.request = request
         
-    def parseResponse(self, reply: QNetworkReply) -> list:
+    def parseResponse(self, reply: QNetworkReply) -> list[PublishableData]:
         xmlReply = reply.readAll().data().decode()
         status, msg = self._parser.parse(xmlReply)
         if status:
