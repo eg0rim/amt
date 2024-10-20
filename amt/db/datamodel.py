@@ -202,6 +202,29 @@ class AbstractData(ABC):
         self.id = query.lastInsertId()
         return True
     
+    def deleteMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
+        """ 
+        Delete multiple data objects from the table corresponding to the data type.
+        WARNING: list of data objects must be of the same type.
+        Args:
+            db (AMTDatabase): database object
+            data (list[AbstractData]): list of data objects
+        Returns:
+            bool: True if delete query executed successfully, False otherwise
+        """
+        ids = [str(d.id) for d in data]
+        if any(id is None for id in ids):
+            logger.error("Cannot delete data without id: {ids}")
+            return False
+        query = AMTQuery(db)
+        if not query.delete(cls.tableName, f"id IN ({','.join(ids)})"):
+            return False
+        if not query.exec():
+            return False
+        for d in data:
+            d.id = None
+        return True
+    
     def delete(self, db : AMTDatabase) -> bool:
         """ 
         Delete data from the table corresponding to the data type.
