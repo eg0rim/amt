@@ -859,7 +859,7 @@ class ArticleData(PublishableData):
     """
     tableName = "articles"
     tableColumns = PublishableData.tableColumns.copy()
-    tableColumns.update({"arxivid": "TEXT", "version": "INTEGER", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT"})  
+    tableColumns.update({"arxivid": "TEXT", "version": "TEXT", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT"})  
     tableAddLines = [] #["UNIQUE(title, doi)"]
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
@@ -925,7 +925,7 @@ class ArticleData(PublishableData):
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
         self.arxivid = nrow[0]
-        self.version = int(nrow[1]) if nrow[1] else None
+        self.version = nrow[1] if nrow[1] else None
         self.journal = nrow[2]
         self.dateArxivUploaded = QDateTime.fromString(nrow[3], Qt.ISODate) if nrow[3] else None
         self.dateArxivUpdated = QDateTime.fromString(nrow[4], Qt.ISODate) if nrow[4] else None
@@ -935,7 +935,7 @@ class ArticleData(PublishableData):
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
         data["arxivid"] = self.arxivid
-        data["version"] = str(self.version) if self.version else None
+        data["version"] = self.version
         data["journal"] = self.journal
         data["date_arxiv_uploaded"] = self.dateArxivUploaded.toString(Qt.ISODate) if self.dateArxivUploaded else None
         data["date_arxiv_updated"] = self.dateArxivUpdated.toString(Qt.ISODate) if self.dateArxivUpdated else None
