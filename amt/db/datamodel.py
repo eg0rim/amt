@@ -550,6 +550,9 @@ class AuthorData(AbstractData):
     def toShortString(self):
         return ' '.join([self.firstName] + [self.lastName]).strip()
     
+    def toMinimalString(self):
+        return f"{f"{self.firstName[0]}." if self.firstName else ""} {self.lastName if self.lastName else ""}".strip()
+    
     def getDisplayData(self, field: str) -> str:
         if field == "firstName":
             return self.firstName
@@ -771,7 +774,7 @@ class EntryData(AbstractData):
     def getAuthorsString(self):
         s = ""
         if isinstance(self.authors, list):
-            s = ", ".join([auth.toShortString() for auth in self.authors])
+            s = ", ".join([auth.toMinimalString() for auth in self.authors])
         return s
     
     def getDisplayData(self, field : str) -> str:
