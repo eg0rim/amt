@@ -202,6 +202,7 @@ class AbstractData(ABC):
         self.id = query.lastInsertId()
         return True
     
+    @classmethod
     def deleteMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
         """ 
         Delete multiple data objects from the table corresponding to the data type.
