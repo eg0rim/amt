@@ -202,6 +202,29 @@ class AbstractData(ABC):
         self.id = query.lastInsertId()
         return True
     
+    def deleteMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
+        """ 
+        Delete multiple data objects from the table corresponding to the data type.
+        WARNING: list of data objects must be of the same type.
+        Args:
+            db (AMTDatabase): database object
+            data (list[AbstractData]): list of data objects
+        Returns:
+            bool: True if delete query executed successfully, False otherwise
+        """
+        ids = [str(d.id) for d in data]
+        if any(id is None for id in ids):
+            logger.error("Cannot delete data without id: {ids}")
+            return False
+        query = AMTQuery(db)
+        if not query.delete(cls.tableName, f"id IN ({','.join(ids)})"):
+            return False
+        if not query.exec():
+            return False
+        for d in data:
+            d.id = None
+        return True
+    
     def delete(self, db : AMTDatabase) -> bool:
         """ 
         Delete data from the table corresponding to the data type.
@@ -696,6 +719,36 @@ class EntryData(AbstractData):
         if not query.exec():
             return False
         return True
+    
+    def update(self, db: AMTDatabase) -> bool:
+        if not super().update(db):
+            return False
+        # update authors and reference
+        query = AMTQuery(db)
+        refTable = f"{self.tableName}_{AuthorData.tableName}"
+        refId = f"{self.tableName}_id"
+        refAuthorId = f"{AuthorData.tableName}_id"
+        # remove all references
+        logger.debug(f"deleting references for {self.id}")
+        if not query.delete(refTable, f"{refId} = {self.id}"):
+            return False
+        if not query.exec():
+            return False
+        # add new authors or ignore existing
+        authorsToInsert = [author for author in self.authors if not author.id]
+        if len(authorsToInsert) == 0:
+            return True
+        if not AuthorData.insertMultiple(db, authorsToInsert):
+            logger.error(f"Failed to insert authors")
+            return False
+        refsToInsert = []
+        for author in self.authors:
+            refsToInsert.append({refAuthorId: str(author.id), refId: str(self.id)})
+        if not query.insert(refTable, refsToInsert):
+            return False
+        if not query.exec():
+            return False
+        return True      
     
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
