@@ -58,7 +58,7 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTInfoMessageBox,
     AMTQuestionMessageBox
 )
-from amt.file_utils.filehandler import ExternalEntryHandler, ApplicationNotSetError
+from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError
 from amt.network.arxiv_aux import *
 from amt.network.client import ArxivClient
 
@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         # model for the table view
         self.model: AMTDBModel = None
         # file handler
-        self.fileHandler: ExternalEntryHandler = ExternalEntryHandler()
+        self.fileHandler: EntryHandler = EntryHandler()
         # settings atrbiutes
         self.openEntriesOnStartup: bool = False
         self.closeEntriesOnExit: bool = False

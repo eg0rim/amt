@@ -26,34 +26,6 @@ from amt.logger import getLogger
 
 logger = getLogger(__name__)
 
-class FileHandler:   
-    """
-    Abstract class to handle files.
-    """     
-    def openFile(self):
-        """ 
-        Abstract method to open a file.
-        Must be implemented by the subclass.
-        """
-        pass
-    
-    def closeFile(self):
-        """ 
-        Abstract method to close a file.
-        Must be implemented by the subclass.
-        """
-        pass
-    
-    def fileExists(self, file : str) -> bool:
-        """ 
-        Check if the file exists.
-        Args:
-            file: Path to the file.
-        Returns:
-            True if the file exists, False otherwise.
-        """
-        return os.path.isfile(file)
-
 class ApplicationNotSetError(Exception):
     """Exception raised when no application is set for a file type."""
     def __init__(self, message: str ="Application not specified and default application not found.", fileType:str = None):
@@ -72,8 +44,7 @@ class ApplicationNotSetError(Exception):
         else:
             return super().__str__()
         
-
-class ExternalFileHandler(FileHandler):
+class FileHandler:
     """ 
     Class to handle files with external applications. Logic:
     - keep track of the processes of the opened files.
@@ -91,6 +62,12 @@ class ExternalFileHandler(FileHandler):
         fileExists(self, filePath: str) -> bool
         setApp(self, fileExt: str, app: str)
         getApps(self) -> dict[str, str]
+        getOpenedFiles(self) -> list[str]
+        closeByIndex(self, index: int) -> bool
+        closeAllFiles(self)
+        pollByIndex(self, index: int) -> bool
+        pollAllFiles(self) -> tuple[list[str], list[bool]]
+        syncFiles(self)
     """
     def __init__(self, defaultApp: str = ""):
         """ 
@@ -122,6 +99,16 @@ class ExternalFileHandler(FileHandler):
         #         self._defaultApp = "xdg-open"
         # else:
         #     self._defaultApp = None
+
+    def fileExists(self, file : str) -> bool:
+        """ 
+        Check if the file exists.
+        Args:
+            file: Path to the file.
+        Returns:
+            True if the file exists, False otherwise.
+        """
+        return os.path.isfile(file)
 
     def setApp(self, fileExt: str, app: str):
         """
@@ -267,7 +254,7 @@ class ExternalFileHandler(FileHandler):
                 newProcesses[1].append(self._processes[1][i])
         self._processes = newProcesses
         
-class ExternalEntryHandler(ExternalFileHandler):
+class EntryHandler(FileHandler):
     """ 
     Class to handle entries with external applications.
     Methods:
