@@ -612,7 +612,7 @@ class MainWindow(QMainWindow):
         """
         Opens arXiv dialog for submitting queries.
         """
-        self.arxivDialog.exec()
+        self.arxivDialog.show()
          
     # open additional dialog windows
     def openAboutDialog(self):
