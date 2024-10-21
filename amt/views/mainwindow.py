@@ -182,8 +182,8 @@ class MainWindow(QMainWindow):
         settings.beginGroup("Preview")
         width = settings.value("previewWidth", 300, type = int)
         height = settings.value("previewHeight", 400, type = int)
-        self.ui.previewLabel.setPreviewSize(width, height)
-        self.ui.previewLabel.setVisible(settings.value("showPreviewOnStartup", False, type = bool))
+        self.ui.previewWidget.setPreviewSize(width, height)
+        self.ui.previewWidget.setVisible(settings.value("showPreviewOnStartup", False, type = bool))
         settings.endGroup()
         
     def readState(self):
@@ -281,7 +281,7 @@ class MainWindow(QMainWindow):
         # show search bar
         self.ui.actionSearch.triggered.connect(self.toggleSearchBar)
         # show preview
-        self.ui.actionPreview.triggered.connect(self.ui.previewLabel.toggleVisibility)
+        self.ui.actionPreview.triggered.connect(self.ui.previewWidget.toggleVisibility)
         # actions in menu
         # quit application
         self.ui.actionQuit.triggered.connect(self.close)
@@ -470,7 +470,7 @@ class MainWindow(QMainWindow):
                 return
         # retrieve data from database
         self.model.update()
-        self.ui.previewLabel.reset()
+        self.ui.previewWidget.reset()
         
     def openSelectedRowsExternally(self) -> bool:
         """
@@ -611,14 +611,14 @@ class MainWindow(QMainWindow):
             row = deselected.indexes()[0].row()
         entry = self.model.getDataAt(row)
         if entry:
-             self.ui.previewLabel.setEntry(entry)
+             self.ui.previewWidget.setEntry(entry)
                 
     def onDatabaseConnected(self, name: str):
         """
         Updates the current file name and clears the preview cache.
         """
         self.setCurrentFile(name)
-        self.ui.previewLabel.pdfPreviewer.clearCache()
+        self.ui.previewWidget.clearCache()
     
     # file operations
     def setCurrentFile(self, file: str):

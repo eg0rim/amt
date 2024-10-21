@@ -18,7 +18,7 @@
 
 """display preview for entries"""
 
-from PySide6.QtWidgets import QLabel, QApplication
+from PySide6.QtWidgets import QLabel, QApplication, QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 
@@ -50,7 +50,6 @@ class AMTPreviewLabel(QLabel):
         self.setFrameShadow(QLabel.Sunken)
         self.setAlignment(Qt.AlignCenter)
         self.clear()
-        self.setVisible(False)
         
     @property
     def pdfPreviewer(self) -> PdfPreviewer:
@@ -118,4 +117,31 @@ class AMTPreviewLabel(QLabel):
         self.setVisible(not self.isVisible())
         self.setEntry(self._entry)
         
-    
+class AMTPreviewWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        from amt.views.build.previewwidget_ui import Ui_previewWidget
+        self.ui = Ui_previewWidget()
+        self.ui.setupUi(self)
+        self.setVisible(False)
+        
+    def setEntry(self, entry: EntryData):
+        self.ui.previewLabel.setEntry(entry)
+        self.ui.titleBody.setText(entry.getDisplayData('title'))
+        self.ui.authorsBody.setText(entry.getDisplayData('authors'))
+        self.ui.summaryBody.setText(entry.getDisplayData('summary'))
+        
+    def setPreviewSize(self, width: int, height: int):
+        self.ui.previewLabel.setPreviewSize(width, height)
+        
+    def reset(self):
+        self.ui.previewLabel.reset()
+        self.ui.titleBody.clear()
+        self.ui.authorsBody.clear()
+        self.ui.summaryBody.clear()
+        
+    def toggleVisibility(self):
+        self.setVisible(not self.isVisible())
+        
+    def clearCache(self):
+        self.ui.previewLabel.pdfPreviewer.clearCache()
