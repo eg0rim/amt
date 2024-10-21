@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>279</width>
-    <height>399</height>
+    <height>431</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -143,9 +143,16 @@
     </layout>
    </item>
    <item>
+    <widget class="QPushButton" name="downloadPdfButton">
+     <property name="text">
+      <string>Download pdf from arXiv</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="getMetaButton">
      <property name="text">
-      <string>Get Metadata</string>
+      <string>Get Metadata from arXiv</string>
      </property>
     </widget>
    </item>

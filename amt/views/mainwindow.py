@@ -60,7 +60,6 @@ from amt.views.customWidgets.amtmessagebox import (
 )
 from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError
 from amt.network.arxiv_aux import *
-from amt.network.client import ArxivClient
 
 logger = getLogger(__name__)
 
@@ -157,7 +156,6 @@ class MainWindow(QMainWindow):
             self.setTemporary(True)
         logger.info("Main window is initialized.")
 
-    
     # read and write settings
     def readSettings(self):
         """

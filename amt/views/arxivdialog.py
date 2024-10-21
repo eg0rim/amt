@@ -25,9 +25,10 @@ import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
 from amt.db.datamodel import ArticleData,AuthorData
 from amt.network.client import ArxivClient
+from amt.network.filedownloader import EntryDownloader
 from amt.network.arxiv_aux import *
 from amt.network.client import ArxivRequest
-from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog
+from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog, FileDownloadProgressDialog
 from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox
 
 logger = getLogger(__name__)
@@ -50,6 +51,7 @@ class ArxivDialog(QDialog):
         super(ArxivDialog, self).__init__(parent)
         self.model = ArxivModel(self)
         self.client = ArxivClient(self)
+        self.downloader = EntryDownloader(self)
         self.maxNumResults = 50
         self.addingEntries = False
         self.setupUi()
@@ -173,10 +175,15 @@ class ArxivDialog(QDialog):
         
     def getSelectedEntries(self) -> list[ArticleData]:
         selectedRows = self.ui.tableView.selectionModel().selectedRows()
-        selectedEntries = []
+        selectedEntries: list[ArticleData] = []
         for row in selectedRows:
             selectedEntries.append(self.model.getDataAt(row.row()))
+        if self.ui.downloadPdfsCheckBox.isChecked():  
+            numEntries = len(selectedEntries)
+            downloadDialog = FileDownloadProgressDialog(self)  
+            # TODO: download pdfs
         return selectedEntries
+    
 
     def onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
         """     
