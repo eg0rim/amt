@@ -191,8 +191,8 @@ class MainWindow(QMainWindow):
         # read window settings
         settings.beginGroup("MainWindow")
         self.restoreGeometry(settings.value("geometry"))
-        self.restoreState(settings.value("state"))
-        self.resize(settings.value("windowSize", self.size()))
+        #self.restoreState(settings.value("state"))
+        #self.resize(settings.value("windowSize", self.size()))
         settings.endGroup()
         # read database settings
         settings.beginGroup("Database")
@@ -219,13 +219,20 @@ class MainWindow(QMainWindow):
         self.ui.splitter.restoreState(settings.value("splitterState"))
         settings.endGroup()
         
+        settings.beginGroup("ArxivDialog")
+        self.arxivDialog.ui.searchTypeComboBox.setCurrentIndex(settings.value("searchType", 0, type = int))
+        self.arxivDialog.ui.arxivIdCheckBox.setChecked(settings.value("arxivIdCheckBox", False, type = bool))
+        self.arxivDialog.ui.splitter.restoreState(settings.value("splitterState"))
+        self.arxivDialog.restoreGeometry(settings.value("geometry"))
+        settings.endGroup()
+        
     def writeState(self):
         settings = QSettings(self.stateFile)
         settings.beginGroup("MainWindow")
         # TODO: size does not save
         settings.setValue("geometry", self.saveGeometry())
-        settings.setValue("state", self.saveState())
-        settings.setValue("windowSize", self.size())
+        #settings.setValue("state", self.saveState())
+        #settings.setValue("windowSize", self.size())
         settings.endGroup()
         
         settings.beginGroup("Database")
@@ -243,6 +250,13 @@ class MainWindow(QMainWindow):
         
         settings.beginGroup("Splitter")
         settings.setValue("splitterState", self.ui.splitter.saveState())
+        settings.endGroup()
+        
+        settings.beginGroup("ArxivDialog")
+        settings.setValue("searchType", self.arxivDialog.ui.searchTypeComboBox.currentIndex())
+        settings.setValue("arxivIdCheckBox", self.arxivDialog.ui.arxivIdCheckBox.isChecked())
+        settings.setValue("splitterState", self.arxivDialog.ui.splitter.saveState())
+        settings.setValue("geometry", self.arxivDialog.saveGeometry())
         settings.endGroup()
  
     # setup methods        

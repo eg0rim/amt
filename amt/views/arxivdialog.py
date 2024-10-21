@@ -20,7 +20,7 @@
 
 from amt.logger import getLogger
 from PySide6.QtWidgets import QDialog, QProgressDialog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QItemSelection
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
 from amt.db.datamodel import ArticleData,AuthorData
@@ -90,6 +90,9 @@ class ArxivDialog(QDialog):
         self.ui.loadMorePushButton.setEnabled(False)
         self.ui.loadMorePushButton.clicked.connect(self.onLoadMoreButtonClicked)
         self.ui.addSelectedPushButton.setEnabled(False)
+        # preview
+        self.ui.previewWidget.setVisible(True)
+        self.ui.previewWidget.ui.previewLabel.setVisible(False)
         
     def setupModel(self):
         self.ui.tableView.setModel(self.model)
@@ -97,6 +100,8 @@ class ArxivDialog(QDialog):
         self.ui.tableView.setSortingEnabled(False)
         # disable context menu in the table view
         self.ui.tableView.setContextMenuPolicy(Qt.NoContextMenu)
+        # preview
+        self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
         
     def setupClient(self):
         self.client.errorEncountered.connect(self.onClientError)
@@ -172,3 +177,18 @@ class ArxivDialog(QDialog):
         for row in selectedRows:
             selectedEntries.append(self.model.getDataAt(row.row()))
         return selectedEntries
+
+    def onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
+        """     
+        Updates the preview with the selected entry.
+        Args:
+            selected (QItemSelection): The selected items in the table view.
+            deselected (QItemSelection): The deselected items in the table view.
+        """
+        try:
+            row = selected.indexes()[0].row()
+        except IndexError:
+            row = deselected.indexes()[0].row()
+        entry = self.model.getDataAt(row)
+        if entry:
+             self.ui.previewWidget.setEntry(entry)
