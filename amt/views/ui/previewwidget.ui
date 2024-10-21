@@ -99,17 +99,14 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="summaryBody">
+        <widget class="QTextEdit" name="summaryBody">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="wordWrap">
+         <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
