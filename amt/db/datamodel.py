@@ -797,11 +797,12 @@ class PublishableData(EntryData):
     Abstract Data type to store publishable data like articles, books, lecture notes, etc. that have DOI, link, date published.
     """
     tableColumns = EntryData.tableColumns.copy()
-    tableColumns.update({"doi": "TEXT", "link": "TEXT", "date_published": "TEXT"})
+    tableColumns.update({"doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "filelink": "TEXT"})
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._doi: str = None
         self._link: str = None
+        self._filelink: str = None
         self._datePublished: QDate = None
         
     @property
@@ -828,10 +829,18 @@ class PublishableData(EntryData):
     def datePublished(self, value : QDate):
         self._datePublished = value
         
+    @property
+    def filelink(self) -> str:
+        return self._filelink
+    @filelink.setter
+    def filelink(self, value : str):
+        self._filelink = value
+        
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
         data["doi"] = self.doi
         data["link"] = self.link
+        data["filelink"] = self.filelink
         data["date_published"] = self.datePublished.toString(Qt.ISODate) if self.datePublished else None
         return data
         
@@ -840,13 +849,16 @@ class PublishableData(EntryData):
         self.doi = nrow[0]
         self.link = nrow[1]
         self.datePublished = QDate.fromString(nrow[2], Qt.ISODate) if nrow[2] else None
-        return nrow[3:]
+        self.filelink = nrow[3]
+        return nrow[4:]
         
     def getDisplayData(self, field: str) -> str:
         if field == "doi":
             return self.doi or ""
         elif field == "link":
             return self.link or ""
+        elif field == "filelink":
+            return self.filelink or ""
         elif field == "datePublished":
             return self.datePublished.toString(Qt.ISODate) if self.datePublished else ""
         return super().getDisplayData(field)
