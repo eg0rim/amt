@@ -39,6 +39,7 @@ class AMTClient(QObject):
     """
     finished = Signal(list) # list[PublishableData]
     errorEncountered = Signal(str) 
+    progressed = Signal(int)
     def __init__(self, parent=None):
         """
         Constructs the client object.
@@ -89,6 +90,13 @@ class AMTClient(QObject):
         self.finished.emit(parsedData)
         self._request = None
         reply.deleteLater()
+        
+    def _onProgress(self, bytes_received: int, bytes_total: int):
+        if bytes_total > 0:
+            progress = int((bytes_received / bytes_total) * 100)
+            self.progressed.emit(progress)
+        else:
+            self.progressed.emit(0)
     
     def send(self) -> QNetworkReply | None:
         """
@@ -107,6 +115,7 @@ class AMTClient(QObject):
             self.finished.emit([])
             return None
         reply =  self.manager.get(self._request)
+        reply.downloadProgress.connect(self._onProgress)
         return reply
 
 class ArxivClient(AMTClient):
