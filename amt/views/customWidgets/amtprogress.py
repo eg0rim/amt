@@ -44,3 +44,13 @@ class ArxivSearchProgressDialog(AMTProgressDialog):
         super().__init__(parent)
         self.setLabelText("Searching arXiv...")
         self.setWindowTitle("Searching arXiv")
+        
+class FileDownloadProgressDialog(AMTProgressDialog):
+    """
+    Customized QProgressDialog for file download.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setLabelText("Downloading file...")
+        self.setWindowTitle("Downloading file")
+        self.setRange(0, 100)
