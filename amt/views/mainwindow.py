@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
         width = settings.value("previewWidth", 300, type = int)
         height = settings.value("previewHeight", 400, type = int)
         self.ui.previewWidget.setPreviewSize(width, height)
-        self.ui.previewWidget.setVisible(settings.value("showPreviewOnStartup", False, type = bool))
+        #self.ui.previewWidget.setVisible(settings.value("showPreviewOnStartup", False, type = bool))
         settings.endGroup()
         
     def readState(self):
@@ -191,6 +191,8 @@ class MainWindow(QMainWindow):
         # read window settings
         settings.beginGroup("MainWindow")
         self.restoreGeometry(settings.value("geometry"))
+        self.ui.splitter.restoreState(settings.value("splitterState"))
+        self.ui.previewWidget.setVisible(settings.value("previewOn", False, type = bool))
         #self.restoreState(settings.value("state"))
         #self.resize(settings.value("windowSize", self.size()))
         settings.endGroup()
@@ -215,10 +217,6 @@ class MainWindow(QMainWindow):
         self.ui.tableView.horizontalHeader().setSortIndicator(sortingColumn, sortingOrder)
         settings.endGroup()
         
-        settings.beginGroup("Splitter")
-        self.ui.splitter.restoreState(settings.value("splitterState"))
-        settings.endGroup()
-        
         settings.beginGroup("ArxivDialog")
         self.arxivDialog.ui.searchTypeComboBox.setCurrentIndex(settings.value("searchType", 0, type = int))
         self.arxivDialog.ui.arxivIdCheckBox.setChecked(settings.value("arxivIdCheckBox", False, type = bool))
@@ -231,6 +229,8 @@ class MainWindow(QMainWindow):
         settings.beginGroup("MainWindow")
         # TODO: size does not save
         settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("splitterState", self.ui.splitter.saveState())
+        settings.setValue("previewOn", self.ui.previewWidget.isVisible())
         #settings.setValue("state", self.saveState())
         #settings.setValue("windowSize", self.size())
         settings.endGroup()
@@ -246,10 +246,6 @@ class MainWindow(QMainWindow):
         settings.beginGroup("TableView")
         settings.setValue("sortingColumn", self.ui.tableView.horizontalHeader().sortIndicatorSection())
         settings.setValue("sortingOrder", self.ui.tableView.horizontalHeader().sortIndicatorOrder())
-        settings.endGroup()
-        
-        settings.beginGroup("Splitter")
-        settings.setValue("splitterState", self.ui.splitter.saveState())
         settings.endGroup()
         
         settings.beginGroup("ArxivDialog")
