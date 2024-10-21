@@ -112,7 +112,7 @@ class ArxivParser(AMTParser):
                 logger.error("Title is None")
                 continue
             # authors
-            title = title.strip().replace("\n", "")
+            title = title.strip().replace("\n", " ")
             authors = []
             for author in entry.findall('{http://www.w3.org/2005/Atom}author'):
                 if author is None:
@@ -158,13 +158,13 @@ class ArxivParser(AMTParser):
             # summary, doi, journal, comment
             summary = getText(entry, '{http://www.w3.org/2005/Atom}summary')
             if summary:
-                summary = summary.strip().replace("\n", "")
+                summary = summary.strip().replace("\n", " ")
                 entryData.summary = summary
             entryData.doi = getText(entry, '{http://arxiv.org/schemas/atom}doi')
             entryData.journal = getText(entry, '{http://arxiv.org/schemas/atom}journal_ref')
             comment = getText(entry, '{http://arxiv.org/schemas/atom}comment')
             if comment:
-                comment = comment.strip().replace("\n", "")
+                comment = comment.strip().replace("\n", " ")
                 entryData.comment = comment
             # categories
             entryData.primeCategory = getAttr(entry, '{http://arxiv.org/schemas/atom}primary_category', 'term') 
