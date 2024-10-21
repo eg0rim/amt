@@ -284,6 +284,7 @@ class MainWindow(QMainWindow):
         self.ui.actionUpdate.setIcon(QIcon(":/icons/update"))
         self.ui.actionSettings.setIcon(QIcon(":/icons/settings"))
         self.ui.actionPreview.setIcon(QIcon(":/icons/preview"))
+        self.ui.actionArxiv.setIcon(QIcon(":/icons/arxiv"))
         # connect signals
         # actions in toolbar
         # add entry

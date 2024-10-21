@@ -120,6 +120,7 @@
    <addaction name="actionEdit"/>
    <addaction name="actionSearch"/>
    <addaction name="actionPreview"/>
+   <addaction name="actionArxiv"/>
    <addaction name="actionDebug"/>
   </widget>
   <action name="actionAbout">
@@ -146,7 +147,7 @@
     <string>Add entry</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+    <string>Ins</string>
    </property>
   </action>
   <action name="actionDel">
