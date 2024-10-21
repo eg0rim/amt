@@ -84,7 +84,7 @@ class FileDownloader(QObject):
                 file.write(self.reply.readAll().data())
             self.downloadFinished.emit(self.destination)
         except Exception as e:
-            errmsg = f"Failing to write the file: {str(e)}"
+            errmsg = f"Failed to write the file at {self.destination}: {str(e)}"
             logger.error(errmsg)
             self.downloadFailed.emit(errmsg)
         self.reply.deleteLater()
