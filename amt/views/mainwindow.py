@@ -326,10 +326,10 @@ class MainWindow(QMainWindow):
         self.ui.tableView.contextMenu.editAction.triggered.connect(self.editSelectedRow)
         # delete entry on context menu
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
-        # hide unused widgets
-        self.ui.actionDebug.setVisible(False)
         # arxiv dialog
         self.arxivDialog.ui.addSelectedPushButton.clicked.connect(self.addFromArxivDialog)
+        # hide unused widgets
+        self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """
