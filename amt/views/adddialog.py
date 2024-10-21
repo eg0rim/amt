@@ -95,6 +95,7 @@ class AddDialog(QDialog):
         #if entry specified => edit mode
         if entryToEdit:
             # impossible to change type of entry as for different types different database tables are used
+            self.data = entryToEdit
             self.ui.entryTypeComboBox.setVisible(False)
             self.setWindowTitle("Edit entry")
             if isinstance(entryToEdit, ArticleData):
@@ -105,7 +106,7 @@ class AddDialog(QDialog):
                 self.ui.entryTypeComboBox.setCurrentText("Lecture notes")
             else:
                 raise ValueError("Unknown data type")
-            self.ui.formStackedWidget.currentWidget().setData(entryToEdit)
+            self.currentForm.setData(entryToEdit)
         logger.info("AddDialog initialized")
         
     def setupUI(self):

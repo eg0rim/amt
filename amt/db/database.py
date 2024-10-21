@@ -283,12 +283,12 @@ class AMTQuery(QSqlQuery):
                 return False
             valuesList = []
             for row in values:
-                rowValues = ', '.join([f"'{val}'" if not val is None else "NULL" for val in row.values()])
+                rowValues = ', '.join([f"'{val.replace("'","''")}'" if not val is None else "NULL" for val in row.values()])
                 valuesList.append(f"({rowValues})")
             valuesStr = ', '.join(valuesList)
         elif isinstance(values, dict):
             columns = ', '.join(values.keys())
-            valuesStr = f"({', '.join([f"'{val}'" if not val is None else "NULL" for val in values.values()])})"
+            valuesStr = f"({', '.join([f"'{val.replace("'","''")}'" if not val is None else "NULL" for val in values.values()])})"
         else:
             logger.error("Values must be a dictionary or a list of dictionaries")
             return False
@@ -327,7 +327,7 @@ class AMTQuery(QSqlQuery):
             bool: returns True if update query construction is successful
         """
         self._execStatus = False
-        self._queryString = f"UPDATE {table} SET {', '.join([f"{col} = {"NULL" if val is None else f"'{val}'"}" for col, val in values.items()])} WHERE {filter}"
+        self._queryString = f"UPDATE {table} SET {', '.join([f"{col} = {"NULL" if val is None else f"'{val.replace("'","''")}'"}" for col, val in values.items()])} WHERE {filter}"
         self._setState("update", True)
         return True
     

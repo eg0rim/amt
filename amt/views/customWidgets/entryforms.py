@@ -65,6 +65,7 @@ class EntryForm(QWidget):
         """
         super().__init__(parent=parent)
         self.setupUi()
+        self.entry = None
         
     def setupUi(self):
         """ 
@@ -94,7 +95,10 @@ class EntryForm(QWidget):
         Returns:
             EntryData: retrieved data from the form.
         """
-        entry = self.dataType.createEmptyInstance()
+        if not self.entry:
+            entry = self.dataType.createEmptyInstance()
+        else:
+            entry = self.entry
         self.fillEntryWithData(entry)
         return entry
 
@@ -108,6 +112,7 @@ class EntryForm(QWidget):
         self.ui.authorLineEdit.setText(', '.join([author.toString() for author in data.authors]) or self.ui.authorLineEdit.text())
         self.ui.previewPageSpinBox.setValue(data.previewPage or self.ui.previewPageSpinBox.value())
         self.ui.fileInput.setFilePath(data.fileName or self.ui.fileInput.getFilePath())
+        self.entry = data
         
 class PublishableForm(EntryForm):
     """

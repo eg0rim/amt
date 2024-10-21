@@ -18,7 +18,7 @@
 
 """display preview for entries"""
 
-from PySide6.QtWidgets import QLabel, QApplication, QWidget
+from PySide6.QtWidgets import QLabel, QApplication, QWidget, QSizePolicy
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 
@@ -44,7 +44,6 @@ class AMTPreviewLabel(QLabel):
         super().__init__(parent)
         self._pdfPreviewer: PdfPreviewer = PdfPreviewer(size=(self.width(), self.height()))
         self._entry: EntryData = None
-        self.setFixedSize(300,400)
         self.setScaledContents(False)
         self.setFrameShape(QLabel.Box)
         self.setFrameShadow(QLabel.Sunken)
@@ -105,7 +104,8 @@ class AMTPreviewLabel(QLabel):
             width: width of the preview in pixels
             height: height of the preview in pixels
         """
-        self.setFixedSize(width, height)
+        self.setFixedHeight(height)
+        self.setMinimumWidth(width)
         # update the size of the previewer
         self._pdfPreviewer.size = (width, height)
         self.setEntry(self._entry)
