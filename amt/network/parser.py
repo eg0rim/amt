@@ -159,12 +159,10 @@ class ArxivParser(AMTParser):
                 if link.get('rel') == "related":
                     entryData.link = link.get('href')
                 elif link.get('rel') == "alternate":
-                    pass
-                    # TODO: implement corresponding columns and fields
-                    # if link.get('title') == "pdf":
-                    #     entryData.pdfLink = link.get('href')
-                    # elif link.get('title') == "doi":
-                    #     entryData.doiLink = link.get('href')
+                    if link.get('title') == "pdf":
+                        entryData.filelink = link.get('href')
+                    elif link.get('title') == "doi":
+                        entryData.doilink = link.get('href')
             # dates
             datePublished = getText(entry, '{http://www.w3.org/2005/Atom}published')
             entryData.dateArxivUploaded = QDateTime.fromString(datePublished, Qt.ISODate)
