@@ -2,130 +2,150 @@
 <ui version="4.0">
  <class>Dialog</class>
  <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>594</width>
+    <height>393</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>arxiv search</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout_4">
    <item>
-    <widget class="QWidget" name="searchWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QComboBox" name="searchTypeComboBox"/>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="searchLineEdit">
-        <property name="placeholderText">
-         <string>Your search query</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="arxivIdCheckBox">
-        <property name="text">
-         <string>arxiv id</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="arxivIdLneEdit">
-     <property name="placeholderText">
-      <string>Comma separated id's, eg: hep-th/9711200, 1207.7214</string>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QWidget" name="settingsWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QLabel" name="sortByLabel">
-        <property name="text">
-         <string>Sort by</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="sortByComboBox"/>
-      </item>
-      <item>
-       <widget class="QLabel" name="sortOrderLbel">
-        <property name="text">
-         <string>Sort order</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="sortOrderComboBox"/>
-      </item>
-      <item>
-       <widget class="QLabel" name="numResultLabel">
-        <property name="text">
-         <string># Results</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="numResultsSpinBox"/>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="searchButton">
-        <property name="text">
-         <string>Search</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="AMTTableWidget" name="tableView"/>
-   </item>
-   <item>
-    <widget class="QWidget" name="actionWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QPushButton" name="addSelectedPushButton">
-        <property name="text">
-         <string>Add selected</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="loadMorePushButton">
-        <property name="text">
-         <string>Load more</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <widget class="QWidget" name="mainWidget" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QWidget" name="searchWidget" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QComboBox" name="searchTypeComboBox"/>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="searchLineEdit">
+            <property name="placeholderText">
+             <string>Your search query</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="arxivIdCheckBox">
+            <property name="text">
+             <string>arxiv id</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="arxivIdLneEdit">
+         <property name="placeholderText">
+          <string>Comma separated id's, eg: hep-th/9711200, 1207.7214</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="settingsWidget" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QLabel" name="sortByLabel">
+            <property name="text">
+             <string>Sort by</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="sortByComboBox"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="sortOrderLbel">
+            <property name="text">
+             <string>Sort order</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="sortOrderComboBox"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="numResultLabel">
+            <property name="text">
+             <string># Results</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="numResultsSpinBox"/>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="searchButton">
+            <property name="text">
+             <string>Search</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="AMTTableWidget" name="tableView"/>
+       </item>
+       <item>
+        <widget class="QWidget" name="actionWidget" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="addSelectedPushButton">
+            <property name="text">
+             <string>Add selected</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="loadMorePushButton">
+            <property name="text">
+             <string>Load more</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="AMTPreviewWidget" name="previewWidget" native="true"/>
     </widget>
    </item>
   </layout>
@@ -143,6 +163,12 @@
    <class>AMTTableWidget</class>
    <extends>QTableView</extends>
    <header>amt/views/customWidgets/amttable</header>
+  </customwidget>
+  <customwidget>
+   <class>AMTPreviewWidget</class>
+   <extends>QWidget</extends>
+   <header>amt/views/customWidgets/amtpreview</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
