@@ -215,6 +215,10 @@ class MainWindow(QMainWindow):
         self.ui.tableView.horizontalHeader().setSortIndicator(sortingColumn, sortingOrder)
         settings.endGroup()
         
+        settings.beginGroup("Splitter")
+        self.ui.splitter.restoreState(settings.value("splitterState"))
+        settings.endGroup()
+        
     def writeState(self):
         settings = QSettings(self.stateFile)
         settings.beginGroup("MainWindow")
@@ -235,6 +239,10 @@ class MainWindow(QMainWindow):
         settings.beginGroup("TableView")
         settings.setValue("sortingColumn", self.ui.tableView.horizontalHeader().sortIndicatorSection())
         settings.setValue("sortingOrder", self.ui.tableView.horizontalHeader().sortIndicatorOrder())
+        settings.endGroup()
+        
+        settings.beginGroup("Splitter")
+        settings.setValue("splitterState", self.ui.splitter.saveState())
         settings.endGroup()
  
     # setup methods        
@@ -576,6 +584,7 @@ class MainWindow(QMainWindow):
         # if accepted add article to database
         if dialog.exec() == QDialog.Accepted:
             self.model.addEntry(dialog.data)
+            logger.debug(f"Added entry to the database: {repr(dialog.data.title)}")
             
     def openSettingsDialog(self):
         """ 
@@ -679,4 +688,3 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-
