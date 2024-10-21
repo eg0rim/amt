@@ -28,14 +28,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1">
-     <widget class="AMTPreviewLabel" name="previewLabel">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0" colspan="2">
+    <item row="0" column="0" colspan="3">
      <widget class="AMTSearchInput" name="searchInput" native="true">
       <property name="minimumSize">
        <size>
@@ -44,6 +37,9 @@
        </size>
       </property>
      </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="AMTPreviewWidget" name="previewWidget" native="true"/>
     </item>
    </layout>
   </widget>
@@ -259,9 +255,10 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>AMTPreviewLabel</class>
-   <extends>QLabel</extends>
+   <class>AMTPreviewWidget</class>
+   <extends>QWidget</extends>
    <header>amt/views/customWidgets/amtpreview</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
