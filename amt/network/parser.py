@@ -19,6 +19,7 @@
 """parser for arxiv replies"""
 
 import xml.etree.ElementTree as ET
+import re
 
 from amt.logger import getLogger
 from amt.db.datamodel import ArticleData, BookData, LecturesData, AuthorData, PublishableData
@@ -57,6 +58,16 @@ def getAttr( element: ET.Element, tag: str, attr: str) -> str | None:
         return elementTag.get(attr)
     else:
         return None
+    
+def cleanWS(text: str) -> str:
+    """
+    clean whitespace
+    Args:
+        text (str): text
+    Returns:
+        str: cleaned text
+    """
+    return re.sub(r'\s+', ' ', re.sub(r'\n', ' ', text)).strip()
     
 class AMTParser:
     """ 
@@ -112,13 +123,17 @@ class ArxivParser(AMTParser):
                 logger.error("Title is None")
                 continue
             # authors
-            title = title.strip().replace("\n", " ")
+            title = cleanWS(title)
             authors = []
             for author in entry.findall('{http://www.w3.org/2005/Atom}author'):
                 if author is None:
                     logger.error("Author is None")
                     continue
                 name = getText(author, '{http://www.w3.org/2005/Atom}name')
+                if name is None:
+                    logger.error("Name is None")
+                    continue
+                name = cleanWS(name)
                 authorData = AuthorData(name)
                 for affiliation in author.findall('{http://www.w3.org/2005/Atom}arxiv:affiliation'):
                     # TODO: implement several affiliations
@@ -127,7 +142,7 @@ class ArxivParser(AMTParser):
             entryData = ArticleData(title, authors)
             # get arxiv id and version
             rawId = getText(entry, '{http://www.w3.org/2005/Atom}id')
-            idWVersion = rawId.split("/")[-1]
+            idWVersion = re.sub(r'^http://arxiv.org/abs/', '', rawId)
             # version may not be present
             try:
                 id, version = idWVersion.split("v")
@@ -158,13 +173,13 @@ class ArxivParser(AMTParser):
             # summary, doi, journal, comment
             summary = getText(entry, '{http://www.w3.org/2005/Atom}summary')
             if summary:
-                summary = summary.strip().replace("\n", " ")
+                summary = cleanWS(summary)
                 entryData.summary = summary
             entryData.doi = getText(entry, '{http://arxiv.org/schemas/atom}doi')
             entryData.journal = getText(entry, '{http://arxiv.org/schemas/atom}journal_ref')
             comment = getText(entry, '{http://arxiv.org/schemas/atom}comment')
             if comment:
-                comment = comment.strip().replace("\n", " ")
+                comment = cleanWS(comment)
                 entryData.comment = comment
             # categories
             entryData.primeCategory = getAttr(entry, '{http://arxiv.org/schemas/atom}primary_category', 'term') 
