@@ -37,6 +37,7 @@ class AMTSettingsDialog(QDialog):
         super().__init__(parent)
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
+        self.ui.showPreviewOnStartCheckBox.setVisible(False)
         self.readSettings()
         
     def writeSettings(self):
@@ -64,7 +65,7 @@ class AMTSettingsDialog(QDialog):
         settings.beginGroup("Preview")
         settings.setValue("previewWidth", self.ui.previewWidthBox.value())
         settings.setValue("previewHeight", self.ui.previewHeightBox.value())
-        settings.setValue("showPreviewOnStartup", self.ui.showPreviewOnStartCheckBox.isChecked())
+        #settings.setValue("showPreviewOnStartup", self.ui.showPreviewOnStartCheckBox.isChecked())
         settings.endGroup()
         
     def readSettings(self):
@@ -92,8 +93,8 @@ class AMTSettingsDialog(QDialog):
         previewHeight = settings.value("previewHeight", 400, type=int)
         self.ui.previewWidthBox.setValue(previewWidth)
         self.ui.previewHeightBox.setValue(previewHeight)
-        showPreviewOnStartup = settings.value("showPreviewOnStartup", False, type=bool)
-        self.ui.showPreviewOnStartCheckBox.setChecked(showPreviewOnStartup)
+        #showPreviewOnStartup = settings.value("showPreviewOnStartup", False, type=bool)
+        #self.ui.showPreviewOnStartCheckBox.setChecked(showPreviewOnStartup)
         settings.endGroup()
         
     def accept(self):
