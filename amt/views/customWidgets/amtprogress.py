@@ -70,4 +70,4 @@ class MultiFileDownloadProgressDialog(FileDownloadProgressDialog):
         Sets the value of the progress bar and denotes the current file being downloaded.
         """
         self.setValue(progress)
-        self.setLabelText(f"Downloading files: {currentFile} of {totalFiles}...")
+        self.setLabelText(f"Downloading files: {currentFile} of {totalFiles}")

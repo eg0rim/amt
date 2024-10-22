@@ -151,7 +151,6 @@ class ArticleForm(PublishableForm):
         # connect get metadata button
         self.ui.getMetaButton.clicked.connect(self.getMetadataFromArxiv)
         self._arxivClient = ArxivClient(self)
-        self._downloader = EntryDownloader(self)
         self._arxivClient.finished.connect(self._arxivClientFinished)
         
     def setupUi(self):
@@ -194,15 +193,25 @@ class ArticleForm(PublishableForm):
             logger.warning("More than one entry received from arXiv.")
         entry = data[0]
         if self.ui.downloadPdfCheckBox.isChecked():
-            self._downloader.downloadEntry(entry)
-            progressDialog = FileDownloadProgressDialog(self)
-            self._downloader.downloadProgressed.connect(lambda _1, _2, val: progressDialog.setValue(val))
-            self._downloader.downloadFinished.connect(progressDialog.cancel)
-            self._downloader.startDownload()
-            progressDialog.exec()        
+            self.downloadEntry(entry)
         self.setData(entry)
-
     
+    def downloadEntry(self, entry: PublishableData):
+        """
+        Downloads the file of the provided entry.
+        Args:
+            entry (PublishableData): The entry to download the file of.
+        """
+        downloader = EntryDownloader(self)
+        progressDialog = FileDownloadProgressDialog(self)
+        downloader.addDownloadEntry(entry)
+        downloader.downloadProgressed.connect(lambda _1, _2, val: progressDialog.setValue(val))
+        downloader.downloadFinished.connect(progressDialog.cancel)
+        if downloader.startDownload():
+            progressDialog.exec()
+        else:
+            progressDialog.cancel()
+
     def getMetadataFromArxiv(self):
         """
         To be implemented in 0.2.0 version.

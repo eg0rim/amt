@@ -52,7 +52,6 @@ class ArxivDialog(QDialog):
         super(ArxivDialog, self).__init__(parent)
         self.model = ArxivModel(self)
         self.client = ArxivClient(self)
-        self.downloader = EntryDownloader(self)
         self.maxNumResults = 50
         self.addingEntries = False
         self.setupUi()
@@ -179,21 +178,28 @@ class ArxivDialog(QDialog):
         selectedEntries: list[ArticleData] = []
         for row in selectedRows:
             selectedEntries.append(self.model.getDataAt(row.row()))
-        if self.ui.downloadPdfsCheckBox.isChecked():  
-            waitDialog = MultiFileDownloadProgressDialog(self)            
-            logger.debug(f"Downloading {len(selectedEntries)} files")
-            for entry in selectedEntries:
-                logger.debug(f"Adding entry to download queue: {entry.title}")
-                self.downloader.addDownloadEntry(entry)
-            self.downloader.downloadProgressed.connect(waitDialog.setMultiValue)
-            self.downloader.downloadFinished.connect(waitDialog.cancel)
-            self.downloader.downloadFinishedWithErrors.connect(
-                lambda errs: AMTMutliErrorMessageBox(self, text = "One or multiple download(s) failed:", errors=errs).exec()
-                )
-            self.downloader.startDownload()
-            waitDialog.exec()
+        if self.ui.downloadPdfsCheckBox.isChecked():   
+            self.downloadEntries(selectedEntries)
         return selectedEntries
     
+    def downloadEntries(self, entries: list[ArticleData]):
+        downloader = EntryDownloader(self)
+        waitDialog = MultiFileDownloadProgressDialog(self)
+        downloader.downloadProgressed.connect(waitDialog.setMultiValue)
+        downloader.downloadFinished.connect(waitDialog.cancel)
+        downloader.downloadFinishedWithErrors.connect(
+                lambda errs: AMTMutliErrorMessageBox(
+                    self, 
+                    text = "One or multiple download(s) failed:", 
+                    errors=errs).exec()
+                )
+        for entry in entries:
+            downloader.addDownloadEntry(entry)
+        if downloader.startDownload():
+            waitDialog.exec()
+        else:
+            waitDialog.cancel()
+        
 
     def onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
         """     
