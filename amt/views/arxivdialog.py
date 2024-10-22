@@ -21,6 +21,7 @@
 from amt.logger import getLogger
 from PySide6.QtWidgets import QDialog, QProgressDialog
 from PySide6.QtCore import Qt, QItemSelection
+from pathlib import Path
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
 from amt.db.datamodel import ArticleData,AuthorData
@@ -28,8 +29,8 @@ from amt.network.client import ArxivClient
 from amt.network.filedownloader import EntryDownloader
 from amt.network.arxiv_aux import *
 from amt.network.client import ArxivRequest
-from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog, FileDownloadProgressDialog
-from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox
+from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog, MultiFileDownloadProgressDialog
+from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox, AMTMutliErrorMessageBox
 
 logger = getLogger(__name__)
 
@@ -179,9 +180,18 @@ class ArxivDialog(QDialog):
         for row in selectedRows:
             selectedEntries.append(self.model.getDataAt(row.row()))
         if self.ui.downloadPdfsCheckBox.isChecked():  
-            numEntries = len(selectedEntries)
-            downloadDialog = FileDownloadProgressDialog(self)  
-            # TODO: download pdfs
+            waitDialog = MultiFileDownloadProgressDialog(self)            
+            logger.debug(f"Downloading {len(selectedEntries)} files")
+            for entry in selectedEntries:
+                logger.debug(f"Adding entry to download queue: {entry.title}")
+                self.downloader.addDownloadEntry(entry)
+            self.downloader.downloadProgressed.connect(waitDialog.setMultiValue)
+            self.downloader.downloadFinished.connect(waitDialog.cancel)
+            self.downloader.downloadFinishedWithErrors.connect(
+                lambda errs: AMTMutliErrorMessageBox(self, text = "One or multiple download(s) failed:", errors=errs).exec()
+                )
+            self.downloader.startDownload()
+            waitDialog.exec()
         return selectedEntries
     
 

@@ -143,17 +143,23 @@
     </layout>
    </item>
    <item>
-    <widget class="QPushButton" name="downloadPdfButton">
-     <property name="text">
-      <string>Download pdf from arXiv</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="getMetaButton">
-     <property name="text">
-      <string>Get Metadata from arXiv</string>
-     </property>
+    <widget class="QWidget" name="arxivDownloadWidget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="getMetaButton">
+        <property name="text">
+         <string>Get by arXiv id</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="downloadPdfCheckBox">
+        <property name="text">
+         <string>with pdf</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

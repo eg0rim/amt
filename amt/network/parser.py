@@ -153,12 +153,12 @@ class ArxivParser(AMTParser):
             entryData.arxivid = id
             # links
             # there might be several links 
-            # one with rel="related" 
-            # two with rel="alternate"and title="pdf" and "doi"
+            # two with rel="related" and title = "doi" and "pdf"
+            # one with rel="alternate"
             for link in entry.findall('{http://www.w3.org/2005/Atom}link'):
-                if link.get('rel') == "related":
+                if link.get('rel') == "alternate":
                     entryData.link = link.get('href')
-                elif link.get('rel') == "alternate":
+                elif link.get('rel') == "related":
                     if link.get('title') == "pdf":
                         entryData.filelink = link.get('href')
                     elif link.get('title') == "doi":

@@ -54,3 +54,20 @@ class FileDownloadProgressDialog(AMTProgressDialog):
         self.setLabelText("Downloading file...")
         self.setWindowTitle("Downloading file")
         self.setRange(0, 100)
+        
+class MultiFileDownloadProgressDialog(FileDownloadProgressDialog):
+    """
+    Customized QProgressDialog for multiple file download.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setLabelText("Downloading files...")
+        self.setWindowTitle("Downloading files")
+        self.setRange(0, 100)
+        
+    def setMultiValue(self, currentFile: int, totalFiles: int, progress: int):
+        """
+        Sets the value of the progress bar and denotes the current file being downloaded.
+        """
+        self.setValue(progress)
+        self.setLabelText(f"Downloading files: {currentFile} of {totalFiles}...")

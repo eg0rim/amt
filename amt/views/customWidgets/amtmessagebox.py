@@ -50,6 +50,12 @@ class AMTErrorMessageBox(AMTMessageBox):
         super().__init__(parent, text)
         self.setIconPixmap(QIcon(":/icons/error").pixmap(64, 64))
         
+class AMTMutliErrorMessageBox(AMTErrorMessageBox):
+    def __init__(self, parent=None, text: str = None, errors: list[str] = None):
+        super().__init__(parent, text)
+        errorLines = "\n".join(f"{i+1}: {error}" for i, error in enumerate(errors))
+        self.setInformativeText(errorLines) 
+    
 class AMTCriticalMessageBox(AMTMessageBox):
     def __init__(self, parent=None, text: str = None):
         super().__init__(parent, text)

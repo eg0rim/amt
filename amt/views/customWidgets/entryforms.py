@@ -41,7 +41,9 @@ from amt.views.customWidgets.amtmessagebox import (
 )
 from amt.network.parser import ArxivParser
 from amt.network.client import ArxivClient
-from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog
+from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog, FileDownloadProgressDialog
+from amt.network.filedownloader import EntryDownloader
+
 
 logger = getLogger(__name__)
 
@@ -149,6 +151,7 @@ class ArticleForm(PublishableForm):
         # connect get metadata button
         self.ui.getMetaButton.clicked.connect(self.getMetadataFromArxiv)
         self._arxivClient = ArxivClient(self)
+        self._downloader = EntryDownloader(self)
         self._arxivClient.finished.connect(self._arxivClientFinished)
         
     def setupUi(self):
@@ -189,7 +192,16 @@ class ArticleForm(PublishableForm):
             return
         if len(data) > 1:
             logger.warning("More than one entry received from arXiv.")
-        self.setData(data[0])
+        entry = data[0]
+        if self.ui.downloadPdfCheckBox.isChecked():
+            self._downloader.downloadEntry(entry)
+            progressDialog = FileDownloadProgressDialog(self)
+            self._downloader.downloadProgressed.connect(lambda _1, _2, val: progressDialog.setValue(val))
+            self._downloader.downloadFinished.connect(progressDialog.cancel)
+            self._downloader.startDownload()
+            progressDialog.exec()        
+        self.setData(entry)
+
     
     def getMetadataFromArxiv(self):
         """
@@ -207,9 +219,8 @@ class ArticleForm(PublishableForm):
         progressDialog = ArxivSearchProgressDialog(self)
         self._arxivClient.finished.connect(progressDialog.cancel)
         self._arxivClient.send()
-        progressDialog.exec()
-
-        
+        progressDialog.exec()    
+          
 class BookForm(PublishableForm):
     """
     A form for adding or editing an book entry.
