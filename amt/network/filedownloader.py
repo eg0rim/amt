@@ -193,13 +193,13 @@ class EntryDownloader(FileDownloader):
             fileName = entry.doi
         else: 
             fileName = entry.title
-        return re.sub(pattern, '', re.sub(' ', '_', fileName))[:100]
+        return f"{re.sub(pattern, '', re.sub(' ', '_', fileName))[:100]}.{entry.fileextension}"
         
     def addDownloadEntry(self, entry: PublishableData) -> bool:
         url = entry.filelink
         fn = self.generateFileName(entry)
         # TODO: fix extension
-        destination = str(self.entryDirectories[entry.__class__] / f"{fn}.pdf")
+        destination = str(self.entryDirectories[entry.__class__] / fn)
         if not url:
             errmsg = f"Entry {entry.title} has no file link"
             logger.error(errmsg)

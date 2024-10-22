@@ -161,6 +161,7 @@ class ArxivParser(AMTParser):
                 elif link.get('rel') == "related":
                     if link.get('title') == "pdf":
                         entryData.filelink = link.get('href')
+                        entryData.fileextension = "pdf"
                     elif link.get('title') == "doi":
                         entryData.doilink = link.get('href')
             # dates

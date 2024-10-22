@@ -797,13 +797,14 @@ class PublishableData(EntryData):
     Abstract Data type to store publishable data like articles, books, lecture notes, etc. that have DOI, link, date published.
     """
     tableColumns = EntryData.tableColumns.copy()
-    tableColumns.update({"doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "filelink": "TEXT", "doilink": "TEXT"})
+    tableColumns.update({"doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "filelink": "TEXT", "fileextension": "TEXT", "doilink": "TEXT"})
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._doi: str = None
         self._doilink: str = None
         self._link: str = None
         self._filelink: str = None
+        self._fileextension: str = None
         self._datePublished: QDate = None
         
     @property
@@ -844,12 +845,20 @@ class PublishableData(EntryData):
     def doilink(self, value : str):
         self._doilink = value
         
+    @property
+    def fileextension(self) -> str:
+        return self._fileextension
+    @fileextension.setter
+    def fileextension(self, value : str):
+        self._fileextension = value
+        
     def getDataToInsert(self) -> dict[str, str]:
         data = super().getDataToInsert()
         data["doi"] = self.doi
         data["doilink"] = self.doilink
         data["link"] = self.link
         data["filelink"] = self.filelink
+        data["fileextension"] = self.fileextension
         data["date_published"] = self.datePublished.toString(Qt.ISODate) if self.datePublished else None
         return data
         
@@ -859,8 +868,9 @@ class PublishableData(EntryData):
         self.link = nrow[1]
         self.datePublished = QDate.fromString(nrow[2], Qt.ISODate) if nrow[2] else None
         self.filelink = nrow[3]
-        self.doilink = nrow[4]
-        return nrow[5:]
+        self.fileextension = nrow[4]
+        self.doilink = nrow[5]
+        return nrow[6:]
         
     def getDisplayData(self, field: str) -> str:
         if field == "doi":
@@ -871,6 +881,8 @@ class PublishableData(EntryData):
             return self.link or ""
         elif field == "filelink":
             return self.filelink or ""
+        elif field == "fileextension":
+            return self.fileextension or ""
         elif field == "datePublished":
             return self.datePublished.toString(Qt.ISODate) if self.datePublished else ""
         return super().getDisplayData(field)
