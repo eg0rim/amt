@@ -218,6 +218,7 @@ class EntryDownloader(FileDownloader):
         url = entry.filelink
         fn = self.generateFileName(entry)
         # TODO: fix extension
+        # TODO: fix too long file names
         destination = str(self.entryDirectories[entry.__class__] / f"{fn}.pdf")
         if not url:
             errmsg = f"Entry {entry.title} has no file link"

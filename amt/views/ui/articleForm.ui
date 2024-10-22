@@ -154,6 +154,12 @@
       </item>
       <item>
        <widget class="QCheckBox" name="downloadPdfCheckBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>with pdf</string>
         </property>
