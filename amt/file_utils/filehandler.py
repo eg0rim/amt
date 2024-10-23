@@ -18,11 +18,13 @@
 
 """classes to handle files"""
 
-import os
-import subprocess
+import os, shutil, subprocess, tempfile
+from abc import ABC, abstractmethod
 
 from amt.db.datamodel import EntryData
+from amt.db.database import AMTDatabase
 from amt.logger import getLogger
+from amt.file_utils.path import *
 
 logger = getLogger(__name__)
 
@@ -44,24 +46,104 @@ class ApplicationNotSetError(Exception):
         else:
             return super().__str__()
         
-class FileHandler:
+class AbstractFileHandler(ABC):
     """ 
-    Class to handle files with external applications. Logic:
+    Abstract base class for file handling.
+    
+    Methods:
+        __init__(self)
+        fileExists(file: str) -> bool
+        copyFile(src: str, dest: str) -> bool
+        moveFile(src: str, dest: str) -> bool
+        deleteFile(filePath: str) -> bool
+    """
+    def __init__(self) -> None:
+        super().__init__()
+    
+    @staticmethod
+    def fileExists(file : str) -> bool:
+        """ 
+        Check if the file exists.
+        Args:
+            file (str): Path to the file.
+        Returns:
+            bool: True if the file exists, False otherwise.
+        """
+        return os.path.isfile(file)
+    
+    @staticmethod    
+    def copyFile(src: str, dest: str) -> bool:
+        """
+        Copy a file.
+        Args:
+            src (str): Source file.
+            dest (str): Destination file.
+        Returns:
+            bool: True if the file was copied successfully, False otherwise.
+        """
+        # copy using shutil
+        try:
+            shutil.copy2(src, dest)
+            logger.info(f"Copied file from {src} to {dest}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to copy file from {src} to {dest}, Error: {e}")
+            return False
+
+    @staticmethod
+    def moveFile(src: str, dest: str) -> bool:
+        """
+        Move a file.
+        Args:
+            src (str): Source file.
+            dest (str): Destination file.
+        Returns:
+            bool: True if the file was moved successfully, False otherwise.
+        """
+        # move using shutil
+        try:
+            shutil.move(src, dest)
+            logger.info(f"Moved file from {src} to {dest}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to move file from {src} to {dest}, Error: {e}")
+            return False
+    
+    @staticmethod
+    def deleteFile(filePath: str) -> bool:
+        """
+        Delete a file.
+        Args:
+            filePath (str): Path to the file.
+        Returns:
+            bool: True if the file was deleted successfully, False otherwise.
+        """
+        try:
+            os.remove(filePath)
+            logger.info(f"Deleted file: {filePath}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete file: {filePath}, Error: {e}")
+            return False
+        
+class ExternalAppHandler(AbstractFileHandler):
+    """ 
+    Class to handle files with external applications. 
+    
+    Logic:
     - keep track of the processes of the opened files.
-    - filetypes are associated with a particular program
-    - the ability to close is not guaranteed
-    Attributes:
-        defaultApp (str): Default external application to open files.
-        _processes (list[tuple[str, subprocess.Popen]]): process of the opened file.
-        apps (dict[str, str]): file extensions and the associated application.
+    - filetypes are associated with particular external apps
+    - the ability to close is not guaranteed (depends on the external app)
+    
+    Properties:
+        defaultApp (str): Default application to open files.
+        apps dict[str, str]: Dictionary of file extensions and associated applications
+        
     Methods:
         __init__(self, defaultApp: str = None)
-        setDefaultApp(self)
-        openFile(self, filePath: str, application: str = None) -> bool
-        closeFile(self, filePath: str) -> bool
-        fileExists(self, filePath: str) -> bool
+        setApp(self, str, str)
         setApp(self, fileExt: str, app: str)
-        getApps(self) -> dict[str, str]
+        openFile(filePath: str) -> bool
         getOpenedFiles(self) -> list[str]
         closeByIndex(self, index: int) -> bool
         closeAllFiles(self)
@@ -76,7 +158,7 @@ class FileHandler:
             defaultApp: Default application to open files.
         """
         super().__init__()
-        self._defaultApp: str = ""
+        self._defaultApp: str = defaultApp
         self._processes: tuple[list[str], list[subprocess.Popen]] = ([],[])
         self._apps: dict[str,str] = {}
             
@@ -99,16 +181,6 @@ class FileHandler:
         #         self._defaultApp = "xdg-open"
         # else:
         #     self._defaultApp = None
-
-    def fileExists(self, file : str) -> bool:
-        """ 
-        Check if the file exists.
-        Args:
-            file: Path to the file.
-        Returns:
-            True if the file exists, False otherwise.
-        """
-        return os.path.isfile(file)
 
     def setApp(self, fileExt: str, app: str):
         """
@@ -209,6 +281,21 @@ class FileHandler:
         except Exception as e:
             logger.error(f"Failed to close file: {file} at index: {index}, Error: {e}")
             return False
+
+    def closeFile(self, filePath: str) -> bool:
+        """
+        Close the file by path.
+        Args:
+            filePath: Path to the file.
+        Returns:
+            True if the file was closed successfully, False otherwise.
+        """
+        try:
+            index = self._processes[0].index(filePath)
+            return self.closeByIndex(index)
+        except ValueError:
+            logger.error(f"File not found in running processes: {filePath}")
+            return False
         
     def closeAllFiles(self):
         """
@@ -254,7 +341,7 @@ class FileHandler:
                 newProcesses[1].append(self._processes[1][i])
         self._processes = newProcesses
         
-class EntryHandler(FileHandler):
+class EntryHandler(ExternalAppHandler):
     """ 
     Class to handle entries with external applications.
     Methods:
@@ -262,7 +349,7 @@ class EntryHandler(FileHandler):
         openEntry(self, entry: EntryData, application: str = None) -> bool
         closeEntry(self, entry: EntryData) -> bool    
     """
-    def __init__(self, defaultApp: str = None):
+    def __init__(self, defaultApp: str = ""):
         super().__init__(defaultApp)
 
     def openEntry(self, entry: EntryData, application: str = None):
@@ -296,3 +383,73 @@ class EntryHandler(FileHandler):
         else:
             logger.error("Entry does not have associated file")
             return False
+        
+class DatabaseFileHandler(AbstractFileHandler):
+    def __init__(self):
+        super().__init__()
+        
+    @staticmethod
+    def openDB(filePath: str) -> AMTDatabase:
+        """
+        Opens a DB file.
+        Args:
+            filePath: Path to the new database file.
+        Returns:
+            AMTDatabase: The new database object.
+        """
+        db = AMTDatabase(filePath)
+        db.open()
+        return db
+    
+    @classmethod
+    def openTempDB(cls) -> AMTDatabase:
+        """
+        Create a temporary database file.
+        Returns:
+            AMTDatabase: The  temporary database object.
+        """
+        if not TEMPDIR.exists():
+            TEMPDIR.mkdir(parents=True)
+        tmpFile = tempfile.NamedTemporaryFile(delete=False, suffix=".amtdb")   
+        tmpFile.close()
+        newFile = TEMPDIR / os.path.basename(tmpFile.name)
+        cls.moveFile(tmpFile.name, str(newFile))
+        db = AMTDatabase(str(newFile))
+        db.open()
+        return db
+    
+    @staticmethod
+    def closeDB(self, db : AMTDatabase):
+        """
+        Close the database.
+        Args:
+            db: The database object to be closed.
+        """
+        db.close()
+        
+    @classmethod        
+    def saveDBAsAnother(cls, db: AMTDatabase, filePath: str) -> AMTDatabase:
+        """ 
+        Create a copy of the database and open it.
+        Args:
+            db: The database object.
+            filePath: Path to the new database file.
+        Returns:
+            AMTDatabase: The new database object.
+        """
+        oldPath = db.databaseName()
+        if db.isOpen():
+            db.close()
+        cls.copyFile(oldPath, filePath)
+        newDB = AMTDatabase(filePath)
+        newDB.open()
+        return newDB
+    
+    @classmethod
+    def cleanTempDBDir(cls):
+        """
+        Clean the temporary database file.
+        """
+        # delete all files in the temp directory with extension .amtdb
+        for file in TEMPDIR.glob("*.amtdb"):
+            cls.deleteFile(str(file))

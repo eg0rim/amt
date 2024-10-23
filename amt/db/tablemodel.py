@@ -29,6 +29,7 @@ from .datamodel import (
     LecturesData,
     EntryData
 )
+from amt.file_utils.filehandler import DatabaseFileHandler
 
 from amt.logger import getLogger
 
@@ -193,7 +194,7 @@ class DataCache(QObject):
     @filter.setter
     def filter(self, value: AMTFilter):
         self._filter = value
-        self._dataToDisplay = self._filter.apply(self._data)
+        self.updateDataToDisplay()
         logger.debug(f"filter set to {value.pattern} {value.fields} {value.escape} ")
         
     @property
@@ -884,9 +885,7 @@ class AMTDBModel(AMTModel):
         Returns:
             bool: True if successful
         """
-        self.db = AMTDatabase(filePath)
-        #self.prepareTables()
-        self.db.open()
+        self.db = DatabaseFileHandler.openDB(filePath)
         self.temporary = False
         self.updateTableColumns()
         self.update()
@@ -906,10 +905,7 @@ class AMTDBModel(AMTModel):
         """
         # copy the current file to the new location
         try:
-            self.db.close()
-            shutil.copy2(self.db.databaseName(), filePath)
-            self.db = AMTDatabase(filePath)
-            self.db.open()
+            self.db = DatabaseFileHandler.saveDBAsAnother(self.db, filePath)
             logger.debug(f"save db as {filePath}")
             self.temporary = False
             self.databaseConnected.emit(filePath)
@@ -926,12 +922,8 @@ class AMTDBModel(AMTModel):
         Returns:
             bool: True if successful
         """
-        tmpFile = tempfile.NamedTemporaryFile(delete=False, suffix=".amtdb")
-        logger.info(f"using temp file {tmpFile.name}")
-        self.db = AMTDatabase(tmpFile.name)
-        tmpFile.close()
-        self.db.open()
-        logger.debug(f"create new db {tmpFile.name}")
+        self.db = DatabaseFileHandler.openTempDB()
+        logger.debug(f"create temp db")
         self.temporary = True
         self.prepareTables()
         self.update()

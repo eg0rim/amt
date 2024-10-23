@@ -58,7 +58,7 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTInfoMessageBox,
     AMTQuestionMessageBox
 )
-from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError
+from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError, DatabaseFileHandler
 from amt.network.arxiv_aux import *
 
 logger = getLogger(__name__)
@@ -132,9 +132,11 @@ class MainWindow(QMainWindow):
         self.arxivDialog = ArxivDialog(self)   
         # setup main window
         # setup ui
-        self.setupUI()      
-        # create model
-        self.setupModelView()    
+        self.setupUI()  
+        # reproduce the state of the app before last closing
+        self.readState()    
+        # create model  
+        self.setupModelView()  
         # setup searchbar
         self.setupSearchBar()
         # if no filename is loaded, set temporary status
@@ -145,8 +147,6 @@ class MainWindow(QMainWindow):
         # final setup
         # load settings
         self.readSettings()
-        # reproduce the state of the app before last closing
-        self.readState()
         # at the start no changes are made
         self.setEdited(False)
         # if no filename is loaded, set temporary status
@@ -198,8 +198,8 @@ class MainWindow(QMainWindow):
         settings.beginGroup("Database")
         # retrieve last used filename; if empty, set empty filename => temporary status
         self.currentFile = settings.value("lastUsedFile", "")
-        if self.currentFile:
-            self.model.openExistingDB(self.currentFile)
+        #if self.currentFile:
+        #    self.model.openExistingDB(self.currentFile)
         settings.endGroup()
         settings.beginGroup("FileHandler")
         # open files opened last time
@@ -437,6 +437,8 @@ class MainWindow(QMainWindow):
         # close all open files
         if self.closeEntriesOnExit:
             self.fileHandler.closeAllFiles()
+        # clean up temp
+        DatabaseFileHandler.cleanTempDBDir()
         logger.info("Exiting app.")
         event.accept()
         

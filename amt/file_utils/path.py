@@ -21,4 +21,6 @@
 from pathlib import Path
 
 DEFAULTDIR = Path.home() / "Documents" / "AMT"
+TEMPDIR = DEFAULTDIR / "Temp"
 DOWNLOADDIR = DEFAULTDIR / "Downloads"
+DBDIR = DEFAULTDIR / "DB"

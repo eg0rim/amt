@@ -45,10 +45,10 @@ class AMTDatabase(QSqlDatabase):
         open() -> None
     """    
     def __init__(self, databaseFile : str, *args : object) -> None:
-        """Inherits QSqlDatabase. Creates sqlite database for AMT.
-        
+        """
+        Inherits QSqlDatabase. Creates sqlite database for AMT.
         Args:
-            databaseFile (str): path to the database file
+            databaseFile (str): path to the database file. By default, creates an in-memory database.
         """
         super().__init__("QSQLITE", *args)
         self.setDatabaseName(databaseFile)
@@ -73,7 +73,6 @@ class AMTDatabase(QSqlDatabase):
         query = QSqlQuery(self)
         # allow foreign keys
         query.exec("PRAGMA foreign_keys = ON")
-        
         
 class AMTQueryError(Exception):
     def __init__(self, *args: object) -> None:
