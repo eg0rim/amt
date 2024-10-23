@@ -149,11 +149,6 @@ class MainWindow(QMainWindow):
         self.readSettings()
         # at the start no changes are made
         self.setEdited(False)
-        # if no filename is loaded, set temporary status
-        if self.currentFile:
-            self.setTemporary(False)
-        else:
-            self.setTemporary(True)
         logger.info("Main window is initialized.")
 
     # read and write settings
