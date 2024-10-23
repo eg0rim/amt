@@ -396,19 +396,10 @@ class MainWindow(QMainWindow):
         # connect search signal
         self.ui.searchInput.searchInputChanged.connect(self.search)
         
-    # event methods
-    def closeEvent(self, event):
-        """
-        Handles the close event for the main window.
-
-        Parameters:
-        event (QCloseEvent): The close event triggered when the window is requested to close.
-        """
-        # if the model has unsaved changes, ask user if they want to save them
-        logger.info("Close event triggered.")
+    def proceedIfDataDiverged(self) -> bool:
         if self.model.dataCache.diverged:
             msgBox = AMTQuestionMessageBox(self)
-            msgBox.setText("Do you want to save changes before closing?")
+            msgBox.setText("Do you want to save changes before closing database?")
             msgBox.setInformativeText("All unsaved changes will be lost.")
             msgBox.setStandardButtons(
                 QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
@@ -422,8 +413,22 @@ class MainWindow(QMainWindow):
                     # for existing db, save changes inplace
                     self.saveLibrary()
             elif ret == QMessageBox.Cancel:
-                event.ignore()
-                return
+                return False
+        return True
+        
+    # event methods
+    def closeEvent(self, event):
+        """
+        Handles the close event for the main window.
+
+        Parameters:
+        event (QCloseEvent): The close event triggered when the window is requested to close.
+        """
+        # if the model has unsaved changes, ask user if they want to save them
+        logger.info("Close event triggered.")
+        if not self.proceedIfDataDiverged():
+            event.ignore()
+            return
         # check if there are open files
         # and update the dictionary of open files
         self.fileHandler.syncFiles()
@@ -653,12 +658,16 @@ class MainWindow(QMainWindow):
         """
         Creates new temporary database.
         """
+        if not self.proceedIfDataDiverged():
+            return 
         self.model.createNewTempDB()   
         
     def openLibrary(self):
         """
         Opens existing database.
         """
+        if not self.proceedIfDataDiverged():
+            return 
         # open file dialog and choose database to load
         self.dbFileDialog.setAcceptMode(QFileDialog.AcceptOpen)
         if self.dbFileDialog.exec() == QFileDialog.Accepted:
