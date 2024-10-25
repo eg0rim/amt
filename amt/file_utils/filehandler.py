@@ -19,7 +19,6 @@
 """classes to handle files"""
 
 import os, shutil, subprocess, tempfile
-from abc import ABC, abstractmethod
 
 from amt.db.datamodel import EntryData, ArticleData, BookData, LecturesData
 from amt.db.database import AMTDatabase
@@ -46,7 +45,7 @@ class ApplicationNotSetError(Exception):
         else:
             return super().__str__()
         
-class AbstractFileHandler(ABC):
+class FileHandler:
     """ 
     Abstract base class for file handling.
     
@@ -126,7 +125,7 @@ class AbstractFileHandler(ABC):
             logger.error(f"Failed to delete file: {filePath}, Error: {e}")
             return False
         
-class ExternalAppHandler(AbstractFileHandler):
+class ExternalAppHandler(FileHandler):
     """ 
     Class to handle files with external applications. 
     
@@ -389,27 +388,28 @@ class EntryHandler(ExternalAppHandler):
             return False
         
     @classmethod
-    def storeEntryFile(cls, entry : EntryData):
+    def moveEntryFile(cls, entry : EntryData, destDir: str) -> bool:
         if entry.fileName:
-            # check if the deirectory is TEMPDIR
-            if str(TEMPDIR) == entry.fileName[:len(str(TEMPDIR))]:
-                logger.debug(f"File {entry.fileName} is in TEMPDIR")
-                # move the file to the appropriate directory
-                entryType = type(entry)
-                newName =  str(cls.entryDirectories[entryType] / os.path.basename(entry.fileName))
-                cls.moveFile(entry.fileName,newName)
-                entry.fileName = newName
+            newPath = Path(destDir) / entry.fileName
+            cls.moveFile(entry.fileName, str(newPath))
+            entry.fileName = str(newPath)
+            return True
+        else:
+            logger.error("Entry does not have associated file")
+            return False       
                 
     @classmethod
-    def deleteEntryFile(cls, entry: EntryData):
+    def deleteEntryFile(cls, entry: EntryData) -> bool:
         if entry.fileName:
-            # only delete files from amt directory
-            if str(ENTRYDIR) == entry.fileName[:len(str(ENTRYDIR))]:
-                cls.deleteFile(entry.fileName)
-                entry.fileName = None
+            fn = entry.fileName
+            entry.fileName = None
+            return cls.deleteFile(fn)
+        else:
+            logger.error("Entry does not have associated file")
+            return False
+                    
                 
-                
-class DatabaseFileHandler(AbstractFileHandler):
+class DatabaseFileHandler(FileHandler):
     dbDir = DBDIR
     os.makedirs(dbDir, exist_ok=True)
     def __init__(self):
@@ -472,11 +472,3 @@ class DatabaseFileHandler(AbstractFileHandler):
         newDB.open()
         return newDB
     
-    @classmethod
-    def cleanTempDBDir(cls):
-        """
-        Clean the temporary database file.
-        """
-        # delete all files in the temp directory with extension .amtdb
-        for file in TEMPDIR.glob("*.amtdb"):
-            cls.deleteFile(str(file))

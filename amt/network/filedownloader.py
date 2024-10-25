@@ -171,6 +171,7 @@ class EntryDownloader(FileDownloader):
     """ 
     Class to download entries. The download directory is determined by the entry's title.
     """
+    # downloads are saved in the temporary directory
     downloadDirectory = TEMPDIR
     entryDirectories = {ArticleData: downloadDirectory/"Articles", BookData: downloadDirectory/"Books", LecturesData: downloadDirectory/"Lectures"}
     def __init__(self, parent=None):

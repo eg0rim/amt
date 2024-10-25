@@ -397,9 +397,14 @@ class MainWindow(QMainWindow):
         self.ui.searchInput.searchInputChanged.connect(self.search)
         
     def proceedIfDataDiverged(self) -> bool:
+        """
+        Checks if the model has unsaved changes and asks the user if they want to save them.
+        Returns:
+            bool: True if the user wants to proceed, False otherwise.
+        """
         if self.model.dataCache.diverged:
             msgBox = AMTQuestionMessageBox(self)
-            msgBox.setText("Do you want to save changes before closing database?")
+            msgBox.setText("Do you want to save changes?")
             msgBox.setInformativeText("All unsaved changes will be lost.")
             msgBox.setStandardButtons(
                 QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
@@ -437,8 +442,8 @@ class MainWindow(QMainWindow):
         # close all open files
         if self.closeEntriesOnExit:
             self.fileHandler.closeAllFiles()
-        # clean up temp
-        DatabaseFileHandler.cleanTempDBDir()
+        # clean up temp dir
+        self.fileHandler.cleanTempDir()
         logger.info("Exiting app.")
         event.accept()
         
@@ -447,7 +452,7 @@ class MainWindow(QMainWindow):
         """
         Toggles the visibility of the search bar and resets its input field.
         """
-        logger.info("Search bar toggled.")
+        logger.debug("Search bar toggled.")
         self.ui.searchInput.reset()
         self.ui.searchInput.toggleVisible()  
         

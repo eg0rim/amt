@@ -18,7 +18,7 @@
 
 """model to manage the articles, books, etc"""
 
-import  tempfile, shutil, re
+import re
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal, QObject
 from .database import AMTDatabase, AMTQuery
@@ -30,7 +30,7 @@ from .datamodel import (
     EntryData
 )
 from amt.file_utils.filehandler import DatabaseFileHandler, EntryHandler
-
+from amt.file_utils.path import *
 from amt.logger import getLogger
 
 logger = getLogger(__name__) 
@@ -140,6 +140,57 @@ class AMTFilter:
             return filtered
         else:
             return data[:]
+
+class FileCache:
+    """ 
+    all new files must be stored in tempDir by default
+    all files must be moved to libDir when the entry is saved
+    """
+    libDir = ENTRYDIR
+    tempDir = TEMPDIR
+    def __init__(self):
+        self._files: list[str] = []
+        self._filesToAdd: list[str] = []
+        self._filesToDelete: list[str] = []
+    
+    @classmethod
+    def isTempFile(cls, file: str) -> bool:
+        return file.startswith(str(cls.tempDir))
+    
+    @classmethod
+    def isLibFile(cls, file: str) -> bool:
+        return file.startswith(str(cls.libDir))
+    
+    def add(self, file: str) -> bool:
+        if self.isTempFile(file):
+            self._filesToAdd.append(file)
+        self._files.append(file)
+        return True
+    
+    def addFromEntry(self, entry: EntryData | list[EntryData]):
+        if isinstance(entry, list):
+            for e in entry:
+                self.addFromEntry(e)
+            return
+        self.add(entry.fileName)
+        
+    def addFromDataCache(self, model: DataCache):
+        for entry in model.data:
+            self.addFromEntry(entry)
+    
+    def remove(self, file: str) -> bool:
+        if file not in self._files:
+            logger.error(f"File {file} not found in cache")
+            return False
+        self._files.remove(file)
+        # if file is a lib file and no other entry uses it, delete it
+        if self.isLibFile(file) and file not in self._files:
+            self._filesToDelete.append(file)
+            return True
+        if file in self._filesToAdd:
+            self._filesToAdd.remove(file)   
+        return True  
+    
 
 class DataCache(QObject):
     """
@@ -546,6 +597,15 @@ class AMTModel(QAbstractTableModel):
         """
         return self.dataCache.dataToDisplay[index]
     
+    def getData(self) -> list[EntryData]:
+        """
+        returns all entries
+
+        Returns:
+            list[EntryData]: list of entries
+        """
+        return self.dataCache.data
+    
     def setData(self, data : list[EntryData]) -> bool:
         """
         sets the data in the model
@@ -767,9 +827,6 @@ class AMTDBModel(AMTModel):
         status = True
         if len(self.dataCache.dataToAdd) == 0:
             return status
-        # store entry files 
-        for entry in self.dataCache.dataToAdd:
-            EntryHandler.storeEntryFile(entry)
         # if small number added, add them one by one
         if len(self.dataCache.dataToAdd) < 10: 
             for entry in self.dataCache.dataToAdd[:]:
@@ -800,8 +857,6 @@ class AMTDBModel(AMTModel):
         status = True
         if len(self.dataCache.dataToDelete) == 0:
             return status
-        for entry in self.dataCache.dataToDelete:
-            EntryHandler.deleteEntryFile(entry)
         if len(self.dataCache.dataToDelete) < 10: 
             for entry in self.dataCache.dataToDelete[:]:
                 if not entry.delete(self.db):
