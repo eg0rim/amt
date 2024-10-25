@@ -196,5 +196,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>downloadPdfCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fileInput</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>219</x>
+     <y>392</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>189</x>
+     <y>314</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

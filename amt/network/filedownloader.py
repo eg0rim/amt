@@ -25,7 +25,7 @@ import os, re
 
 from amt.logger import getLogger
 from amt.db.datamodel import PublishableData, ArticleData, BookData, LecturesData  
-from amt.file_utils.path import DEFAULTDIR, DOWNLOADDIR
+from amt.file_utils.path import *
 
 logger = getLogger(__name__)
 
@@ -171,7 +171,7 @@ class EntryDownloader(FileDownloader):
     """ 
     Class to download entries. The download directory is determined by the entry's title.
     """
-    downloadDirectory = DOWNLOADDIR
+    downloadDirectory = TEMPDIR
     entryDirectories = {ArticleData: downloadDirectory/"Articles", BookData: downloadDirectory/"Books", LecturesData: downloadDirectory/"Lectures"}
     def __init__(self, parent=None):
         super().__init__(parent)

@@ -21,7 +21,7 @@
 import os, shutil, subprocess, tempfile
 from abc import ABC, abstractmethod
 
-from amt.db.datamodel import EntryData
+from amt.db.datamodel import EntryData, ArticleData, BookData, LecturesData
 from amt.db.database import AMTDatabase
 from amt.logger import getLogger
 from amt.file_utils.path import *
@@ -349,9 +349,13 @@ class EntryHandler(ExternalAppHandler):
         openEntry(self, entry: EntryData, application: str = None) -> bool
         closeEntry(self, entry: EntryData) -> bool    
     """
+    entryRootDirectory = ENTRYDIR
+    entryDirectories = {ArticleData: entryRootDirectory/"Articles", BookData: entryRootDirectory/"Books", LecturesData: entryRootDirectory/"Lectures"}
+    for dir in entryDirectories.values():
+        os.makedirs(dir, exist_ok=True)
     def __init__(self, defaultApp: str = ""):
         super().__init__(defaultApp)
-
+    
     def openEntry(self, entry: EntryData, application: str = None):
         """ 
         Opens the file associated with the given entry.
@@ -384,7 +388,30 @@ class EntryHandler(ExternalAppHandler):
             logger.error("Entry does not have associated file")
             return False
         
+    @classmethod
+    def storeEntryFile(cls, entry : EntryData):
+        if entry.fileName:
+            # check if the deirectory is TEMPDIR
+            if str(TEMPDIR) == entry.fileName[:len(str(TEMPDIR))]:
+                logger.debug(f"File {entry.fileName} is in TEMPDIR")
+                # move the file to the appropriate directory
+                entryType = type(entry)
+                newName =  str(cls.entryDirectories[entryType] / os.path.basename(entry.fileName))
+                cls.moveFile(entry.fileName,newName)
+                entry.fileName = newName
+                
+    @classmethod
+    def deleteEntryFile(cls, entry: EntryData):
+        if entry.fileName:
+            # only delete files from amt directory
+            if str(ENTRYDIR) == entry.fileName[:len(str(ENTRYDIR))]:
+                cls.deleteFile(entry.fileName)
+                entry.fileName = None
+                
+                
 class DatabaseFileHandler(AbstractFileHandler):
+    dbDir = DBDIR
+    os.makedirs(dbDir, exist_ok=True)
     def __init__(self):
         super().__init__()
         

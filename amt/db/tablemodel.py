@@ -29,7 +29,7 @@ from .datamodel import (
     LecturesData,
     EntryData
 )
-from amt.file_utils.filehandler import DatabaseFileHandler
+from amt.file_utils.filehandler import DatabaseFileHandler, EntryHandler
 
 from amt.logger import getLogger
 
@@ -153,7 +153,7 @@ class DataCache(QObject):
         dataToDisplay (list[EntryData]): data to display
         data (list[EntryData]): all data
         dataToDelete (list[EntryData]): data to delete
-        dataToEdit (list[EntryData]): data to edit
+        dataToEdit (dict[EntryData, EntryData]): pairs of old and new data
         dataToAdd (list[EntryData]): data to add
     Methods:
         add(self, entry: EntryData) -> bool
@@ -231,11 +231,37 @@ class DataCache(QObject):
             bool: True if the entry was added
         """
         if entry in self.data:
+            logger.error(f"entry {entry} already in the cache")
             return False
         self.data.append(entry)
         self.dataToAdd.append(entry)
         self.updateDataToDisplay()
         self.diverged = True      
+        return True
+            
+    # editing means replacing the entry with a new one
+    def edit(self, oldEntry : EntryData, newEntry : EntryData) -> bool:
+        """ 
+        Edits entry in the cache.
+        Args:
+            oldEntry (EntryData): entry to replace
+            newEntry (EntryData): new entry
+        Returns:
+            bool: True if the entry was edited
+        """
+        if oldEntry in self._dataToAdd:
+            self._dataToAdd[self._dataToAdd.index(oldEntry)] = newEntry
+        elif oldEntry in self._dataToEdit:
+            self._dataToEdit[self._dataToEdit.index(oldEntry)] = newEntry
+        elif oldEntry in self._data:
+            self._dataToEdit.append(newEntry)
+        else:
+            logger.error(f"entry {oldEntry} not found")
+            return False
+        self._data[self._data.index(oldEntry)] = newEntry
+        newEntry.id = oldEntry.id
+        self.updateDataToDisplay()  
+        self.diverged = True
         return True
     
     def remove(self, entry : EntryData) -> bool:
@@ -246,44 +272,22 @@ class DataCache(QObject):
         Returns:
             bool: True if the entry was removed
         """
-        # first try to remove from add cache
-        try: 
+        if entry in self._dataToAdd:
             self._dataToAdd.remove(entry)
-            self._data.remove(entry)
-            self.updateDataToDisplay()
-            # if the entry is in add cache, it is not in the db
-            # check if anything in the editing cache
-            if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
-                # if all caches are empty, cache is not diverged anymore
-                self.diverged = False
-            return True
-        except ValueError:
-            pass
-        # if not in add cache, try to remove from the edit cache
-        try:    
+        elif entry in self._dataToEdit:
             self._dataToEdit.remove(entry)
-            self._data.remove(entry)
-            self.updateDataToDisplay()
-            # if the entry is in edit cache, it is not in the db
-            # check if anything in the editing cache
-            if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
-                # if all caches are empty, cache is not diverged anymore
-                self.diverged = False
-            return True
-        except ValueError:
-            pass
-        # if not in edit cache, try to remove from the main cache
-        try:
-            self._data.remove(entry)
-            self.updateDataToDisplay()
-            # add to delete cache
             self._dataToDelete.append(entry)
-            # data now differs from the db
-            self.diverged = True
-            return True
-        except ValueError:
-            # entry was not in the cache
+        elif entry in self._data:
+            self._dataToDelete.append(entry)
+        else:
+            logger.error(f"entry {entry} not found")
             return False
+        self._data.remove(entry)
+        self.updateDataToDisplay()  
+        if not (self._dataToAdd or self._dataToEdit or self._dataToDelete):
+            # if all caches are empty, cache is not diverged anymore
+            self.diverged = False
+        return True
             
     def removeByIndex(self, index : int) -> bool:
         """ 
@@ -311,39 +315,6 @@ class DataCache(QObject):
         for entry in entriesToRemove:
             state = state and self.remove(entry)
         return state
-        
-    # editing means replacing the entry with a new one
-    def edit(self, oldEntry : EntryData, newEntry : EntryData) -> bool:
-        """ 
-        Edits entry in the cache.
-        Args:
-            oldEntry (EntryData): entry to replace
-            newEntry (EntryData): new entry
-        Returns:
-            bool: True if the entry was edited
-        """
-        # first check if the entry is in the add cache
-        try:
-            # if the entry is in the add cache, just replace it
-            self._dataToAdd[self._dataToAdd.index(oldEntry)] = newEntry
-            self._data[self._data.index(oldEntry)] = newEntry
-            self.updateDataToDisplay()
-            # entry in add cache does not have an id
-            self.diverged = True
-            return True
-        except ValueError:
-            pass
-        # if the entry is not in the add cache, try to replace it in the main cache
-        try:
-            self._data[self._data.index(oldEntry)] = newEntry
-            self.updateDataToDisplay()
-            # entry in the main cache has and not in add cache has an id
-            newEntry.id = oldEntry.id
-            self._dataToEdit.append(newEntry)
-            self.diverged = True
-            return True
-        except ValueError:
-            return False
             
     def editByIndex(self, index : int, newEntry : EntryData) -> bool:
         """ 
@@ -796,7 +767,11 @@ class AMTDBModel(AMTModel):
         status = True
         if len(self.dataCache.dataToAdd) == 0:
             return status
-        elif len(self.dataCache.dataToAdd) < 10: 
+        # store entry files 
+        for entry in self.dataCache.dataToAdd:
+            EntryHandler.storeEntryFile(entry)
+        # if small number added, add them one by one
+        if len(self.dataCache.dataToAdd) < 10: 
             for entry in self.dataCache.dataToAdd[:]:
                 #logger.debug(f"insert entry {entry}")
                 if not entry.insert(self.db):
@@ -825,7 +800,9 @@ class AMTDBModel(AMTModel):
         status = True
         if len(self.dataCache.dataToDelete) == 0:
             return status
-        elif len(self.dataCache.dataToDelete) < 10: 
+        for entry in self.dataCache.dataToDelete:
+            EntryHandler.deleteEntryFile(entry)
+        if len(self.dataCache.dataToDelete) < 10: 
             for entry in self.dataCache.dataToDelete[:]:
                 if not entry.delete(self.db):
                     logger.error(f"failed to delete entry {entry}")
