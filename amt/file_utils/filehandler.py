@@ -341,20 +341,16 @@ class ExternalAppHandler(FileHandler):
         self._processes = newProcesses
         
 class EntryHandler(ExternalAppHandler):
+    entryDirs = ENTRYDIRS
+    for d in entryDirs.values():
+        os.makedirs(d, exist_ok=True)
     """ 
     Class to handle entries with external applications.
     Methods:
         __init__(self, defaultApp: str = None)
         openEntry(self, entry: EntryData, application: str = None) -> bool
         closeEntry(self, entry: EntryData) -> bool    
-    """
-    entryRootDirectory = ENTRYDIR
-    entryDirectories = {ArticleData: entryRootDirectory/"Articles", BookData: entryRootDirectory/"Books", LecturesData: entryRootDirectory/"Lectures"}
-    for dir in entryDirectories.values():
-        os.makedirs(dir, exist_ok=True)
-    def __init__(self, defaultApp: str = ""):
-        super().__init__(defaultApp)
-    
+    """    
     def openEntry(self, entry: EntryData, application: str = None):
         """ 
         Opens the file associated with the given entry.
@@ -397,6 +393,18 @@ class EntryHandler(ExternalAppHandler):
         else:
             logger.error("Entry does not have associated file")
             return False       
+        
+    @classmethod
+    def renameEntryFile(cls, entry: EntryData, newName: str) -> bool:
+        if entry.fileName:
+            oldPath = entry.fileName
+            newPath = Path(oldPath).with_name(newName)
+            cls.moveFile(oldPath, str(newPath))
+            entry.fileName = str(newPath)
+            return True
+        else:
+            logger.error("Entry does not have associated file")
+            return False
                 
     @classmethod
     def deleteEntryFile(cls, entry: EntryData) -> bool:
@@ -411,7 +419,9 @@ class EntryHandler(ExternalAppHandler):
                 
 class DatabaseFileHandler(FileHandler):
     dbDir = DBDIR
+    tempDir = TEMPDIR
     os.makedirs(dbDir, exist_ok=True)
+    os.makedirs(tempDir, exist_ok=True)
     def __init__(self):
         super().__init__()
         
@@ -435,11 +445,9 @@ class DatabaseFileHandler(FileHandler):
         Returns:
             AMTDatabase: The  temporary database object.
         """
-        if not TEMPDIR.exists():
-            TEMPDIR.mkdir(parents=True)
         tmpFile = tempfile.NamedTemporaryFile(delete=False, suffix=".amtdb")   
         tmpFile.close()
-        newFile = TEMPDIR / os.path.basename(tmpFile.name)
+        newFile = cls.tempDir / os.path.basename(tmpFile.name)
         cls.moveFile(tmpFile.name, str(newFile))
         db = AMTDatabase(str(newFile))
         db.open()
@@ -472,3 +480,14 @@ class DatabaseFileHandler(FileHandler):
         newDB.open()
         return newDB
     
+    @classmethod
+    def cleanTempDir(cls):
+        """
+        Clean the temporary directory.
+        """
+        # delete only .amtdb files
+        for file in cls.tempDir.iterdir():
+            if file.suffix == ".amtdb":
+                filePath = cls.tempDir / file
+                cls.deleteFile(str(filePath))
+

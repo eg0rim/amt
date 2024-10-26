@@ -172,14 +172,10 @@ class EntryDownloader(FileDownloader):
     Class to download entries. The download directory is determined by the entry's title.
     """
     # downloads are saved in the temporary directory
-    downloadDirectory = TEMPDIR
-    entryDirectories = {ArticleData: downloadDirectory/"Articles", BookData: downloadDirectory/"Books", LecturesData: downloadDirectory/"Lectures"}
+    downloadDirectory = DOWNLOADDIR
+    entryDirectories = ENTRYDIRS
     def __init__(self, parent=None):
         super().__init__(parent)
-        # create download directory if it does not exist
-        os.makedirs(self.downloadDirectory, exist_ok=True)
-        for directory in self.entryDirectories.values():
-            os.makedirs(directory, exist_ok=True)
         self.entries: dict[str, 'PublishableData'] = {}
         # when download is finished, add the file name to the entries
         self.downloadFinished.connect(self.addFilesToEntries)

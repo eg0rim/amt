@@ -139,58 +139,7 @@ class AMTFilter:
             filtered =  [entry for entry in data if self.test(entry)]
             return filtered
         else:
-            return data[:]
-
-class FileCache:
-    """ 
-    all new files must be stored in tempDir by default
-    all files must be moved to libDir when the entry is saved
-    """
-    libDir = ENTRYDIR
-    tempDir = TEMPDIR
-    def __init__(self):
-        self._files: list[str] = []
-        self._filesToAdd: list[str] = []
-        self._filesToDelete: list[str] = []
-    
-    @classmethod
-    def isTempFile(cls, file: str) -> bool:
-        return file.startswith(str(cls.tempDir))
-    
-    @classmethod
-    def isLibFile(cls, file: str) -> bool:
-        return file.startswith(str(cls.libDir))
-    
-    def add(self, file: str) -> bool:
-        if self.isTempFile(file):
-            self._filesToAdd.append(file)
-        self._files.append(file)
-        return True
-    
-    def addFromEntry(self, entry: EntryData | list[EntryData]):
-        if isinstance(entry, list):
-            for e in entry:
-                self.addFromEntry(e)
-            return
-        self.add(entry.fileName)
-        
-    def addFromDataCache(self, model: DataCache):
-        for entry in model.data:
-            self.addFromEntry(entry)
-    
-    def remove(self, file: str) -> bool:
-        if file not in self._files:
-            logger.error(f"File {file} not found in cache")
-            return False
-        self._files.remove(file)
-        # if file is a lib file and no other entry uses it, delete it
-        if self.isLibFile(file) and file not in self._files:
-            self._filesToDelete.append(file)
-            return True
-        if file in self._filesToAdd:
-            self._filesToAdd.remove(file)   
-        return True  
-    
+            return data[:]   
 
 class DataCache(QObject):
     """
@@ -748,6 +697,12 @@ class AMTDBModel(AMTModel):
             self.createNewTempDB()
         else:
             self.openExistingDB(dbFile)       
+        
+    def __del__(self):
+        """ 
+        Destructor for the model.
+        """
+        DatabaseFileHandler.cleanTempDir()
             
     @property
     def temporary(self) -> bool:

@@ -442,8 +442,6 @@ class MainWindow(QMainWindow):
         # close all open files
         if self.closeEntriesOnExit:
             self.fileHandler.closeAllFiles()
-        # clean up temp dir
-        self.fileHandler.cleanTempDir()
         logger.info("Exiting app.")
         event.accept()
         
