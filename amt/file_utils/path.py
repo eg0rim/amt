@@ -20,10 +20,7 @@
 
 from pathlib import Path
 
-from amt.db.datamodel import ArticleData, BookData, LecturesData
-
 DEFAULTDIR = Path.home() / "Documents" / "AMT"
 TEMPDIR = DEFAULTDIR / "Temp"
 DOWNLOADDIR = DEFAULTDIR / "Downloads"
-ENTRYDIRS = {ArticleData: DOWNLOADDIR/"Articles", BookData: DOWNLOADDIR/"Books", LecturesData: DOWNLOADDIR/"Lectures"}
 DBDIR = DEFAULTDIR / "DB"

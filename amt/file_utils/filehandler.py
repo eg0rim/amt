@@ -341,9 +341,6 @@ class ExternalAppHandler(FileHandler):
         self._processes = newProcesses
         
 class EntryHandler(ExternalAppHandler):
-    entryDirs = ENTRYDIRS
-    for d in entryDirs.values():
-        os.makedirs(d, exist_ok=True)
     """ 
     Class to handle entries with external applications.
     Methods:
