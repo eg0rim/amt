@@ -1,4 +1,4 @@
-# Article Management Tool v0.1.3
+# Article Management Tool v0.1.4
 
 Manage articles, books, lecture notes, etc for research.
 
@@ -11,12 +11,13 @@ Currently this tool supports:
 - Previews.
 - Pulling metadata from arxiv.org.
 - Searching in arxiv and adding articles directly.
+- Downloading pdf-files from arxiv.org.
 
 ### Soon to be implemented
 
 For the next release v0.2.0:
 - Pull metadata from various sources (with the focus on arxiv.org).
-- Download and store pdf/djvu/etc files from open sources.
+- Download and store pdf/djvu/etc files from various sources.
 - Compose bibtex files.
 
 ## Installing (for Linux)

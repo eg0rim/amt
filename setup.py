@@ -6,7 +6,7 @@ longDescription = (thisDirectory / "README.md").read_text()
 
 setup(
     name="article-management-tool",
-    version="0.1.3",
+    version="0.1.4",
     author="Egor Im",
     author_email="egor.im.97@gmail.com",
     description="Manage articles, books, lecture notes, etc for research.",

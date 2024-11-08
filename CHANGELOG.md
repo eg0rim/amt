@@ -1,5 +1,14 @@
 # Change log
 
+## v0.1.4
+### Added
+- download capability from arxiv.org
+- bulk download from arxiv.org
+
+### Changed
+- code partly refactored
+- bugs fixed
+
 ## v0.1.3
 ### Added
 - arxiv window with searching and direct adding of articles
