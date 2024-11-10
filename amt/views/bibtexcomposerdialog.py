@@ -18,27 +18,49 @@
 
 """dialog widget for composing bibtex file"""
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QItemSelection
 from PySide6.QtWidgets import QDialog, QWidget
 
 from amt.views.build.bibtexcomposerdialog_ui import Ui_BibtexComposerDialog
+from amt.db.datamodel import EntryData 
 from amt.db.tablemodel import BibtexComposerModel
+
+from amt.logger import getLogger
+
+logger = getLogger(__name__)
 
 class BibtexComposerDialog(QDialog):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.model = BibtexComposerModel(self)
+        self.model: BibtexComposerModel = BibtexComposerModel(self)
         self.setupUi()
         self.setupModel()
+        
        
     def setupUi(self) -> None:
         self.ui = Ui_BibtexComposerDialog()
         self.ui.setupUi(self)
         # make the dialog window a normal window
         self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        # actions
+        self.ui.actionRemoveEntry.triggered.connect(self.removeSelectedEntries)
         
     def setupModel(self) -> None:
         self.ui.tableView.setModel(self.model)
+        # when selection changes
+        self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
         
-    def addEntries(self, entries: list[dict[str, str]]) -> None:
+    def addEntries(self, entries: list[EntryData]) -> None:
         self.model.addEntries(entries)
+            
+    def removeSelectedEntries(self) -> None:
+        selectedRows = self.ui.tableView.getSelectedRows()
+        self.model.removeEntriesAt(selectedRows)
+        
+    def onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection) -> None:
+        try:
+            row = selected.indexes()[0].row()
+        except IndexError:
+            row = deselected.indexes()[0].row()
+        bibtex = self.model.getBibtexAt(row)
+        self.ui.bibtexTextEdit.setText(bibtex)

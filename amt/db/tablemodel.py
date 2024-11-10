@@ -965,4 +965,87 @@ class BibtexComposerModel(AMTModel):
         Args:
             *args (object): arguments for the parent class
         """
-        super().__init__(*args)    
+        super().__init__(*args)   
+        self.bibtexCache: dict[EntryData, str] = {}
+        
+    def getBibtexAt(self, index : int ) -> str:
+        """
+        returns the bibtex string at given index
+
+        Args:
+            index (int): index
+
+        Returns:
+            str: bibtex string
+        """
+        entry = self.getDataAt(index)
+        return self.bibtexCache[entry]
+    
+    def getBibtexAll(self) -> dict[EntryData, str]:
+        """
+        returns all bibtex strings
+
+        Returns:
+            list[str]: list of bibtex strings
+        """
+        return self.bibtexCache 
+    
+    def setData(self, data : list[EntryData]) -> bool:
+        """
+        sets the data in the model
+
+        Args:
+            data (list[EntryData]): list of entries
+
+        Returns:
+            bool: True if successful
+        """
+        for entry in data:
+            if entry not in self.bibtexCache:
+                self.bibtexCache[entry] = entry.bibtex
+        return super().setData(data)
+
+    
+    def removeEntriesAt(self, rows : list[int]) -> bool:
+        """
+        removes entry at given rows
+
+        Args:
+            row (int): row number
+
+        Returns:
+            bool: True if successful
+        """
+        for row in rows:
+            entry = self.getDataAt(row)
+            del self.bibtexCache[entry]
+        return super().removeEntriesAt(rows)
+    
+    def addEntry(self, entry : EntryData) -> bool:
+        """
+        adds entry to the model
+
+        Args:
+            entry (EntryData): entry to add
+
+        Returns:
+            bool: True if successful
+        """
+        if entry not in self.bibtexCache:
+            self.bibtexCache[entry] = entry.bibtex
+        return super().addEntry(entry)
+    
+    def addEntries(self, entries : list[EntryData]) -> bool:
+        """
+        adds multiple entries to the model
+
+        Args:
+            entries (list[EntryData]): list of entries to add
+
+        Returns:
+            bool: True if successful
+        """
+        for entry in entries:
+            if entry not in self.bibtexCache:
+                self.bibtexCache[entry] = entry.bibtex
+        return super().addEntries(entries)

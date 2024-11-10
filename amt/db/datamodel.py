@@ -553,6 +553,9 @@ class AuthorData(AbstractData):
     def toMinimalString(self):
         return f"{f"{self.firstName[0]}." if self.firstName else ""} {self.lastName if self.lastName else ""}".strip()
     
+    def toLastFirstNameString(self):
+        return f"{f"{self.lastName}, " if self.lastName else ""}{self.firstName}"
+    
     def getDisplayData(self, field: str) -> str:
         if field == "firstName":
             return self.firstName
@@ -578,7 +581,8 @@ class EntryData(AbstractData):
     createTable creates also additional tables to keep reference to authors.
     """    
     tableColumns = AbstractData.tableColumns.copy()
-    tableColumns.update({"title": "TEXT NOT NULL", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"})
+    tableColumns.update({"title": "TEXT NOT NULL", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0", "bibtex": "TEXT"})
+    bibtexType = "misc"
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__()
         self._title: str = title
@@ -587,6 +591,7 @@ class EntryData(AbstractData):
         self._summary: str = None
         self._comment: str = None
         self._previewPage: int = 0
+        self._bibtex: str = None
         
     @property
     def summary(self) -> str:
@@ -635,6 +640,15 @@ class EntryData(AbstractData):
     def previewPage(self, value : int):
         self._previewPage = value
         
+    @property
+    def bibtex(self) -> str:
+        if self._bibtex:
+            return self._bibtex
+        return self.generateBibtex()
+    @bibtex.setter
+    def bibtex(self, value : str):
+        self._bibtex = value
+        
     @classmethod
     def createTable(cls, db : AMTDatabase) -> bool:
         if not super().createTable(db):
@@ -673,6 +687,7 @@ class EntryData(AbstractData):
         data["file_name"] = self.fileName
         data["comment"] = self.comment
         data["preview_page"] = str(self.previewPage)
+        data["bibtex"] = self._bibtex
         return data
     
     @classmethod
@@ -761,7 +776,8 @@ class EntryData(AbstractData):
         self.fileName = nrow[2]
         self.comment = nrow[3]
         self.previewPage = int(nrow[4])
-        return nrow[5:]
+        self.bibtex = nrow[5]
+        return nrow[6:]
         
     def toString(self):
         if len(self.authors) == 0:
@@ -790,7 +806,35 @@ class EntryData(AbstractData):
             return self.comment or ""
         elif field == "previewPage":
             return str(self.previewPage)
+        elif field == "bibtex":
+            return self._bibtex or ""
         return super().getDisplayData(field)
+        
+    def generateBibtex(self) -> str:
+        fields = self.bibtexFields()
+        if "year" in fields:
+            year = fields["year"]
+        else:
+            year = ""
+        # TODO: improve generatrion of label
+        # generate  label as first 5 letters of title lowercase
+        titleWords = self.title.lower().split(" ")
+        label = ''.join([word[0] for word in titleWords[:min(5, len(titleWords))]])
+        bibref = f"{self.authors[0].lastName}:{year}{label}"
+        bibtex = "@"+ self.bibtexType + "{" + bibref + "\n"
+        
+        for key, value in fields.items():
+            if value:
+                bibtex += f'\t{key} = "{value}",\n'
+        bibtex += "}\n"
+        return bibtex
+        
+    def bibtexFields(self) -> dict[str,str]:
+        fields = {}
+        fields["title"] = self.title
+        fields["author"] = " and ".join([auth.toLastFirstNameString() for auth in self.authors])
+        return fields
+        
     
 class PublishableData(EntryData):
     """
@@ -887,6 +931,17 @@ class PublishableData(EntryData):
             return self.datePublished.toString(Qt.ISODate) if self.datePublished else ""
         return super().getDisplayData(field)
         
+    def bibtexFields(self) -> dict[str, str]:
+        fields =  super().bibtexFields()
+        if self.doi:
+            fields["doi"] = self.doi
+        if self.link:
+            fields["url"] = self.link
+        if self.datePublished:
+            fields["year"] = str(self.datePublished.year())
+        return fields
+        
+        
 class ArticleData(PublishableData):
     """
     Data type to store article data.
@@ -895,6 +950,7 @@ class ArticleData(PublishableData):
     tableColumns = PublishableData.tableColumns.copy()
     tableColumns.update({"arxivid": "TEXT", "version": "TEXT", "journal": "TEXT", "date_arxiv_uploaded": "TEXT", "date_arxiv_updated": "TEXT", "prime_category": "TEXT"})  
     tableAddLines = [] #["UNIQUE(title, doi)"]
+    bibtexType = "article"
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._arxivid : str = None
@@ -992,6 +1048,15 @@ class ArticleData(PublishableData):
             return self.primeCategory or ""
         return super().getDisplayData(field)
         
+    def bibtexFields(self) -> dict[str, str]:
+        fields = super().bibtexFields()
+        if self.journal:
+            fields["journal"] = self.journal
+        if not "year" in fields and self._dateArxivUploaded:
+            fields["year"] = str(self._dateArxivUploaded.date().year())
+        return fields
+        
+        
 class BookData(PublishableData):
     """
     Data type to store book data.
@@ -1057,6 +1122,16 @@ class BookData(PublishableData):
         elif field == "edition":
             return self.edition or ""
         return super().getDisplayData(field)
+        
+    def bibtexFields(self) -> dict[str, str]:
+        fields = super().bibtexFields()
+        if self.isbn:
+            fields["isbn"] = self.isbn
+        if self.publisher:
+            fields["publisher"] = self.publisher
+        if self.edition:
+            fields["edition"] = self.edition
+        return fields
 
 class LecturesData(PublishableData):
     """
@@ -1109,3 +1184,9 @@ class LecturesData(PublishableData):
         elif field == "course":
             return self.course or ""
         return super().getDisplayData(field)
+        
+    def bibtexFields(self) -> dict[str, str]:
+        fields = super().bibtexFields()
+        if self.school:
+            fields["organization"] = self.school
+        return fields
