@@ -365,8 +365,6 @@ class AMTModel(QAbstractTableModel):
         _columnNames (list[str]): list of column names
         _columnCount (int): number of columns
         _columnToField (dict[int, str]): mapping of columns to fields in the data model
-        _supportedDataTypes (dict[str, EntryData]): supported data types
-        _entryTypes (list[str]): data types that are shown in the corresponding table view
     Attributes:
         dataCache (DataCache): cache of data, where all data are stored
     Methods:
@@ -384,15 +382,6 @@ class AMTModel(QAbstractTableModel):
     _columnCount: int = len(_columnNames)
     # map columns to fields in datamodel
     _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid"}
-    # supported data types; if new data types are added, they should be added here
-    _supportedDataTypes: dict[str,EntryData] = {
-        "articles": ArticleData,
-        "books": BookData,
-        "lectures": LecturesData,
-        "authors": AuthorData
-    }
-    # data types that are shown in the corresponding table view
-    _entryTypes = ["articles", "books", "lectures"]
     
     def __init__(self, *args : object):
         """
@@ -680,6 +669,15 @@ class AMTDBModel(AMTModel):
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
     databaseConnected = Signal(str)    
+    # supported data types; if new data types are added, they should be added here
+    _supportedDataTypes: dict[str,EntryData] = {
+        "articles": ArticleData,
+        "books": BookData,
+        "lectures": LecturesData,
+        "authors": AuthorData
+    }
+    # data types that are shown in the corresponding table view
+    _entryTypes = ["articles", "books", "lectures"]
     def __init__(self, dbFile : str = "", *args : object):
         """
         Constructor for the model.
@@ -925,8 +923,6 @@ class ArxivModel(AMTModel):
         _columnNames (list[str]): list of column names
         _columnCount (int): number of columns
         _columnToField (dict[int, str]): mapping of columns to fields in the data model
-        _supportedDataTypes (dict[str, EntryData]): supported data types
-        _entryTypes (list[str]): data types that are shown in the corresponding table view
     Methods:
         __init__(self, *args: object) -> None
         addEntry(self, entry: EntryData) -> bool
@@ -937,12 +933,6 @@ class ArxivModel(AMTModel):
     _columnCount: int = len(_columnNames)
     # map columns to fields in datamodel
     _columnToField: dict[int, str] = {0: "title", 1: "authors", 2: "arxivid"}
-    # supported data types; if new data types are added, they should be added here
-    _supportedDataTypes: dict[str,EntryData] = {
-        "articles": ArticleData
-    }
-    # data types that are shown in the corresponding table view
-    _entryTypes = ["articles"]
     
     def __init__(self, *args : object):
         """
@@ -952,3 +942,27 @@ class ArxivModel(AMTModel):
         """
         super().__init__(*args)          
         
+class BibtexComposerModel(AMTModel):
+    """
+    Model to display article for bibtex composer.
+    Inherits from AMTModel.
+    Class attributes:
+        _columnNames (list[str]): list of column names
+        _columnCount (int): number of columns
+        _columnToField (dict[int, str]): mapping of columns to fields in the data model
+    Methods:
+        __init__(self, *args: object) -> None
+    """
+    # specify columns
+    _columnNames: list[str] = ["Title", "Author(s)"]
+    _columnCount: int = len(_columnNames)
+    # map columns to fields in datamodel
+    _columnToField: dict[int, str] = {0: "title", 1: "authors"}
+    
+    def __init__(self, *args : object):
+        """
+        Constructor for the model.
+        Args:
+            *args (object): arguments for the parent class
+        """
+        super().__init__(*args)    
