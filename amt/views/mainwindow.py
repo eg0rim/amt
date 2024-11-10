@@ -56,7 +56,8 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTWarnMessageBox,
     AMTCriticalMessageBox,
     AMTInfoMessageBox,
-    AMTQuestionMessageBox
+    AMTQuestionMessageBox,
+    AMTMutliErrorMessageBox
 )
 from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError, DatabaseFileHandler
 from amt.network.arxiv_aux import *
@@ -714,6 +715,10 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        logger.debug(f"Icon search path: {QIcon.themeSearchPaths()}")
+        AMTInfoMessageBox(self, "Debug button pressed").exec()
+        AMTWarnMessageBox(self, "Debug button pressed").exec()
+        AMTErrorMessageBox(self, "Debug button pressed").exec()
+        AMTCriticalMessageBox(self, "Debug button pressed").exec()
+        AMTQuestionMessageBox(self, "Debug button pressed").exec()
+        AMTMutliErrorMessageBox(self, "Debug button pressed", ["error1", "error2"]).exec()
         
-        QIcon.setThemeName("light")

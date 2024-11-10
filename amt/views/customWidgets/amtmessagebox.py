@@ -38,17 +38,17 @@ class AMTMessageBox(QMessageBox):
 class AMTInfoMessageBox(AMTMessageBox):
     def __init__(self, parent=None, text: str = None):
         super().__init__(parent, text)
-        self.setIconPixmap(QIcon(":/icons/information").pixmap(64, 64))
+        self.setIconPixmap(QIcon.fromTheme("information").pixmap(64, 64))
         
 class AMTWarnMessageBox(AMTMessageBox):
     def __init__(self, parent=None, text: str = None):
         super().__init__(parent,text)
-        self.setIconPixmap(QIcon(":/icons/warning").pixmap(64, 64))
+        self.setIconPixmap(QIcon.fromTheme("warning").pixmap(64, 64))
         
 class AMTErrorMessageBox(AMTMessageBox):
     def __init__(self, parent=None, text: str = None):
         super().__init__(parent, text)
-        self.setIconPixmap(QIcon(":/icons/error").pixmap(64, 64))
+        self.setIconPixmap(QIcon.fromTheme("error").pixmap(64, 64))
         
 class AMTMutliErrorMessageBox(AMTErrorMessageBox):
     def __init__(self, parent=None, text: str = None, errors: list[str] = None):
@@ -59,10 +59,10 @@ class AMTMutliErrorMessageBox(AMTErrorMessageBox):
 class AMTCriticalMessageBox(AMTMessageBox):
     def __init__(self, parent=None, text: str = None):
         super().__init__(parent, text)
-        self.setIconPixmap(QIcon(":/icons/critical").pixmap(64, 64))
+        self.setIconPixmap(QIcon.fromTheme("error-red").pixmap(64, 64))
         
 class AMTQuestionMessageBox(AMTMessageBox):
     def __init__(self, parent=None, text: str = None):
         super().__init__(parent,text)
-        self.setIconPixmap(QIcon(":/icons/question").pixmap(64, 64))
+        self.setIconPixmap(QIcon.fromTheme("question").pixmap(64, 64))
     
