@@ -43,7 +43,10 @@ class BibtexComposerDialog(QDialog):
         # make the dialog window a normal window
         self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
         # actions
+        # TODO: fix it
         self.ui.actionRemoveEntry.triggered.connect(self.removeSelectedEntries)
+        # compose button
+        self.ui.composeButton.clicked.connect(self.composeBibtex)
         
     def setupModel(self) -> None:
         self.ui.tableView.setModel(self.model)
@@ -64,3 +67,7 @@ class BibtexComposerDialog(QDialog):
             row = deselected.indexes()[0].row()
         bibtex = self.model.getBibtexAt(row)
         self.ui.bibtexTextEdit.setText(bibtex)
+        
+    def composeBibtex(self) -> None:
+        logger.debug("Composing bibtex")
+        # TODO: implement
