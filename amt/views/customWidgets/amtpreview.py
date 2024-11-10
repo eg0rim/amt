@@ -146,8 +146,3 @@ class AMTPreviewWidget(QWidget):
     def clearCache(self):
         self.ui.previewLabel.pdfPreviewer.clearCache()
         
-    def resizeEvent(self, event: QResizeEvent):
-        logger.debug(f"Preview widget size changed to {event.size()}")
-        logger.debug(f"Size of summary label: {self.ui.summaryBody.size()}")
-        logger.debug(f"Size of scroll area: {self.ui.scrollArea.size()}")
-        logger.debug(f"Size of scroll area widget: {self.ui.scrollAreaWidgetContents.size()}")
