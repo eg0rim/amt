@@ -67,6 +67,10 @@ class ArxivDialog(QDialog):
     def setupUi(self):
         self.ui: arxivDialog_ui.Ui_Dialog = arxivDialog_ui.Ui_Dialog()
         self.ui.setupUi(self)
+        #self.setWindowFlag(Qt.Dialog, False)
+        self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        logger.debug(f"Flags: {self.windowFlags().name}")
+        
         self.ui.arxivIdCheckBox.setChecked(False)
         self.ui.arxivIdLneEdit.setVisible(False)
         # add types of search
@@ -214,4 +218,4 @@ class ArxivDialog(QDialog):
             row = deselected.indexes()[0].row()
         entry = self.model.getDataAt(row)
         if entry:
-             self.ui.previewWidget.setEntry(entry)
+             self.ui.previewWidget.setEntry(entry) 
