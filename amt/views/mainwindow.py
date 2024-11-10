@@ -18,25 +18,17 @@
 
 """main window for the app"""
 
-import sys, subprocess
-from PySide6.QtCore import QSettings, QSize, QItemSelection, Qt
+import sys
+from PySide6.QtCore import QSettings, QItemSelection, Qt
 from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QDialog,
-    QFileDialog,
-    QLabel
+    QFileDialog
 )
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon
 from amt.db.tablemodel import AMTDBModel, AMTFilter
 from amt.db.database import AMTDatabaseError
-from amt.db.datamodel import (
-    ArticleData, 
-    AuthorData, 
-    BookData, 
-    LecturesData
-)
-from PySide6.QtNetwork import QNetworkRequest, QNetworkAccessManager
 
 from amt.views.customWidgets.amtfiledialog import AMTDBFileDialog
 
@@ -49,6 +41,7 @@ from .aboutdialog import AboutDialog
 from .adddialog import AddDialog
 from .settingsdialog import AMTSettingsDialog
 from .arxivdialog import ArxivDialog
+from .bibtexcomposerdialog import BibtexComposerDialog
 
 from amt.logger import getLogger
 from amt.views.customWidgets.amtmessagebox import (
@@ -59,7 +52,7 @@ from amt.views.customWidgets.amtmessagebox import (
     AMTQuestionMessageBox,
     AMTMutliErrorMessageBox
 )
-from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError, DatabaseFileHandler
+from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError
 from amt.network.arxiv_aux import *
 from amt.views.thememanager import ThemeManager
 
@@ -132,6 +125,8 @@ class MainWindow(QMainWindow):
         self.dbFileDialog = AMTDBFileDialog(self) 
         # arxiv dialog
         self.arxivDialog = ArxivDialog(self)   
+        # bibtex composer dialog
+        self.bibtexComposer = BibtexComposerDialog(self)
         # setup main window
         # setup ui
         self.setupUI()  
@@ -287,6 +282,7 @@ class MainWindow(QMainWindow):
         self.ui.actionSettings.setIcon(QIcon.fromTheme("settings"))
         self.ui.actionPreview.setIcon(QIcon.fromTheme("preview"))
         self.ui.actionArxiv.setIcon(QIcon.fromTheme("arxiv"))
+        self.ui.actionComposeBibtex.setIcon(QIcon.fromTheme("tex"))
         # connect signals
         # actions in toolbar
         # add entry
@@ -320,6 +316,8 @@ class MainWindow(QMainWindow):
         self.ui.actionSettings.triggered.connect(self.openSettingsDialog)
         # arxiv
         self.ui.actionArxiv.triggered.connect(self.openArxivDialog)
+        # compose bibtex
+        self.ui.actionComposeBibtex.triggered.connect(self.openBibtexComposer)
         # actions in table
         # open entry on double click
         self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
@@ -622,7 +620,17 @@ class MainWindow(QMainWindow):
         Opens arXiv dialog for submitting queries.
         """
         self.arxivDialog.show()
-         
+        
+    def openBibtexComposer(self):
+        """
+        Opens bibtex composer dialog.
+        """
+        selected_rows = self.ui.tableView.getSelectedRows()
+        if len(selected_rows):
+            self.bibtexComposer.addEntries([self.model.getDataAt(row) for row in selected_rows])
+        if not self.bibtexComposer.isVisible():
+            self.bibtexComposer.show()    
+            
     # open additional dialog windows
     def openAboutDialog(self):
         """

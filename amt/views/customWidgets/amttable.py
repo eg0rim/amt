@@ -44,6 +44,7 @@ class AMTTableWidget(QTableView):
         showContextMenu(self, pos: QPoint)
         resizeEvent(self, event: QResizeEvent) -> None
         resizeColumns(self)
+        getSelectedRows(self) -> list[int]
     """
     def __init__(self, parent: QWidget =None):
         """
@@ -128,6 +129,17 @@ class AMTTableWidget(QTableView):
                 self.setColumnWidth(i, int(tableWidth * defaultTitleFraction))
             else:
                 self.setColumnWidth(i, int(tableWidth * (1-defaultTitleFraction)/ float((numberOfColumns - 1))))
+                
+    def getSelectedRows(self) -> list[int]:
+        """
+        Get the selected rows in the table.
+        
+        Returns:
+            list[int]: A list of row indices for the selected rows.
+        """
+        selectedIndexes = self.selectionModel().selectedRows()
+        selectedRows = [index.row() for index in selectedIndexes]
+        return selectedRows
         
 class ATMTableContextMenu(QMenu):
     """

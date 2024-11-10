@@ -86,6 +86,7 @@
     <addaction name="actionSearch"/>
     <addaction name="actionUpdate"/>
     <addaction name="separator"/>
+    <addaction name="actionComposeBibtex"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -122,6 +123,7 @@
    <addaction name="actionPreview"/>
    <addaction name="actionArxiv"/>
    <addaction name="actionDebug"/>
+   <addaction name="actionComposeBibtex"/>
   </widget>
   <action name="actionAbout">
    <property name="text">
@@ -246,6 +248,14 @@
   <action name="actionArxiv">
    <property name="text">
     <string>arxiv.org</string>
+   </property>
+  </action>
+  <action name="actionComposeBibtex">
+   <property name="text">
+    <string>Compose Bibtex</string>
+   </property>
+   <property name="toolTip">
+    <string>Compose Bibtex</string>
    </property>
   </action>
  </widget>

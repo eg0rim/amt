@@ -21,6 +21,7 @@
         <file>icons/light/actions/settings.png</file>
         <file>icons/light/actions/update.png</file>
         <file>icons/light/actions/warning.png</file>
+        <file>icons/light/actions/tex.png</file>
         <file>icons/dark/index.theme</file>
         <file>icons/dark/actions/about.png</file>
         <file>icons/dark/actions/arxiv.png</file>
@@ -42,6 +43,7 @@
         <file>icons/dark/actions/settings.png</file>
         <file>icons/dark/actions/update.png</file>
         <file>icons/dark/actions/warning.png</file>
+        <file>icons/dark/actions/tex.png</file>
         <file alias="logo">files/logo.png</file>
     </qresource>
 </RCC>
