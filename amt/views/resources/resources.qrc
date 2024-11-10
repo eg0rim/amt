@@ -22,6 +22,6 @@
         <file alias="arxiv">files/icons/icons8-x-100.png</file>
     </qresource>
     <qresource>
-        <file alias="logo">files/logo.ico</file>
+        <file alias="logo">files/logo.png</file>
     </qresource>
 </RCC>
