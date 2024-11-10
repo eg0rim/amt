@@ -22,19 +22,24 @@ For the next release v0.2.0:
 
 ## Installing (for Linux)
 
-1. Clone this repository.
+1. Create a directory where you want Article Management Tool to be installed
 ```bash
-    git clone git@github.com:eg0rim/amt.git
+mkdir /path/to/amt/parent/dir
+cd /path/to/amt/parent/dir
 ```
-2. Create virtual environment and activate (recommended)
+2. Clone this repository.
+```bash
+    git clone https://github.com/eg0rim/amt.git
+```
+3. (Optional) create virtual environment and activate 
 ```bash
     python3 -m venv /path/to/venv
     source /path/to/venv/bin/activate
 ```
-3. Install 
+4. Install dependencies (see `REQUIREMENTS.txt`). Example for `pip`: 
 ```bash
-    cd /path/to/amt
-    pip install .
+    cd ./amt
+    pip install -r REQUIREMENTS.txt
 ```
 2. Compile `.qrc` and `.ui` files
 ```bash 
