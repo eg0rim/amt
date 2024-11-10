@@ -1,27 +1,47 @@
 <RCC>
-    <qresource prefix="/icons">
-        <file alias="about">files/icons/icons8-about-100.png</file>
-        <file alias="bug">files/icons/icons8-bug-100.png</file>
-        <file alias="edit">files/icons/icons8-edit-property-100.png</file>
-        <file alias="remove">files/icons/icons8-minus-100.png</file>
-        <file alias="new">files/icons/icons8-new-file-100.png</file>
-        <file alias="open">files/icons/icons8-open-file-100.png</file>
-        <file alias="add">files/icons/icons8-plus-100.png</file>
-        <file alias="quit">files/icons/icons8-quit-100.png</file>
-        <file alias="save">files/icons/icons8-save-100.png</file>
-        <file alias="saveas">files/icons/icons8-save-as-100.png</file>
-        <file alias="search">files/icons/icons8-search-100.png</file>
-        <file alias="update">files/icons/icons8-update-100.png</file>
-        <file alias="settings">files/icons/icons8-settings-100.png</file>
-        <file alias="warning">files/icons/icons8-error-100.png</file>
-        <file alias="information">files/icons/icons8-information.svg</file>
-        <file alias="error">files/icons/icons8-error.svg</file>
-        <file alias="question">files/icons/icons8-question-100.png</file>
-        <file alias="critical">files/icons/icons8-error-red.svg</file>
-        <file alias="preview">files/icons/icons8-preview-100.png</file>
-        <file alias="arxiv">files/icons/icons8-x-100.png</file>
-    </qresource>
-    <qresource>
+    <qresource prefix="/">
+        <file>icons/light/index.theme</file>
+        <file>icons/light/actions/about.png</file>
+        <file>icons/light/actions/arxiv.png</file>
+        <file>icons/light/actions/bug.png</file>
+        <file>icons/light/actions/edit-property.png</file>
+        <file>icons/light/actions/error-red.svg</file>
+        <file>icons/light/actions/error.svg</file>
+        <file>icons/light/actions/information.svg</file>
+        <file>icons/light/actions/minus.png</file>
+        <file>icons/light/actions/new-file.png</file>
+        <file>icons/light/actions/open-file.png</file>
+        <file>icons/light/actions/plus.png</file>
+        <file>icons/light/actions/preview.png</file>
+        <file>icons/light/actions/question.png</file>
+        <file>icons/light/actions/quit.png</file>
+        <file>icons/light/actions/save-as.png</file>
+        <file>icons/light/actions/save.png</file>
+        <file>icons/light/actions/search.png</file>
+        <file>icons/light/actions/settings.png</file>
+        <file>icons/light/actions/update.png</file>
+        <file>icons/light/actions/warning.png</file>
+        <file>icons/dark/index.theme</file>
+        <file>icons/dark/actions/about.png</file>
+        <file>icons/dark/actions/arxiv.png</file>
+        <file>icons/dark/actions/bug.png</file>
+        <file>icons/dark/actions/edit-property.png</file>
+        <file>icons/dark/actions/error-red.svg</file>
+        <file>icons/dark/actions/error.svg</file>
+        <file>icons/dark/actions/information.svg</file>
+        <file>icons/dark/actions/minus.png</file>
+        <file>icons/dark/actions/new-file.png</file>
+        <file>icons/dark/actions/open-file.png</file>
+        <file>icons/dark/actions/plus.png</file>
+        <file>icons/dark/actions/preview.png</file>
+        <file>icons/dark/actions/question.png</file>
+        <file>icons/dark/actions/quit.png</file>
+        <file>icons/dark/actions/save-as.png</file>
+        <file>icons/dark/actions/save.png</file>
+        <file>icons/dark/actions/search.png</file>
+        <file>icons/dark/actions/settings.png</file>
+        <file>icons/dark/actions/update.png</file>
+        <file>icons/dark/actions/warning.png</file>
         <file alias="logo">files/logo.png</file>
     </qresource>
 </RCC>

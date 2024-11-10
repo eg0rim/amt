@@ -60,6 +60,7 @@ from amt.views.customWidgets.amtmessagebox import (
 )
 from amt.file_utils.filehandler import EntryHandler, ApplicationNotSetError, DatabaseFileHandler
 from amt.network.arxiv_aux import *
+from amt.views.thememanager import ThemeManager
 
 logger = getLogger(__name__)
 
@@ -268,22 +269,23 @@ class MainWindow(QMainWindow):
         # set icons
         self.setWindowIcon(QIcon(":/logo")) # does not work
         #self.setIconSize(QSize(16, 16))
-        self.ui.actionAdd.setIcon(QIcon(":/icons/add"))
-        self.ui.actionDel.setIcon(QIcon(":/icons/remove"))
-        self.ui.actionEdit.setIcon(QIcon(":/icons/edit"))
-        self.ui.actionUpdate.setIcon(QIcon(":/icons/update"))
-        self.ui.actionSaveLibrary.setIcon(QIcon(":/icons/save"))
-        self.ui.actionSaveAs.setIcon(QIcon(":/icons/saveas"))
-        self.ui.actionNewLibrary.setIcon(QIcon(":/icons/new"))
-        self.ui.actionOpenLibrary.setIcon(QIcon(":/icons/open"))
-        self.ui.actionSearch.setIcon(QIcon(":/icons/search"))
-        self.ui.actionQuit.setIcon(QIcon(":/icons/quit"))
-        self.ui.actionAbout.setIcon(QIcon(":/icons/about"))
-        self.ui.actionDebug.setIcon(QIcon(":/icons/bug"))
-        self.ui.actionUpdate.setIcon(QIcon(":/icons/update"))
-        self.ui.actionSettings.setIcon(QIcon(":/icons/settings"))
-        self.ui.actionPreview.setIcon(QIcon(":/icons/preview"))
-        self.ui.actionArxiv.setIcon(QIcon(":/icons/arxiv"))
+        ThemeManager.deduceTheme(self)
+        self.ui.actionAdd.setIcon(QIcon.fromTheme("plus"))
+        self.ui.actionDel.setIcon(QIcon.fromTheme("minus"))
+        self.ui.actionEdit.setIcon(QIcon.fromTheme("edit-property"))
+        self.ui.actionUpdate.setIcon(QIcon.fromTheme("update"))
+        self.ui.actionSaveLibrary.setIcon(QIcon.fromTheme("save"))
+        self.ui.actionSaveAs.setIcon(QIcon.fromTheme("save-as"))
+        self.ui.actionNewLibrary.setIcon(QIcon.fromTheme("new-file"))
+        self.ui.actionOpenLibrary.setIcon(QIcon.fromTheme("open-file"))
+        self.ui.actionSearch.setIcon(QIcon.fromTheme("search"))
+        self.ui.actionQuit.setIcon(QIcon.fromTheme("quit"))
+        self.ui.actionAbout.setIcon(QIcon.fromTheme("about"))
+        self.ui.actionDebug.setIcon(QIcon.fromTheme("bug"))
+        self.ui.actionUpdate.setIcon(QIcon.fromTheme("update"))
+        self.ui.actionSettings.setIcon(QIcon.fromTheme("settings"))
+        self.ui.actionPreview.setIcon(QIcon.fromTheme("preview"))
+        self.ui.actionArxiv.setIcon(QIcon.fromTheme("arxiv"))
         # connect signals
         # actions in toolbar
         # add entry
@@ -329,7 +331,7 @@ class MainWindow(QMainWindow):
         # arxiv dialog
         self.arxivDialog.ui.addSelectedPushButton.clicked.connect(self.addFromArxivDialog)
         # hide unused widgets
-        self.ui.actionDebug.setVisible(False)
+        #self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """
@@ -712,3 +714,6 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
+        logger.debug(f"Icon search path: {QIcon.themeSearchPaths()}")
+        
+        QIcon.setThemeName("light")

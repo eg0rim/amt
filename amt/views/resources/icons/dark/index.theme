@@ -1,0 +1,8 @@
+[Icon Theme]
+Name=dark
+Comment=dark theme icon set
+
+[actions]
+Size=100
+Context=Actions
+Type=Fixed
