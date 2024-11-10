@@ -35,6 +35,36 @@ from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox, AMTMutliEr
 logger = getLogger(__name__)
 
 class ArxivDialog(QDialog):
+    """
+    Window for searching arXiv.org for articles and adding them to the database.
+
+    Class Attributes:
+        searchOptions (dict[str, str]): A dictionary mapping search options to their respective search parameters.
+        sortBys (dict[str, str]): A dictionary mapping sort by options to their respective sort by parameters.
+        sortOrders (dict[str, str]): A dictionary mapping sort order options to their respective sort order parameters.
+        
+    Attributes:
+        model (ArxivModel): The model for the table view.
+        client (ArxivClient): The client for sending requests to arXiv.
+        maxNumResults (int): The maximum number of results to be retrieved from arXiv.
+        addingEntries (bool): A flag indicating whether entries are being added to the model
+        
+    Methods:
+        setupUi(self) -> None
+        setupModel(self) -> None
+        setupClient(self) -> None
+        resetUi(self) -> None
+        onClientFinished(self, data: list[ArticleData]) -> None
+        onSearchParametersChanged(self) -> None
+        onNumResultsChanged(self, value: int) -> None
+        onClientError(self, errmsg: str) -> None
+        createRequest(self) -> ArxivRequest
+        onLoadMoreButtonClicked(self) -> None
+        onSearchButtonClicked(self) -> None
+        getSelectedEntries(self) -> list[ArticleData]
+        downloadEntries(self, entries: list[ArticleData]) -> None
+        onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection) -> None
+    """
     # search options: combobox text -> search parameter
     searchOptions = {"All": ASP.ALL,
                      "Title": ASP.TITLE,
