@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
     # read and write settings
     def readSettings(self):
         """
-        Reads and restores the application settings from the QSettings storage.
+        Reads the application settings from the QSettings storage.
 
         This method retrieves and applies the saved settings for the main window's
         geometry and state, as well as the last used database file. If no settings
@@ -180,6 +180,9 @@ class MainWindow(QMainWindow):
         settings.endGroup()
         
     def readState(self):
+        """
+        Reads the application state from the QSettings storage.
+        """
         settings = QSettings(self.stateFile)
         # read window settings
         settings.beginGroup("MainWindow")
@@ -218,6 +221,9 @@ class MainWindow(QMainWindow):
         settings.endGroup()
         
     def writeState(self):
+        """
+        Writes the application state to the QSettings storage.
+        """
         settings = QSettings(self.stateFile)
         settings.beginGroup("MainWindow")
         # TODO: size does not save

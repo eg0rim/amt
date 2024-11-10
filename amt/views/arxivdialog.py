@@ -35,6 +35,37 @@ from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox, AMTMutliEr
 logger = getLogger(__name__)
 
 class ArxivDialog(QDialog):
+    """
+    Window for searching arXiv.org for articles and adding them to the database.
+
+    Class Attributes:
+        searchOptions (dict[str, str]): A dictionary mapping search options to their respective search parameters.
+        sortBys (dict[str, str]): A dictionary mapping sort by options to their respective sort by parameters.
+        sortOrders (dict[str, str]): A dictionary mapping sort order options to their respective sort order parameters.
+        
+    Attributes:
+        model (ArxivModel): The model for the table view.
+        client (ArxivClient): The client for sending requests to arXiv.
+        maxNumResults (int): The maximum number of results to be retrieved from arXiv.
+        addingEntries (bool): A flag indicating whether entries are being added to the model
+        
+    Methods:
+        setupUi(self) -> None
+        setupModel(self) -> None
+        setupClient(self) -> None
+        resetUi(self) -> None
+        onClientFinished(self, data: list[ArticleData]) -> None
+        onSearchParametersChanged(self) -> None
+        onNumResultsChanged(self, value: int) -> None
+        onClientError(self, errmsg: str) -> None
+        createRequest(self) -> ArxivRequest
+        onLoadMoreButtonClicked(self) -> None
+        onSearchButtonClicked(self) -> None
+        getSelectedEntries(self) -> list[ArticleData]
+        downloadEntries(self, entries: list[ArticleData]) -> None
+        onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection) -> None
+    """
+    # search options: combobox text -> search parameter
     searchOptions = {"All": ASP.ALL,
                      "Title": ASP.TITLE,
                      "Author": ASP.AUTHOR,
@@ -43,9 +74,11 @@ class ArxivDialog(QDialog):
                      "Journal": ASP.JOURNAL,
                      "Category": ASP.CATEGORY,
                      "Report": ASP.REPORT}
+    # sort by options: combobox text -> sort by parameter
     sortBys = {"Submitted Date": AQSortBy.SUB,
                "Relevance": AQSortBy.REL,
                "Last Updated Date": AQSortBy.UPD}
+    # sort order options: combobox text -> sort order parameter
     sortOrders = {"Descending": AQSortOrder.DESC,
                   "Ascending": AQSortOrder.ASC}
     def __init__(self, parent=None):
@@ -65,8 +98,16 @@ class ArxivDialog(QDialog):
         # waitDialog.exec()
         
     def setupUi(self):
+        """
+        Sets up the UI.
+        """
         self.ui: arxivDialog_ui.Ui_Dialog = arxivDialog_ui.Ui_Dialog()
         self.ui.setupUi(self)
+        #self.setWindowFlag(Qt.Dialog, False)
+        # make the dialog window a normal window
+        self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        
+        # default settings
         self.ui.arxivIdCheckBox.setChecked(False)
         self.ui.arxivIdLneEdit.setVisible(False)
         # add types of search
@@ -97,6 +138,9 @@ class ArxivDialog(QDialog):
         self.ui.previewWidget.ui.previewLabel.setVisible(False)
         
     def setupModel(self):
+        """
+        Sets up the model for the table view.
+        """
         self.ui.tableView.setModel(self.model)
         # disable sorting 
         self.ui.tableView.setSortingEnabled(False)
@@ -106,38 +150,72 @@ class ArxivDialog(QDialog):
         self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
         
     def setupClient(self):
+        """
+        Sets up the client for sending requests to arXiv.
+        """
         self.client.errorEncountered.connect(self.onClientError)
         self.client.finished.connect(self.onClientFinished)
         
     def resetUi(self):
+        """
+        Resets the UI to the default state.
+        """
         self.addingEntries = False
         self.ui.loadMorePushButton.setEnabled(False)
         self.ui.addSelectedPushButton.setEnabled(False)
         
     def onClientFinished(self, data: list[ArticleData]):
+        """
+        When the client finished, add the retrieved data to the model or update it.
+
+        Args:
+            data (list[ArticleData]): The data retrieved from the client.
+        """
+        # enable the add selected button
         self.ui.addSelectedPushButton.setEnabled(True)
+        # if adding mode is enabled, add the entries to the model
+        # otherwise, set the data
         if self.addingEntries:
             self.model.addEntries(data)
         else:
             self.model.setData(data)
+        # determine whether more data can be loaded
         if self.client.parser.totalResults > self.model.rowCount():
             self.ui.loadMorePushButton.setEnabled(True)
         else:
             self.ui.loadMorePushButton.setEnabled(False)
         
     def onSearchParametersChanged(self):
+        """
+        Disables the load more button when the search parameters are changed.
+        """
         self.ui.loadMorePushButton.setEnabled(False)
         
     def onNumResultsChanged(self, value: int):
+        """
+        Sets the maximum number of results to be retrieved from arXiv.
+        Args:
+            value (int): maximum entry number_
+        """
         self.maxNumResults = value
         
     def onClientError(self, errmsg: str):
+        """
+        Displays an error message when the client encounters an error.
+        Args:
+            errmsg (str): error string emitted by the client.
+        """
         msgbox = AMTErrorMessageBox(self)
         msgbox.setText("arxiv.org search failed.")
         msgbox.setInformativeText(errmsg)
         msgbox.exec()
         
-    def parseRequest(self) -> ArxivRequest:
+    def createRequest(self) -> ArxivRequest:
+        """
+        Creates an arXiv request based on the search parameters.
+        Returns:
+            ArxivRequest: The request to be sent to arXiv.
+        """
         request = ArxivRequest()
         searchType = self.searchOptions[self.ui.searchTypeComboBox.currentText()]
         searchValue = self.ui.searchLineEdit.text()
@@ -147,7 +225,7 @@ class ArxivDialog(QDialog):
         request.addSearch(searchQuery)
         request.addSortBy(sortBy)   
         request.addSortOrder(sortOrder)
-        maxResults = self.ui.numResultsSpinBox.value()
+        maxResults = self.maxNumResults
         request.addMaxResults(maxResults)
         if self.ui.arxivIdCheckBox.isChecked():
             idList = [id.strip() for id in self.ui.arxivIdLneEdit.text().split(",")]
@@ -155,8 +233,11 @@ class ArxivDialog(QDialog):
         return request
         
     def onLoadMoreButtonClicked(self):
+        """
+        Sends a request to arXiv to load more entries.
+        """
         self.addingEntries = True
-        request = self.parseRequest()
+        request = self.createRequest()
         request.addStart(self.model.rowCount())
         self.client.request = request   
         self.client.send()
@@ -165,8 +246,11 @@ class ArxivDialog(QDialog):
         waitDialog.exec()
         
     def onSearchButtonClicked(self):
+        """
+        Sends a request to arXiv based on the search parameters.
+        """
         self.resetUi()
-        request = self.parseRequest()
+        request = self.createRequest()
         self.client.request = request
         self.client.send()
         waitDialog = ArxivSearchProgressDialog(self)
@@ -174,6 +258,11 @@ class ArxivDialog(QDialog):
         waitDialog.exec()
         
     def getSelectedEntries(self) -> list[ArticleData]:
+        """
+        Gets the selected entries in the table view. If the download pdfs checkbox is checked, the entries are downloaded.
+        Returns:
+            list[ArticleData]: The selected entries.
+        """
         selectedRows = self.ui.tableView.selectionModel().selectedRows()
         selectedEntries: list[ArticleData] = []
         for row in selectedRows:
@@ -183,6 +272,12 @@ class ArxivDialog(QDialog):
         return selectedEntries
     
     def downloadEntries(self, entries: list[ArticleData]):
+        """
+        Downloads the pdfs of the selected entries.
+
+        Args:
+            entries (list[ArticleData]): entries to download.
+        """
         downloader = EntryDownloader(self)
         waitDialog = MultiFileDownloadProgressDialog(self)
         downloader.downloadProgressed.connect(waitDialog.setMultiValue)
@@ -214,4 +309,4 @@ class ArxivDialog(QDialog):
             row = deselected.indexes()[0].row()
         entry = self.model.getDataAt(row)
         if entry:
-             self.ui.previewWidget.setEntry(entry)
+             self.ui.previewWidget.setEntry(entry) 

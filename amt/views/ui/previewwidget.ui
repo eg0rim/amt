@@ -29,6 +29,9 @@
    </item>
    <item>
     <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
      <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
@@ -38,7 +41,13 @@
         <height>524</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QLabel" name="titleLabel">
          <property name="text">
@@ -52,7 +61,7 @@
        <item>
         <widget class="QLabel" name="titleBody">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -62,6 +71,9 @@
          </property>
          <property name="wordWrap">
           <bool>true</bool>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
          </property>
         </widget>
        </item>
@@ -78,7 +90,7 @@
        <item>
         <widget class="QLabel" name="authorsBody">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -88,6 +100,9 @@
          </property>
          <property name="wordWrap">
           <bool>true</bool>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
          </property>
         </widget>
        </item>
@@ -99,15 +114,21 @@
         </widget>
        </item>
        <item>
-        <widget class="QTextEdit" name="summaryBody">
+        <widget class="QLabel" name="summaryBody">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="readOnly">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
           <bool>true</bool>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
          </property>
         </widget>
        </item>

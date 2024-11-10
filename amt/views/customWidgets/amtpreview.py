@@ -20,7 +20,7 @@
 
 from PySide6.QtWidgets import QLabel, QApplication, QWidget, QSizePolicy
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QResizeEvent
 
 from amt.file_utils.pdfpreview import PdfPreviewer
 from amt.db.datamodel import EntryData
@@ -123,7 +123,7 @@ class AMTPreviewWidget(QWidget):
         from amt.views.build.previewwidget_ui import Ui_previewWidget
         self.ui = Ui_previewWidget()
         self.ui.setupUi(self)
-        self.setVisible(False)
+        self.setVisible(False)        
         
     def setEntry(self, entry: EntryData):
         self.ui.previewLabel.setEntry(entry)
@@ -145,3 +145,9 @@ class AMTPreviewWidget(QWidget):
         
     def clearCache(self):
         self.ui.previewLabel.pdfPreviewer.clearCache()
+        
+    def resizeEvent(self, event: QResizeEvent):
+        logger.debug(f"Preview widget size changed to {event.size()}")
+        logger.debug(f"Size of summary label: {self.ui.summaryBody.size()}")
+        logger.debug(f"Size of scroll area: {self.ui.scrollArea.size()}")
+        logger.debug(f"Size of scroll area widget: {self.ui.scrollAreaWidgetContents.size()}")
