@@ -19,7 +19,7 @@
 """dialog widget for composing bibtex file"""
 
 from PySide6.QtCore import Qt, QItemSelection
-from PySide6.QtWidgets import QDialog, QWidget
+from PySide6.QtWidgets import QDialog, QWidget, QAbstractItemView
 
 from amt.views.build.bibtexcomposerdialog_ui import Ui_BibtexComposerDialog
 from amt.db.datamodel import EntryData 
@@ -35,6 +35,7 @@ class BibtexComposerDialog(QDialog):
         self.model: BibtexComposerModel = BibtexComposerModel(self)
         self.setupUi()
         self.setupModel()
+        self.currentEntry: EntryData | None = None
         
        
     def setupUi(self) -> None:
@@ -52,6 +53,8 @@ class BibtexComposerDialog(QDialog):
         self.ui.tableView.setModel(self.model)
         # when selection changes
         self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
+        # allow only single selection
+        self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
         
     def addEntries(self, entries: list[EntryData]) -> None:
         self.model.addEntries(entries)
@@ -61,12 +64,25 @@ class BibtexComposerDialog(QDialog):
         self.model.removeEntriesAt(selectedRows)
         
     def onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection) -> None:
+        # save the bibtex of the deselected row
+        try: 
+            row = deselected.indexes()[0].row()
+            bibtex = self.ui.bibtexTextEdit.toPlainText()
+            self.model.setBiBtexAt(row, bibtex)
+        except IndexError:
+            pass
+        # set the bibtex edit widget to the selected row
         try:
             row = selected.indexes()[0].row()
+            bibtex = self.model.getBibtexAt(row)
+            self.ui.bibtexTextEdit.setText(bibtex)
         except IndexError:
-            row = deselected.indexes()[0].row()
-        bibtex = self.model.getBibtexAt(row)
-        self.ui.bibtexTextEdit.setText(bibtex)
+            pass
+        
+        
+        
+    def onBibtexChanged(self, bibtex: str) -> None:
+        self.model.bibtexCache
         
     def composeBibtex(self) -> None:
         logger.debug("Composing bibtex")

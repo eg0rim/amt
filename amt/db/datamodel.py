@@ -825,7 +825,7 @@ class EntryData(AbstractData):
         
         for key, value in fields.items():
             if value:
-                bibtex += f'\t{key} = "{value}",\n'
+                bibtex += (4 * ' ') + f'{key} = "{value}",\n'
         bibtex += "}\n"
         return bibtex
         
@@ -1066,6 +1066,7 @@ class BookData(PublishableData):
     tableColumns.update({"isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT"})
     #tableColumns = {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "title": "TEXT NOT NULL", "doi": "TEXT", "link": "TEXT", "date_published": "TEXT", "isbn": "TEXT", "publisher": "TEXT", "edition": "TEXT", "summary": "TEXT", "file_name": "TEXT", "comment": "TEXT", "preview_page": "INTEGER DEFAULT 0"}
     tableAddLines = [] #["UNIQUE(title, doi, edition)"]
+    bibtexType = "book"
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._isbn: str = None
@@ -1141,6 +1142,7 @@ class LecturesData(PublishableData):
     tableColumns= PublishableData.tableColumns.copy()
     tableColumns.update({"school": "TEXT", "course": "TEXT"})
     tableAddLines = [] #["UNIQUE(title, course, school)"]
+    bibtextType = "misc"
     def __init__(self, title : str, authors : list[AuthorData]):
         super().__init__(title, authors)
         self._school: str = None

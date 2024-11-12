@@ -1004,6 +1004,21 @@ class BibtexComposerModel(AMTModel):
             if entry not in self.bibtexCache:
                 self.bibtexCache[entry] = entry.bibtex
         return super().setData(data)
+    
+    def setBiBtexAt(self, index : int, bibtex : str) -> bool:   
+        """
+        sets the bibtex string at given index
+
+        Args:
+            index (int): index
+            bibtex (str): bibtex string
+
+        Returns:
+            bool: True if successful
+        """
+        entry = self.getDataAt(index)
+        self.bibtexCache[entry] = bibtex
+        return True
 
     
     def removeEntriesAt(self, rows : list[int]) -> bool:
