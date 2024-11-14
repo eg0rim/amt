@@ -629,7 +629,10 @@ class MainWindow(QMainWindow):
         """
         Opens arXiv dialog for submitting queries.
         """
-        self.arxivDialog.show()
+        if not self.arxivDialog.isVisible():
+            self.arxivDialog.show()
+        else:
+            self.arxivDialog.activateWindow()
         
     def openBibtexComposer(self):
         """
@@ -639,7 +642,9 @@ class MainWindow(QMainWindow):
         if len(selected_rows):
             self.bibtexComposer.addEntries([self.model.getDataAt(row) for row in selected_rows])
         if not self.bibtexComposer.isVisible():
-            self.bibtexComposer.show()    
+            self.bibtexComposer.show() 
+        else:
+            self.bibtexComposer.activateWindow()   
             
     # open additional dialog windows
     def openAboutDialog(self):
