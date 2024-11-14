@@ -142,9 +142,9 @@ class AMTDateInput(QWidget):
         self.dateEdit.setDate(date)
         
 
-class AMTFileInput(QWidget):
+class AMTFileIO(QWidget):
     """ 
-    Composite widget for file input. Contains a QLineEdit and a QPushButton to browse for a file.
+    Composite widget for file input/output. Contains a QLineEdit and a QPushButton to browse for a file.
     If no file is selected, the filepath is an empty string. getFilePath returns None if no file is selected.
     """
     def __init__(self, parent=None):
@@ -172,6 +172,8 @@ class AMTFileInput(QWidget):
         self.filepathEdit.setText(filepath)
         
     def browseFile(self):
+        if self.filepath:
+            self.fileDialog.selectFile(self.filepath)
         if self.fileDialog.exec() == QFileDialog.Accepted:
             self.filepath = self.fileDialog.selectedFile()
         
@@ -199,6 +201,33 @@ class AMTFileInput(QWidget):
     def onTextChanged(self, text):
         self._filepath = text
         
+class AMTFileInput(AMTFileIO):
+    """ 
+    Specialization of AMTFileIO for file input.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.fileDialog.setAcceptMode(QFileDialog.AcceptOpen)
+        self.fileDialog.setFileMode(QFileDialog.ExistingFile)
+
+class AMTFileOutput(AMTFileIO):
+    """ 
+    Specialization of AMTFileIO for file output.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)        
+        self.fileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        self.fileDialog.setFileMode(QFileDialog.AnyFile)
+        
+class AMTBibtexFileOutput(AMTFileOutput):
+    """ 
+    Specialization of AMTFileOutput for bibtex file output.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.fileDialog.setNameFilter("Bibtex Files (*.bib)")
+        self.fileDialog.setDefaultSuffix("bib")
+
 class AMTEntryFileInput(AMTFileInput):
     """ 
     Composite widget for entry file input. Contains a QLineEdit and a QPushButton to browse for a file.

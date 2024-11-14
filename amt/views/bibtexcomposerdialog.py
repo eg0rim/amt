@@ -43,9 +43,9 @@ class BibtexComposerDialog(QDialog):
         self.ui.setupUi(self)
         # make the dialog window a normal window
         self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
-        # actions
-        # TODO: fix it
-        self.ui.actionRemoveEntry.triggered.connect(self.removeSelectedEntries)
+        # shortcuts
+        self.addAction(self.ui.actionRemoveEntry)
+        self.ui.actionRemoveEntry.triggered.connect(self.onRemoveTriggered)
         # compose button
         self.ui.composeButton.clicked.connect(self.composeBibtex)
         
@@ -79,10 +79,9 @@ class BibtexComposerDialog(QDialog):
         except IndexError:
             pass
         
-        
-        
-    def onBibtexChanged(self, bibtex: str) -> None:
-        self.model.bibtexCache
+    def onRemoveTriggered(self) -> None:
+        logger.debug("Remove action triggered")
+        self.removeSelectedEntries()
         
     def composeBibtex(self) -> None:
         logger.debug("Composing bibtex")
