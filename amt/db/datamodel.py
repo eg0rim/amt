@@ -826,6 +826,7 @@ class EntryData(AbstractData):
         for key, value in fields.items():
             if value:
                 bibtex += (4 * ' ') + f'{key} = "{value}",\n'
+        bibtex = bibtex[:-2] + "\n"
         bibtex += "}\n"
         return bibtex
         
