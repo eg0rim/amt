@@ -198,7 +198,7 @@ class AMTFileIO(QWidget):
         else:
             self.filepath = ""
     
-    def onTextChanged(self, text):
+    def onTextChanged(self, text: str):
         self._filepath = text
         
 class AMTFileInput(AMTFileIO):

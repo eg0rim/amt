@@ -20,10 +20,12 @@
 
 from PySide6.QtCore import Qt, QItemSelection
 from PySide6.QtWidgets import QDialog, QWidget, QAbstractItemView
+import os
 
 from amt.views.build.bibtexcomposerdialog_ui import Ui_BibtexComposerDialog
 from amt.db.datamodel import EntryData 
 from amt.db.tablemodel import BibtexComposerModel
+from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox, AMTWarnMessageBox
 
 from amt.logger import getLogger
 
@@ -48,13 +50,16 @@ class BibtexComposerDialog(QDialog):
         self.ui.actionRemoveEntry.triggered.connect(self.onRemoveTriggered)
         # compose button
         self.ui.composeButton.clicked.connect(self.composeBibtex)
+        # allow only single selection
+        self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
+        # no context menu
+        self.ui.tableView.setContextMenuPolicy(Qt.NoContextMenu)
         
     def setupModel(self) -> None:
         self.ui.tableView.setModel(self.model)
         # when selection changes
         self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
-        # allow only single selection
-        self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
+
         
     def addEntries(self, entries: list[EntryData]) -> None:
         self.model.addEntries(entries)
@@ -68,7 +73,7 @@ class BibtexComposerDialog(QDialog):
         try: 
             row = deselected.indexes()[0].row()
             bibtex = self.ui.bibtexTextEdit.toPlainText()
-            self.model.setBiBtexAt(row, bibtex)
+            self.model.setBibtexAt(row, bibtex)
         except IndexError:
             pass
         # set the bibtex edit widget to the selected row
@@ -84,5 +89,21 @@ class BibtexComposerDialog(QDialog):
         self.removeSelectedEntries()
         
     def composeBibtex(self) -> None:
+        self.ui.tableView.clearSelection()
         logger.debug("Composing bibtex")
-        # TODO: implement
+        #logger.debug(f"Composed bibtex:\n{self.model.composer.compose()}")
+        filename = self.ui.bibtexFileInput.getFilePath()
+        if not filename:
+            msg = "No destination file specified."
+            logger.error(msg)
+            msgBox = AMTErrorMessageBox(self, msg)
+            msgBox.exec()            
+            return
+        if os.path.exists(filename):
+            msg = "File already exists. Overwrite?"
+            logger.warning(msg)
+            msgBox = AMTWarnMessageBox(self, msg)
+            msgBox.setStandardButtons(AMTWarnMessageBox.Yes | AMTWarnMessageBox.No)
+            if msgBox.exec() == AMTErrorMessageBox.No:
+                return
+        self.model.composer.write(filename)

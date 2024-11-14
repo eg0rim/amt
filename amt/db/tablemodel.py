@@ -30,6 +30,7 @@ from .datamodel import (
     EntryData
 )
 from amt.file_utils.filehandler import DatabaseFileHandler, EntryHandler
+from amt.file_utils.bibtex import BibtexComposer
 from amt.file_utils.path import *
 from amt.logger import getLogger
 
@@ -966,7 +967,7 @@ class BibtexComposerModel(AMTModel):
             *args (object): arguments for the parent class
         """
         super().__init__(*args)   
-        self.bibtexCache: dict[EntryData, str] = {}
+        self.composer = BibtexComposer()
         
     def getBibtexAt(self, index : int ) -> str:
         """
@@ -979,7 +980,7 @@ class BibtexComposerModel(AMTModel):
             str: bibtex string
         """
         entry = self.getDataAt(index)
-        return self.bibtexCache[entry]
+        return self.composer.getBibtex(entry)
     
     def getBibtexAll(self) -> dict[EntryData, str]:
         """
@@ -988,7 +989,7 @@ class BibtexComposerModel(AMTModel):
         Returns:
             list[str]: list of bibtex strings
         """
-        return self.bibtexCache 
+        return self.composer.getEntries()
     
     def setData(self, data : list[EntryData]) -> bool:
         """
@@ -1000,12 +1001,11 @@ class BibtexComposerModel(AMTModel):
         Returns:
             bool: True if successful
         """
-        for entry in data:
-            if entry not in self.bibtexCache:
-                self.bibtexCache[entry] = entry.bibtex
+        for entry in data:  
+            self.composer.addEntry(entry)
         return super().setData(data)
     
-    def setBiBtexAt(self, index : int, bibtex : str) -> bool:   
+    def setBibtexAt(self, index : int, bibtex : str) -> bool:   
         """
         sets the bibtex string at given index
 
@@ -1017,7 +1017,7 @@ class BibtexComposerModel(AMTModel):
             bool: True if successful
         """
         entry = self.getDataAt(index)
-        self.bibtexCache[entry] = bibtex
+        self.composer.setBibtex(entry, bibtex)
         return True
 
     
@@ -1033,7 +1033,7 @@ class BibtexComposerModel(AMTModel):
         """
         for row in rows:
             entry = self.getDataAt(row)
-            del self.bibtexCache[entry]
+            self.composer.removeEntry(entry)
         return super().removeEntriesAt(rows)
     
     def addEntry(self, entry : EntryData) -> bool:
@@ -1046,8 +1046,7 @@ class BibtexComposerModel(AMTModel):
         Returns:
             bool: True if successful
         """
-        if entry not in self.bibtexCache:
-            self.bibtexCache[entry] = entry.bibtex
+        self.composer.addEntry(entry)
         return super().addEntry(entry)
     
     def addEntries(self, entries : list[EntryData]) -> bool:
@@ -1061,6 +1060,6 @@ class BibtexComposerModel(AMTModel):
             bool: True if successful
         """
         for entry in entries:
-            if entry not in self.bibtexCache:
-                self.bibtexCache[entry] = entry.bibtex
+            self.composer.addEntry(entry)
         return super().addEntries(entries)
+    
