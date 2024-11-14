@@ -106,4 +106,16 @@ class BibtexComposerDialog(QDialog):
             msgBox.setStandardButtons(AMTWarnMessageBox.Yes | AMTWarnMessageBox.No)
             if msgBox.exec() == AMTErrorMessageBox.No:
                 return
-        self.model.composer.write(filename)
+        try:
+            self.model.composer.write(filename)
+        except FileNotFoundError as e:
+            msg = f"File path error. Check the destination file path."
+            logger.error(msg)
+            msgBox = AMTErrorMessageBox(self, msg)
+            msgBox.exec()
+        except Exception as e:
+            msg = f"Error composing bibtex: {e}"
+            logger.error(msg)
+            msgBox = AMTErrorMessageBox(self, msg)
+            msgBox.exec()    
+        
