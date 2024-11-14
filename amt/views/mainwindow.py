@@ -217,6 +217,11 @@ class MainWindow(QMainWindow):
         self.arxivDialog.restoreGeometry(settings.value("geometry"))
         settings.endGroup()
         
+        settings.beginGroup("BibtexDialog")
+        self.bibtexComposer.ui.splitter.restoreState(settings.value("splitterState"))
+        self.bibtexComposer.restoreGeometry(settings.value("geometry"))
+        settings.endGroup()
+        
     def writeState(self):
         """
         Writes the application state to the QSettings storage.
@@ -249,6 +254,11 @@ class MainWindow(QMainWindow):
         settings.setValue("arxivIdCheckBox", self.arxivDialog.ui.arxivIdCheckBox.isChecked())
         settings.setValue("splitterState", self.arxivDialog.ui.splitter.saveState())
         settings.setValue("geometry", self.arxivDialog.saveGeometry())
+        settings.endGroup()
+        
+        settings.beginGroup("BibtexDialog")
+        settings.setValue("splitterState", self.bibtexComposer.ui.splitter.saveState())
+        settings.setValue("geometry", self.bibtexComposer.saveGeometry())
         settings.endGroup()
  
     # setup methods        
