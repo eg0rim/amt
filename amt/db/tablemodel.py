@@ -33,6 +33,7 @@ from .datamodel import (
 from amt.file_utils.filehandler import DatabaseFileHandler, EntryHandler
 from amt.file_utils.bibtex import BibtexComposer
 from amt.file_utils.path import *
+from amt.db.datamodel import DATAMODELVERSION
 from amt.logger import getLogger
 
 logger = getLogger(__name__) 
@@ -746,6 +747,21 @@ class AMTDBModel(AMTModel):
                 state = False
         return state
     
+    def prepareMetadata(self) -> bool:
+        """ 
+        Prepare metadata in the database.
+        Returns:
+            bool: True if successful
+        """
+        query = AMTQuery(self.db)
+        meta = {}
+        meta["dataModelVersion"] = DATAMODELVERSION
+        if not query.createTable("metadata", meta, ifNotExists=True):
+            return False
+        if not query.exec():
+            return False
+        return True
+    
     # update table columns
     def updateTableColumns(self) -> bool:
         """ 
@@ -874,6 +890,7 @@ class AMTDBModel(AMTModel):
             logger.debug(f"save changes in cache")
             status =  self._submitAdd() and self._submitDelete() and self._submitEdit()   
             self.dataCache.diverged = False
+            self.prepareMetadata()
         except Exception as e:
             logger.error(f"failed to save changes: {e}")
             status = False
@@ -930,6 +947,7 @@ class AMTDBModel(AMTModel):
         logger.debug(f"create temp db")
         self.temporary = True
         self.prepareTables()
+        self.prepareMetadata()
         self.update()
         self.databaseConnected.emit("")
         return True

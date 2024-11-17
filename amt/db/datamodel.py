@@ -33,6 +33,10 @@ logger = getLogger(__name__)
 
 T = TypeVar('T', bound='AbstractData')
 
+# DATAMODELVERSION must be increased if the data model db fields are changed: add new fields, change types, etc.
+# needed for backward compatibility
+DATAMODELVERSION = 1
+
 class AbstractData(ABC):
     """
     Abstract class for data storage and its insertion, deletion, update, etc. to specified database.
@@ -103,6 +107,7 @@ class AbstractData(ABC):
             bool: True if table created successfully, False otherwise
         """
         query = AMTQuery(db)
+        
         if not query.createTable(cls.tableName, cls.tableColumns, ifNotExists=True): #, addLines=cls.tableAddLines):
             return False
         return query.exec()
@@ -119,6 +124,7 @@ class AbstractData(ABC):
         state = True
         query = AMTQuery(db)
         currentColumns = query.getTableInfo(cls.tableName)
+        logger.debug(f"Current columns in the table {cls.tableName}: {currentColumns}")
         newColumns = cls.tableColumns
         newColumnsToAdd = {k: v for k, v in newColumns.items() if k not in currentColumns.keys()}
         if not newColumnsToAdd:
