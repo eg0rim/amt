@@ -57,6 +57,8 @@ class AbstractData(ABC):
         toString() -> str
         toShortString() -> str
         getDisplayData(field: str) -> str
+    Notes:
+        - all empty string values are converted to None and there must be always represented by NULL in SQL
     """
     # table name corresponding to the data type
     tableName: str = None
@@ -135,20 +137,34 @@ class AbstractData(ABC):
         #     return False
         # return query.exec()
     
-    @classmethod
-    def select(cls, db : AMTDatabase, filter : str = "") -> bool:
+    def retrieveId(self, db : AMTDatabase):
         """ 
-        Select data from the table corresponding to the data type.
+        Retrieve id of the data object from the database.
         Args:
             db (AMTDatabase): database object
-            filter (str, optional): filter string. Defaults to "".
         Returns:
-            bool: True if select query executed successfully, False otherwise
+            bool: True if retrieval is successful, False otherwise
         """
         query = AMTQuery(db)
-        if not query.select(cls.tableName, cls.tableColumns.keys(), filter):
+        data = self.getDataToInsert()
+        data.pop("id", None)
+        data.pop("summary", None)
+        whereClause = " AND ".join([f"{column} IS NULL" if value is None else f'{column} = "{value.replace('"', '""').replace("'", "''")}"'  for column, value in data.items()])
+        #logger.debug(f"Retrieving id for {self} with where clause: {whereClause}")
+        if not query.select(self.tableName, ["id"], filter = whereClause):
+            logger.error("Failed to compose select id query")
             return False
-        return query.exec()
+        if not query.exec():
+            logger.error("Failed to execute select id query")
+            return False
+        if not query.next():
+            logger.error("Failed to retrieve id")
+            logger.error(f"Where clause: {whereClause}")
+            return False
+        self.id = query.value(0)
+        logger.debug(f"Retrieved id {self.id} for {self}")
+        return True
+        
     
     def getDataToInsert(self) -> dict[str, str]:
         """
@@ -194,12 +210,14 @@ class AbstractData(ABC):
             bool: True if insert query executed successfully, False otherwise
         """
         query = AMTQuery(db)
-        if not query.insert(self.tableName, self.getDataToInsert()):
+        data = self.getDataToInsert()
+        if not query.insert(self.tableName, data):
             return False
         if not query.exec():
             return False
         # get id of the inserted data
-        self.id = query.lastInsertId()
+        #self.id = query.lastInsertId()
+        #self.select()
         return True
     
     @classmethod
@@ -399,10 +417,10 @@ class OrganizationData(AbstractData):
     
     def fillFromRow(self, row: list[str]) -> None:
         nrow = super().fillFromRow(row)
-        self.name = nrow[0]
-        self.shortName = nrow[1]
-        self.address = nrow[2]
-        self.info = nrow[3] 
+        self.name = nrow[0] or None
+        self.shortName = nrow[1] or None
+        self.address = nrow[2] or None
+        self.info = nrow[3] or None
         return nrow[4:]
         
     def getDataToInsert(self) -> dict[str, str]:
@@ -536,9 +554,9 @@ class AuthorData(AbstractData):
     
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
-        self.firstName = nrow[0]
-        self.middleNames = nrow[1].split(" ")
-        self.lastName = nrow[2]
+        self.firstName = nrow[0] or None
+        self.middleNames = nrow[1].split(" ") or None
+        self.lastName = nrow[2] or None
         self.birthDate = QDate.fromString(nrow[3], Qt.ISODate) if nrow[3] else None
         self.deathDate = QDate.fromString(nrow[4], Qt.ISODate) if nrow[4] else None
         self.bio = nrow[5]  
@@ -680,7 +698,7 @@ class EntryData(AbstractData):
             entry.authors = authors
         return entries
         
-    def getDataToInsert(self) -> dict[str, str]:
+    def getDataToInsert(self) -> dict[str, str | None]:
         data = super().getDataToInsert()
         data["title"] = self.title
         data["summary"] = self.summary
@@ -776,12 +794,12 @@ class EntryData(AbstractData):
     
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
-        self.title = nrow[0]
-        self.summary = nrow[1]
-        self.fileName = nrow[2]
-        self.comment = nrow[3]
+        self.title = nrow[0] or None
+        self.summary = nrow[1] or None
+        self.fileName = nrow[2] or None
+        self.comment = nrow[3] or None
         self.previewPage = int(nrow[4])
-        self.bibtex = nrow[5]
+        self.bibtex = nrow[5] or None
         return nrow[6:]
         
     def toString(self):
@@ -914,12 +932,12 @@ class PublishableData(EntryData):
         
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
-        self.doi = nrow[0]
-        self.link = nrow[1]
+        self.doi = nrow[0] or None
+        self.link = nrow[1] or None
         self.datePublished = QDate.fromString(nrow[2], Qt.ISODate) if nrow[2] else None
-        self.filelink = nrow[3]
-        self.fileextension = nrow[4]
-        self.doilink = nrow[5]
+        self.filelink = nrow[3] or None
+        self.fileextension = nrow[4] or None
+        self.doilink = nrow[5] or None
         return nrow[6:]
         
     def getDisplayData(self, field: str) -> str:
@@ -1020,12 +1038,12 @@ class ArticleData(PublishableData):
     
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
-        self.arxivid = nrow[0]
-        self.version = nrow[1] if nrow[1] else None
-        self.journal = nrow[2]
+        self.arxivid = nrow[0] or None
+        self.version = nrow[1] or None
+        self.journal = nrow[2] or None
         self.dateArxivUploaded = QDateTime.fromString(nrow[3], Qt.ISODate) if nrow[3] else None
         self.dateArxivUpdated = QDateTime.fromString(nrow[4], Qt.ISODate) if nrow[4] else None
-        self.primeCategory = nrow[5]
+        self.primeCategory = nrow[5] or None
         return nrow[6:]
         
     def getDataToInsert(self) -> dict[str, str]:
@@ -1109,9 +1127,9 @@ class BookData(PublishableData):
     
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
-        self.isbn = nrow[0]
-        self.publisher = nrow[1]
-        self.edition = nrow[2]
+        self.isbn = nrow[0] or None
+        self.publisher = nrow[1] or None
+        self.edition = nrow[2] or None
         return nrow[3:]
     
     def getDataToInsert(self) -> dict[str, str]:
@@ -1176,8 +1194,8 @@ class LecturesData(PublishableData):
 
     def fillFromRow(self, row: list[str]) -> list[str]:
         nrow = super().fillFromRow(row)
-        self.school = nrow[0]
-        self.course = nrow[1]
+        self.school = nrow[0] or None
+        self.course = nrow[1] or None
         return nrow[2:]
     
     def getDataToInsert(self) -> dict[str, str]:

@@ -746,10 +746,7 @@ class MainWindow(QMainWindow):
              
     def debug(self):
         logger.debug("Debug button pressed")
-        AMTInfoMessageBox(self, "Debug button pressed").exec()
-        AMTWarnMessageBox(self, "Debug button pressed").exec()
-        AMTErrorMessageBox(self, "Debug button pressed").exec()
-        AMTCriticalMessageBox(self, "Debug button pressed").exec()
-        AMTQuestionMessageBox(self, "Debug button pressed").exec()
-        AMTMutliErrorMessageBox(self, "Debug button pressed", ["error1", "error2"]).exec()
+        for entry in self.model.dataCache.data:
+            if not entry.retrieveId(self.model.db):
+                logger.debug(f"Failed to retrieve id for {entry.title}")
         
