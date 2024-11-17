@@ -159,6 +159,7 @@ class ATMTableContextMenu(QMenu):
         self.openAction: QAction = self.addAction("Open")
         self.editAction: QAction = self.addAction("Edit")
         self.deleteAction: QAction = self.addAction("Remove")
+        self.manageFileAction: QAction = self.addAction("Manage File")
         self.triggered.connect(self.menuAction)
         
         

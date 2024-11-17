@@ -17,6 +17,12 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="AMTSearchInput" name="searchInput" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -33,16 +39,22 @@
       <property name="childrenCollapsible">
        <bool>false</bool>
       </property>
-      <widget class="AMTTableWidget" name="tableView">
-       <property name="alternatingRowColors">
-        <bool>true</bool>
-       </property>
-       <property name="sortingEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="cornerButtonEnabled">
-        <bool>false</bool>
-       </property>
+      <widget class="QWidget" name="leftContainer" native="true">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="FileManagerWidget" name="fileManagerWidget" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="AMTTableWidget" name="tableView"/>
+        </item>
+       </layout>
       </widget>
       <widget class="AMTPreviewWidget" name="previewWidget" native="true"/>
      </widget>
@@ -82,6 +94,7 @@
     <addaction name="actionAdd"/>
     <addaction name="actionDel"/>
     <addaction name="actionEdit"/>
+    <addaction name="actionManageFile"/>
     <addaction name="separator"/>
     <addaction name="actionSearch"/>
     <addaction name="actionUpdate"/>
@@ -124,6 +137,7 @@
    <addaction name="actionArxiv"/>
    <addaction name="actionDebug"/>
    <addaction name="actionComposeBibtex"/>
+   <addaction name="actionManageFile"/>
   </widget>
   <action name="actionAbout">
    <property name="text">
@@ -258,6 +272,14 @@
     <string>Compose Bibtex</string>
    </property>
   </action>
+  <action name="actionManageFile">
+   <property name="text">
+    <string>Manage File</string>
+   </property>
+   <property name="toolTip">
+    <string>Show file manager bar</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -275,6 +297,12 @@
    <class>AMTPreviewWidget</class>
    <extends>QWidget</extends>
    <header>amt/views/customWidgets/amtpreview</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FileManagerWidget</class>
+   <extends>QWidget</extends>
+   <header>amt/views/customWidgets/filemanager</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -754,6 +754,11 @@ class EntryData(AbstractData):
         if not query.exec():
             return False
         # add new authors or ignore existing
+        # TODO: fix the issue
+        # if the authors line automatically purged after deleteing references
+        # but the existing authors are used to be updates
+        # so that they have an id, these authros get lost
+        # as they aren't inserted again
         authorsToInsert = [author for author in self.authors if not author.id]
         if len(authorsToInsert) == 0:
             return True

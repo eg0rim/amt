@@ -328,6 +328,8 @@ class MainWindow(QMainWindow):
         self.ui.actionArxiv.triggered.connect(self.openArxivDialog)
         # compose bibtex
         self.ui.actionComposeBibtex.triggered.connect(self.openBibtexComposer)
+        # filemanager 
+        self.ui.actionManageFile.triggered.connect(self.ui.fileManagerWidget.toggleVisible)
         # actions in table
         # open entry on double click
         self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
@@ -337,6 +339,8 @@ class MainWindow(QMainWindow):
         self.ui.tableView.contextMenu.editAction.triggered.connect(self.editSelectedRow)
         # delete entry on context menu
         self.ui.tableView.contextMenu.deleteAction.triggered.connect(self.deleteSelectedRows)   
+        # manage file on context menu
+        self.ui.tableView.contextMenu.manageFileAction.triggered.connect(self.ui.fileManagerWidget.toggleVisible)
         # arxiv dialog
         self.arxivDialog.ui.addSelectedPushButton.clicked.connect(self.addFromArxivDialog)
         # hide unused widgets
@@ -403,7 +407,9 @@ class MainWindow(QMainWindow):
         # if db is connected, set current file
         self.model.databaseConnected.connect(self.onDatabaseConnected)
         # if selection changed
-        self.ui.tableView.selectionModel().selectionChanged.connect(self.updatePreview)
+        self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
+        # add model to file manager
+        self.ui.fileManagerWidget.setModel(self.model)
         
     def setupSearchBar(self):
         """
@@ -652,10 +658,18 @@ class MainWindow(QMainWindow):
         Opens about dialog. Attributions and license information are displayed.
         """
         AboutDialog(self).exec()
+                       
+    def onDatabaseConnected(self, name: str):
+        """
+        Updates the current file name and clears the preview cache.
+        """
+        self.setCurrentFile(name)
+        self.ui.previewWidget.clearCache()
+    
+    def onSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
+        """
+        Updates the preview widget with the selected entry and adds it to the file manager.
         
-    def updatePreview(self, selected: QItemSelection, deselected: QItemSelection):
-        """     
-        Updates the preview label with the selected entry.
         Args:
             selected (QItemSelection): The selected items in the table view.
             deselected (QItemSelection): The deselected items in the table view.
@@ -666,15 +680,9 @@ class MainWindow(QMainWindow):
             row = deselected.indexes()[0].row()
         entry = self.model.getDataAt(row)
         if entry:
-             self.ui.previewWidget.setEntry(entry)
+            self.ui.previewWidget.setEntry(entry)
+            self.ui.fileManagerWidget.setEntry(entry)
                 
-    def onDatabaseConnected(self, name: str):
-        """
-        Updates the current file name and clears the preview cache.
-        """
-        self.setCurrentFile(name)
-        self.ui.previewWidget.clearCache()
-    
     # file operations
     def setCurrentFile(self, file: str):
         """

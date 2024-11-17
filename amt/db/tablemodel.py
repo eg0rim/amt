@@ -19,6 +19,7 @@
 """model to manage the articles, books, etc"""
 
 import re
+import copy
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal, QObject
 from .database import AMTDatabase, AMTQuery
@@ -375,6 +376,7 @@ class AMTModel(QAbstractTableModel):
         getDataAt(self, index: int) -> EntryData
         removeEntriesAt(self, rows: list[int]) -> bool
         editEntryAt(self, row: int, newEntry: EntryData) -> bool
+        editEntryInPlace(self, entry: EntryData, newEntry: EntryData) -> bool
         addEntry(self, entry: EntryData) -> bool
         filter(self, filter: AMTFilter) -> bool
     """
@@ -589,6 +591,22 @@ class AMTModel(QAbstractTableModel):
         """
         self.beginResetModel()
         self.dataCache.editByIndex(row, newEntry)
+        self.endResetModel()
+        self._resort()
+        return True
+    
+    def editEntryInPlace(self, entry : EntryData) -> bool:
+        """
+        should be called when an entry fields are changed programmatically
+
+        Args:
+            entry (EntryData): entry that has been changed
+
+        Returns:
+            bool: True if successful
+        """
+        self.beginResetModel()
+        self.dataCache.edit(entry, entry)
         self.endResetModel()
         self._resort()
         return True

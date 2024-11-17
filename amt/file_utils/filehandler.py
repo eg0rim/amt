@@ -395,9 +395,8 @@ class EntryHandler(ExternalAppHandler):
     def renameEntryFile(cls, entry: EntryData, newName: str) -> bool:
         if entry.fileName:
             oldPath = entry.fileName
-            newPath = Path(oldPath).with_name(newName)
-            cls.moveFile(oldPath, str(newPath))
-            entry.fileName = str(newPath)
+            cls.moveFile(oldPath, str(newName))
+            entry.fileName = str(newName)
             return True
         else:
             logger.error("Entry does not have associated file")

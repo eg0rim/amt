@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""afroms to add entriesa"""
+"""froms to add entries"""
 
 from PySide6.QtWidgets import (
     QWidget
