@@ -689,6 +689,7 @@ class AMTDBModel(AMTModel):
     # signal to notify about changes in the model
     temporaryStatusChanged = Signal(bool)
     databaseConnected = Signal(str)    
+    databaseOutdated = Signal()
     # supported data types; if new data types are added, they should be added here
     _supportedDataTypes: dict[str,EntryData] = {
         "articles": ArticleData,
@@ -754,26 +755,55 @@ class AMTDBModel(AMTModel):
             bool: True if successful
         """
         query = AMTQuery(self.db)
-        meta = {}
-        meta["dataModelVersion"] = DATAMODELVERSION
-        if not query.createTable("metadata", meta, ifNotExists=True):
+        metaFields = {"key": "TEXT UNIQUE", "value": "TEXT"}
+        meta = [
+            {"key": "target", "value": "article-management-tool"},
+            {"key": "data_model_version", "value": str(DATAMODELVERSION)}
+        ]
+        if not query.createTable("metadata", metaFields, ifNotExists=True):
+            return False
+        if not query.exec():
+            return False
+        # complete here
+        if not query.insert("metadata", meta, orIgnore=True):
             return False
         if not query.exec():
             return False
         return True
     
-    # update table columns
-    def updateTableColumns(self) -> bool:
+    def checkDatabaseMetadata(self) -> bool:
         """ 
-        Update table columns for all supported data types.
+        Check if the database is supported.
+        Returns:
+            bool: True if supported
+        """ 
+        query = AMTQuery(self.db)
+        version = 0
+        if query.select("metadata", ["value"], filter='key = "data_model_version"'):
+            if query.exec():
+                if query.next():
+                    version = int(query.value(0))
+        if version == DATAMODELVERSION:
+            logger.info(f"Database model version is up to date")
+            return True
+        if version > DATAMODELVERSION:
+            logger.error(f"Database model version is higher than supported")
+            return False
+        logger.info(f"Database model version is {version}, current supported version is {DATAMODELVERSION}.")
+        self.databaseOutdated.emit()
+        return True
+    
+    # update table columns
+    def updateDatabase(self) -> bool:
+        """ 
+        Creates new temp database and copies data.
         Returns:
             bool: True if successful
         """
-        state = True
-        for cls in self._supportedDataTypes.values():
-            if not cls.extendTableColumns(self.db):
-                state = False
-        return state
+        data = self.dataCache.data
+        self.createNewTempDB()
+        self.addEntries(data)
+        return True
     
     # extract entries from the database
     def extractEntries(self) -> list[EntryData]:
@@ -908,10 +938,12 @@ class AMTDBModel(AMTModel):
         """
         self.db = DatabaseFileHandler.openDB(filePath)
         self.temporary = False
-        self.updateTableColumns()
         self.update()
         self.databaseConnected.emit(filePath)
         logger.info(f"database opened: {filePath}")
+        if not self.checkDatabaseMetadata():
+            logger.error("database is not supported")
+            return False
         return True    
     
     def saveDBAs(self, filePath : str) -> bool:

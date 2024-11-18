@@ -380,18 +380,8 @@ class MainWindow(QMainWindow):
         """
         Sets up the model-view architecture for the main window.
         """
-        # create model based on current filename
-        # if db raises error, show critical message box and close the app
-        try:
-            self.model = AMTDBModel(self.currentFile)
-            logger.info(f"Model is connected.")
-        except AMTDatabaseError:
-            logger.critical(f"Database Error: {self.model.db.lastError().text()}")
-            msgBox = AMTCriticalMessageBox(self)
-            msgBox.setText("Critical Error! AMT will be closed.")
-            msgBox.setInformativeText(f"Database Error: {self.model.db.lastError().text()}")
-            msgBox.exec()
-            sys.exit(1)
+        # create model 
+        self.model = AMTDBModel()
         # bind model to table view
         self.ui.tableView.setModel(self.model)
         # retrieve data from database
@@ -410,6 +400,22 @@ class MainWindow(QMainWindow):
         self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
         # add model to file manager
         self.ui.fileManagerWidget.setModel(self.model)
+        # if opened database outdated, offer to update:
+        self.model.databaseOutdated.connect(self.offerUpdateDatabase)
+        # open model based on current filename
+        # if db raises error, show critical message box and close the app
+        if self.currentFile:
+            self.model.openExistingDB(self.currentFile)
+        # try:
+        #     self.model = AMTDBModel(self.currentFile)
+        #     logger.info(f"Model is connected.")
+        # except AMTDatabaseError:
+        #     logger.critical(f"Database Error: {self.model.db.lastError().text()}")
+        #     msgBox = AMTCriticalMessageBox(self)
+        #     msgBox.setText("Critical Error! AMT will be closed.")
+        #     msgBox.setInformativeText(f"Database Error: {self.model.db.lastError().text()}")
+        #     msgBox.exec()
+        #     sys.exit(1)
         
     def setupSearchBar(self):
         """
@@ -658,6 +664,19 @@ class MainWindow(QMainWindow):
         Opens about dialog. Attributions and license information are displayed.
         """
         AboutDialog(self).exec()
+        
+    def offerUpdateDatabase(self):
+        """
+        Offers to update the database if it is outdated.
+        """
+        logger.debug("Database is outdated.")
+        msgBox = AMTQuestionMessageBox(self)
+        msgBox.setText("The database is outdated. Do you want to update it?")
+        msgBox.setInformativeText("""This will create a new temporary database with the updated data.""")
+        msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        ret = msgBox.exec()
+        if ret == QMessageBox.Ok:
+            self.model.updateDatabase()
                        
     def onDatabaseConnected(self, name: str):
         """

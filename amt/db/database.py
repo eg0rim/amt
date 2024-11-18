@@ -348,6 +348,23 @@ class AMTQuery(QSqlQuery):
         self._queryString = f"ALTER TABLE {table} {action} {column} {type}"
         self._setState("alter", True)
         return True
+        
+    def renameTable(self, table : str, newTable : str) -> bool:
+        """
+        Constructs query:
+            ALTER TABLE table RENAME TO newTable
+
+        Args:
+            table (str): table to rename
+            newTable (str): new table name
+
+        Returns:
+            bool: returns True if table rename query construction is successful
+        """
+        self._execStatus = False
+        self._queryString = f"ALTER TABLE {table} RENAME TO {newTable}"
+        self._setState("alter", True)
+        return True
     
     def getTableInfo(self, table : str) -> dict[str, str]:
         """
@@ -367,4 +384,21 @@ class AMTQuery(QSqlQuery):
         while self.next():
             info[self.value(1)] = self.value(2)
         return info
+        
+    def getTables(self) -> list[str]:
+        """
+        Get a list of all tables in the database.
+        
+        Returns:
+            list[str]: A list of table names.
+        """
+        self._queryString = "SELECT name FROM sqlite_master WHERE type='table'"
+        
+        if not self.exec():
+            return []
+        self._execStatus = True
+        tables = []
+        while self.next():
+            tables.append(self.value(0))
+        return tables
     

@@ -35,7 +35,7 @@ T = TypeVar('T', bound='AbstractData')
 
 # DATAMODELVERSION must be increased if the data model db fields are changed: add new fields, change types, etc.
 # needed for backward compatibility
-DATAMODELVERSION = 1
+DATAMODELVERSION: int = 1
 
 class AbstractData(ABC):
     """
@@ -180,8 +180,9 @@ class AbstractData(ABC):
             dict[str, str]: dictionary of column names and values. values can be None, corresponding to NULL in SQL
         """
         data = {}
-        if self.id:
-            data["id"] = str(self.id)
+        # do not insert id, during insertion new id will be given
+        # if self.id:
+        #     data["id"] = str(self.id)
         return data
     
     @classmethod
@@ -222,7 +223,7 @@ class AbstractData(ABC):
         if not query.exec():
             return False
         # get id of the inserted data
-        #self.id = query.lastInsertId()
+        self.id = query.lastInsertId()
         #self.select()
         return True
     
@@ -716,8 +717,10 @@ class EntryData(AbstractData):
     
     @classmethod
     def insertMultiple(cls : Type[T], db : AMTDatabase, data : list[T]) -> bool:
+        logger.debug(f"Inserting multiple entries")
         if not super().insertMultiple(db, data):
             return False
+        logger.debug(f"Inserting authors")
         query = AMTQuery(db)    
         refTable = f"{cls.tableName}_{AuthorData.tableName}"
         refId = f"{cls.tableName}_id"
@@ -729,14 +732,17 @@ class EntryData(AbstractData):
         if not AuthorData.insertMultiple(db, authorsToInsert):
             return False
         # insert reference
+        logger.debug(f"Inserting references")
         refsToInsert = []
         for entry in data:
             for author in entry.authors:
+                logger.debug(f"Inserting reference for {author.id} and {entry.id}")
                 refsToInsert.append({refAuthorId: str(author.id), refId: str(entry.id)})
         if not query.insert(refTable, refsToInsert):
             return False
         if not query.exec():
             return False
+        logger.debug(f"End inserting multiple entries")
         return True
     
     def insert(self, db: AMTDatabase) -> bool:
