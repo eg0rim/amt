@@ -315,11 +315,7 @@ class AMTSearchInput(QWidget):
         # any changes in the searchLineEdit or filterComboBox should emit the searchInputChanged signal
         self.searchLineEdit.textChanged.connect(self.onSearchLineEditChange)
         self.filterComboBox.currentIndexChanged.connect(self.onFilterComboBoxChange)
-        # hide on esc
-        self.hideAction = self.addAction("Hide")
-        self.hideAction.setShortcut("Esc")
-        self.hideAction.triggered.connect(self.toggleVisible)
-        
+               
     def addColumns(self, columns: list[str]):
         """
         Adds a list of columns to the existing columns and updates the filterComboBox.
@@ -344,6 +340,13 @@ class AMTSearchInput(QWidget):
         Toggle the visibility of the widget.
         """
         self.setVisible(not self.isVisible())
+        
+    def showEvent(self, event):
+        """ 
+        When the widget is shown, set the focus to the searchLineEdit.
+        """
+        super().showEvent(event)
+        self.searchLineEdit.setFocus()
         
     def text(self) -> tuple[str, bool]:
         """ 
