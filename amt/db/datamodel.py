@@ -777,19 +777,18 @@ class EntryData(AbstractData):
         refTable = f"{self.tableName}_{AuthorData.tableName}"
         refId = f"{self.tableName}_id"
         refAuthorId = f"{AuthorData.tableName}_id"
-        # remove all references
-        logger.debug(f"deleting references for {self.id}")
-        if not query.delete(refTable, f"{refId} = {self.id}"):
+        # remove all references that relate to authors, that were removed
+        listAuthorWIds = [str(author.id) for author in self.authors if author.id]
+        whereClause = f"{refId} = {self.id}"
+        if len(listAuthorWIds) > 0 : 
+            whereClause += ' AND ' + ' AND '.join([f"{refAuthorId} != {authorId}" for authorId in listAuthorWIds])
+        logger.debug(f"deleting references, where clause: {whereClause}")
+        if not query.delete(refTable, filter=whereClause):
             return False
         if not query.exec():
             return False
-        # add new authors or ignore existing
-        # TODO: fix the issue
-        # if the authors line automatically purged after deleteing references
-        # but the existing authors are used to be updates
-        # so that they have an id, these authros get lost
-        # as they aren't inserted again
         authorsToInsert = [author for author in self.authors if not author.id]
+        logger.debug(f"Inserting authors: {[author.toShortString() for author in authorsToInsert]}")
         if len(authorsToInsert) == 0:
             return True
         if not AuthorData.insertMultiple(db, authorsToInsert):
@@ -798,6 +797,7 @@ class EntryData(AbstractData):
         refsToInsert = []
         for author in self.authors:
             refsToInsert.append({refAuthorId: str(author.id), refId: str(self.id)})
+        logger.debug(f"Inserting references: {refsToInsert}")
         if not query.insert(refTable, refsToInsert):
             return False
         if not query.exec():
