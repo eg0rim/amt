@@ -21,18 +21,35 @@
 from amt.db.datamodel import EntryData  
 
 from amt.logger import getLogger
+import re
 
 logger = getLogger(__name__)
 
 class BibtexComposer:
     def __init__(self) -> None:
         self._entries: dict[EntryData, str] = {}
+        self._labels: list[str] = []
         
     def addEntry(self, entry: EntryData):
         if entry in self._entries:
             return
         bibtex = entry.bibtex
+        match = re.search(r"@(\w+)\s*{\s*([^,]+),", bibtex)
+        etype = match.group(1)
+        label = match.group(2)
+        if not label in self._labels:
+            self._entries[entry] = bibtex
+            self._labels.append(label)
+            return
+        counter = 0
+        newlabel = label + str(counter)
+        while newlabel in self._labels:
+            counter += 1
+            newlabel = label + str(counter)
+        bibtex = re.sub(r"@(\w+)\s*{\s*([^,]+),", f"@{etype}{{{newlabel},", bibtex)
         self._entries[entry] = bibtex
+        self._labels.append(newlabel)
+        
         
     def removeEntry(self, entry: EntryData):
         try:

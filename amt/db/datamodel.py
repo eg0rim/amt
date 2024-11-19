@@ -851,12 +851,16 @@ class EntryData(AbstractData):
             year = fields["year"]
         else:
             year = ""
+        if "author" in fields:
+            leadAuthor = self.authors[0].lastName + ":"
+        else:
+            leadAuthor = ""
         # TODO: improve generatrion of label
         # generate  label as first 5 letters of title lowercase
         titleWords = self.title.lower().split(" ")
         label = ''.join([word[0] for word in titleWords[:min(5, len(titleWords))]])
-        bibref = f"{self.authors[0].lastName}:{year}{label}"
-        bibtex = "@"+ self.bibtexType + "{" + bibref + "\n"
+        bibref = f"{leadAuthor}{year}{label}"
+        bibtex = "@"+ self.bibtexType + "{" + bibref + ",\n"
         
         for key, value in fields.items():
             if value:
@@ -868,7 +872,8 @@ class EntryData(AbstractData):
     def bibtexFields(self) -> dict[str,str]:
         fields = {}
         fields["title"] = self.title
-        fields["author"] = " and ".join([auth.toLastFirstNameString() for auth in self.authors])
+        if len(self.authors) > 0:
+            fields["author"] = " and ".join([auth.toLastFirstNameString() for auth in self.authors])
         return fields
         
     
