@@ -293,6 +293,7 @@ class MainWindow(QMainWindow):
         self.ui.actionPreview.setIcon(QIcon.fromTheme("preview"))
         self.ui.actionArxiv.setIcon(QIcon.fromTheme("arxiv"))
         self.ui.actionComposeBibtex.setIcon(QIcon.fromTheme("tex"))
+        self.ui.actionManageFile.setIcon(QIcon.fromTheme("wrench-folder"))
         # connect signals
         # actions in toolbar
         # add entry

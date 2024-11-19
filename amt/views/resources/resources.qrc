@@ -2,7 +2,7 @@
     <qresource prefix="/">
         <file>icons/light/index.theme</file>
         <file>icons/light/actions/about.png</file>
-        <file>icons/light/actions/arxiv.png</file>
+        <file>icons/light/actions/arxiv.svg</file>
         <file>icons/light/actions/bug.png</file>
         <file>icons/light/actions/edit-property.png</file>
         <file>icons/light/actions/error-red.svg</file>
@@ -22,9 +22,10 @@
         <file>icons/light/actions/update.png</file>
         <file>icons/light/actions/warning.png</file>
         <file>icons/light/actions/tex.png</file>
+        <file>icons/light/actions/wrench-folder.png</file>
         <file>icons/dark/index.theme</file>
         <file>icons/dark/actions/about.png</file>
-        <file>icons/dark/actions/arxiv.png</file>
+        <file>icons/dark/actions/arxiv.svg</file>
         <file>icons/dark/actions/bug.png</file>
         <file>icons/dark/actions/edit-property.png</file>
         <file>icons/dark/actions/error-red.svg</file>
@@ -44,6 +45,7 @@
         <file>icons/dark/actions/update.png</file>
         <file>icons/dark/actions/warning.png</file>
         <file>icons/dark/actions/tex.png</file>
+        <file>icons/dark/actions/wrench-folder.png</file>
         <file alias="logo">files/logo.png</file>
     </qresource>
 </RCC>
