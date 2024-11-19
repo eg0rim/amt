@@ -348,7 +348,7 @@ class MainWindow(QMainWindow):
         # arxiv dialog
         self.arxivDialog.ui.addSelectedPushButton.clicked.connect(self.addFromArxivDialog)
         # hide unused widgets
-        #self.ui.actionDebug.setVisible(False)
+        self.ui.actionDebug.setVisible(False)
                
     def setTemporary(self, status: bool):
         """

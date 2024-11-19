@@ -1,5 +1,22 @@
 # Change log
 
+## v0.1.5
+### Added
+- File manager bar
+- Bibtex composer
+- Update of database files for older versions
+
+### Changed
+- Behavior of dialog windows
+- Installation method 
+- Preview improved
+- Icons improved/added
+- Some hotkeys
+
+### Fix
+- Version control for datamodel
+- Updating entries to database 
+
 ## v0.1.4
 ### Added
 - download capability from arxiv.org
