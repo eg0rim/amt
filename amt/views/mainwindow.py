@@ -332,8 +332,11 @@ class MainWindow(QMainWindow):
         # filemanager 
         self.ui.actionManageFile.triggered.connect(self.ui.fileManagerWidget.toggleVisible)
         # actions in table
-        # open entry on double click
+        # open entry 
+        # on double click
         self.ui.tableView.doubleClicked.connect(self.openSelectedRowsExternally) 
+        # on enter key
+        self.ui.actionOpenEntry.triggered.connect(self.openSelectedRowsExternally)
         # open entry on context menu
         self.ui.tableView.contextMenu.openAction.triggered.connect(self.openSelectedRowsExternally)
         # edit entry on context menu

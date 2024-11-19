@@ -85,6 +85,8 @@
     <addaction name="actionSaveLibrary"/>
     <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
+    <addaction name="actionOpenEntry"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -278,6 +280,17 @@
    </property>
    <property name="toolTip">
     <string>Show file manager bar</string>
+   </property>
+  </action>
+  <action name="actionOpenEntry">
+   <property name="text">
+    <string>Open Entry</string>
+   </property>
+   <property name="toolTip">
+    <string>Open entry file in an externalapp</string>
+   </property>
+   <property name="shortcut">
+    <string>Return</string>
    </property>
   </action>
  </widget>
