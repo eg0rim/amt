@@ -21,35 +21,34 @@ For the next release v0.2.0:
 - Download and store pdf/djvu/etc files from various sources.
 - Compose bibtex files.
 
-## Installing (for Linux)
+## Installing 
 
+### Linux
 1. Create a directory where you want Article Management Tool to be installed
 ```bash
-mkdir /path/to/amt/parent/dir
-cd /path/to/amt/parent/dir
+    mkdir /path/to/amt/parent/dir
+    cd /path/to/amt/parent/dir
 ```
-2. Clone this repository.
+2. Clone this repository
 ```bash
     git clone https://github.com/eg0rim/amt.git
 ```
-3. (Optional) create virtual environment and activate 
+3. Execute installation script
 ```bash
-    python3 -m venv /path/to/venv
-    source /path/to/venv/bin/activate
+    ./install.sh
 ```
-4. Install dependencies (see `REQUIREMENTS.txt`). Example for `pip`: 
+
+### Manual
+For manual installation:
+- Install dependencies from REQUIREMENTS.txt, e.g.
 ```bash
-    cd ./amt
     pip install -r REQUIREMENTS.txt
 ```
-2. Compile `.qrc` and `.ui` files
-```bash 
-    make
-```
-3. Run the app
+- Compile ui/qrc files using make
 ```bash
-    ./articlemanagementtool.py
+    make all
 ```
+- `articlemanagementtool.py` serves as an entry point to the application.
 
 ## Requirements
 

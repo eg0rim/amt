@@ -6,3 +6,5 @@ __pycache__
 /run
 *.log
 *.amtdb
+/installation_files/
+/venv/
