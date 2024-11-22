@@ -37,6 +37,11 @@ For the next release v0.2.0:
 ```bash
     ./install.sh
 ```
+The installation script:
+- creates a `python` virtual environment;
+- installs dependencies using `pip`;
+- compiles ui/qrc files;
+- generate executable and `.desktop` file.
 
 ### Manual
 For manual installation:
@@ -54,15 +59,15 @@ For manual installation:
 
 This package was tested on 
 - `python3.12.3`
-- `PySide6>=6.7.3`
-- `pymupdf>=1.24.11`
+- `PySide6=6.7.3`
+- `pymupdf=1.24.11`
 
 ## Changelog
 
-See CHANGELOG.md.
+See `CHANGELOG.md`.
 
 ## License
 
 Copyright (c) 2024 Egor Im
 
-This software is licensed under the GNU General Public License v3.0. See the COPYING.txt file for details.
+This software is licensed under the GNU General Public License v3.0. See the `COPYING.txt` file for details.
