@@ -4,10 +4,16 @@
 
 echo "This script will install the article management tool and its dependencies."
 
+# Pause function
+function pause(){
+   read -p "$*"
+}
+
 echo "Do you want to continue? [y/n]"   
 read answer
 if [ "$answer" != "y" ]; then
     echo "Installation aborted."
+    pause 'Press any key to exit...'
     exit 1
 fi
 
@@ -15,6 +21,7 @@ fi
 if ! command -v python3 &> /dev/null
 then
     echo "Python3 is not installed. Please, install python3 and try again."
+    pause 'Press any key to exit...'
     exit 1
 fi
 
@@ -22,6 +29,7 @@ fi
 if ! command -v pip &> /dev/null
 then
     echo "Pip is not installed. Please, install pip and try again."
+    pause 'Press any key to exit...'
     exit 1
 fi
 
@@ -107,4 +115,5 @@ else
 fi
 
 echo "Installation completed."
+pause 'Press any key to exit...'
 
