@@ -21,6 +21,7 @@
 from amt.logger import getLogger
 from PySide6.QtWidgets import QDialog, QProgressDialog
 from PySide6.QtCore import Qt, QItemSelection, QSettings
+from PySide6.QtGui import QShowEvent
 from pathlib import Path
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
@@ -181,6 +182,12 @@ class ArxivDialog(QDialog):
         self.addingEntries = False
         self.ui.loadMorePushButton.setEnabled(False)
         self.ui.addSelectedPushButton.setEnabled(False)
+        self.ui.searchLineEdit.setFocus()
+        
+    def showEvent(self, event : QShowEvent):
+        # focus on search bar always
+        self.ui.searchLineEdit.setFocus()
+        return super().showEvent(event)
         
     def onClientFinished(self, data: list[ArticleData]):
         """
