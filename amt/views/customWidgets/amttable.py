@@ -225,7 +225,7 @@ class AMTArxivTableContextMenu(AMTTableContextMenu):
         # add additional actions
         self.openAction: QAction = self.addAction("Open arXiv page")
         self.openPDFAction: QAction = self.addAction("Open PDF")
-        self.addToLibAction: QAction = self.addAction("Add to library")
-        self.downloadAction: QAction = self.addAction("Add and download")
+        #self.addToLibAction: QAction = self.addAction("Add to library")
+        #self.downloadAction: QAction = self.addAction("Add and download")
         
    

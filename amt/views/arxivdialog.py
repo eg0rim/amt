@@ -89,6 +89,9 @@ class ArxivDialog(QDialog):
         self.maxNumResults = 50
         self.addingEntries = False
         self.linkHandler = LinkHandler() # may be specify browser by default
+        self.linkHandler.setApp('http', 'xdg-open')
+        self.linkHandler.setApp('https', 'xdg-open')
+        # TODO: make it flexible
         self.setupUi()
         self.setupModel()
         self.setupClient()
@@ -148,6 +151,12 @@ class ArxivDialog(QDialog):
         self.ui.tableView.setSortingEnabled(False)
         # preview
         self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
+        # context menu action
+        self.ui.tableView.contextMenu.openPDFAction.triggered.connect(lambda : self.openSelected('pdf'))
+        self.ui.tableView.contextMenu.openAction.triggered.connect(lambda : self.openSelected())
+        # doulble click on row 
+        self.ui.tableView.doubleClicked.connect(lambda : self.openSelected('pdf'))
+        
         
     def setupClient(self):
         """
@@ -310,3 +319,23 @@ class ArxivDialog(QDialog):
         entry = self.model.getDataAt(row)
         if entry:
              self.ui.previewWidget.setEntry(entry) 
+             
+    def openSelected(self, target = 'arxiv'):
+        logger.debug("open pdf triggered")
+        rows = self.ui.tableView.selectionModel().selectedRows()
+        if len(rows) < 1:
+            logger.info("No rows selected")
+            return 
+        entry = self.model.getDataAt(rows[0].row())
+        # TODO: all entries are neccessarily arxiv entries: fix it
+        if not isinstance(entry, ArticleData):
+            return
+        else:
+            if target == 'arxiv':
+                self.linkHandler.openLink(entry.link)
+            elif target == 'pdf':
+                self.linkHandler.openLink(entry.filelink)
+            else:
+                logger.error(f"Unknown target {target}")
+        return
+        
