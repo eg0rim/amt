@@ -31,6 +31,7 @@ from amt.network.arxiv_aux import *
 from amt.network.client import ArxivRequest
 from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog, MultiFileDownloadProgressDialog
 from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox, AMTMutliErrorMessageBox
+from amt.file_utils.linkhandler import LinkHandler
 
 logger = getLogger(__name__)
 
@@ -87,6 +88,7 @@ class ArxivDialog(QDialog):
         self.client = ArxivClient(self)
         self.maxNumResults = 50
         self.addingEntries = False
+        self.linkHandler = LinkHandler() # may be specify browser by default
         self.setupUi()
         self.setupModel()
         self.setupClient()
