@@ -62,6 +62,13 @@ class AMTSettingsDialog(QDialog):
             settings.setValue("closeEntriesOnExit", False)
         settings.endGroup()
         
+        settings.beginGroup("LinkHandler")
+        defLinkAppFile = self.ui.defaultLinkFileInput.filepath
+        settings.setValue("defLinkApp", defLinkAppFile)
+        httpLinkAppFile = self.ui.httpAppFileInput.filepath
+        settings.setValue("httpApp", httpLinkAppFile)
+        settings.endGroup()
+        
         settings.beginGroup("Preview")
         settings.setValue("previewWidth", self.ui.previewWidthBox.value())
         settings.setValue("previewHeight", self.ui.previewHeightBox.value())
@@ -86,6 +93,13 @@ class AMTSettingsDialog(QDialog):
         logger.debug(f"Open entries on startup: {openEntriesOnStartup}, Close entries on exit: {closeEntriesOnExit}")
         self.ui.entryOpenOnStartup.setChecked(openEntriesOnStartup)
         self.ui.entryCloseOnExit.setChecked(closeEntriesOnExit)
+        settings.endGroup()
+        
+        settings.beginGroup("LinkHandler")
+        defLinkAppFile = settings.value("defLinkApp")
+        self.ui.defaultLinkFileInput.filepath = defLinkAppFile
+        httpLinkAppFile = settings.value("httpApp")
+        self.ui.httpAppFileInput.filepath = httpLinkAppFile
         settings.endGroup()
         
         settings.beginGroup("Preview")

@@ -640,6 +640,7 @@ class MainWindow(QMainWindow):
         dialog = AMTSettingsDialog(self)
         if dialog.exec() == QDialog.Accepted:
             self.readSettings()
+            self.arxivDialog.readSettings()
             
     def openArxivDialog(self):
         """

@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>Dialog</class>
  <widget class="QDialog" name="Dialog">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>429</width>
-    <height>315</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Settings</string>
   </property>
@@ -21,7 +13,7 @@
      </property>
      <widget class="QWidget" name="tabFiles">
       <attribute name="title">
-       <string>Entry files</string>
+       <string>External apps</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
@@ -118,6 +110,46 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Set applications to open URLs:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="widget_2" native="true">
+         <layout class="QFormLayout" name="formLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="httpLabel">
+            <property name="text">
+             <string>default</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="AMTAppFileInput" name="defaultLinkFileInput" native="true"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="httpAppLabel">
+            <property name="text">
+             <string>http/https</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="AMTAppFileInput" name="httpAppFileInput" native="true"/>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>

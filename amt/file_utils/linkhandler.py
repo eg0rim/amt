@@ -48,8 +48,9 @@ class LinkHandler:
         self._apps = apps
         
     def openLink(self, url : str, application: str | None = None) -> bool:
-        app = application
-        if not app:
+        if application:
+            app = application
+        else:
             urlSplited = url.split(':')
             if len(urlSplited) < 2:
                 app = self.defaultApp
@@ -59,7 +60,9 @@ class LinkHandler:
                 try: 
                     app = self.apps[scheme]
                 except KeyError:
-                    app = self.defaultApp
+                    pass
+        if not app:
+            app = self.defaultApp
         if not app:
             logger.error(f"Application to open the url {url} could not be inferred.")
             return False # may be raise exception

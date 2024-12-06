@@ -20,7 +20,7 @@
 
 from amt.logger import getLogger
 from PySide6.QtWidgets import QDialog, QProgressDialog
-from PySide6.QtCore import Qt, QItemSelection
+from PySide6.QtCore import Qt, QItemSelection, QSettings
 from pathlib import Path
 import amt.views.build.arxivDialog_ui as arxivDialog_ui
 from amt.db.tablemodel import ArxivModel
@@ -32,6 +32,7 @@ from amt.network.client import ArxivRequest
 from amt.views.customWidgets.amtprogress import ArxivSearchProgressDialog, MultiFileDownloadProgressDialog
 from amt.views.customWidgets.amtmessagebox import AMTErrorMessageBox, AMTMutliErrorMessageBox
 from amt.file_utils.linkhandler import LinkHandler
+from amt.views.settingsdialog import AMTSettingsDialog
 
 logger = getLogger(__name__)
 
@@ -89,18 +90,30 @@ class ArxivDialog(QDialog):
         self.maxNumResults = 50
         self.addingEntries = False
         self.linkHandler = LinkHandler() # may be specify browser by default
-        self.linkHandler.setApp('http', 'xdg-open')
-        self.linkHandler.setApp('https', 'xdg-open')
-        # TODO: make it flexible
         self.setupUi()
         self.setupModel()
         self.setupClient()
+        self.readSettings()
         # searchQuery = ArxivSearchQuery(ASP.AUTHOR, "Juan Maldacena")
         # self.client.search(searchQuery, sort_by=AQSortBy.SUB, max_results=2)
         # self.client.send()
         # waitDialog = ArxivSearchProgressDialog(self)
         # self.client.finished.connect(waitDialog.cancel)
         # waitDialog.exec()
+        
+    def readSettings(self):
+        settings = QSettings(AMTSettingsDialog.settingsFileName)    
+        settings.beginGroup("LinkHandler")
+        defLinkApp = settings.value("defLinkApp", "")
+        self.linkHandler.defaultApp = defLinkApp
+        logger.debug(f"read settings for default app: {defLinkApp}")
+        httpLinkApp = settings.value("httpApp", "")
+        logger.debug(f"read settings for http app: {httpLinkApp}")
+        self.linkHandler.setApp('http', httpLinkApp)
+        self.linkHandler.setApp('https', httpLinkApp)
+        settings.endGroup()
+        logger.debug(f"current default app: {self.linkHandler.defaultApp}")
+        logger.debug(f"current apps: {self.linkHandler.apps}")
         
     def setupUi(self):
         """
