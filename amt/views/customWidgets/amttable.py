@@ -59,7 +59,7 @@ class AMTTableWidget(QTableView):
         super().__init__(parent)
         # attributes
         # context menu
-        self.contextMenu = ATMTableContextMenu(self)
+        self.contextMenu = AMTTableContextMenu(self)
         # setup ui 
         self.setupUI()
         
@@ -140,8 +140,38 @@ class AMTTableWidget(QTableView):
         selectedIndexes = self.selectionModel().selectedRows()
         selectedRows = [index.row() for index in selectedIndexes]
         return selectedRows
+    
+class AMTMainTable(AMTTableWidget):
+    """ 
+    Specialized table widget for the main table in the Article Management Tool.
+    """
+    def __init__(self, parent: QWidget = None):
+        """
+        Initializes the AMTMainTable widget.
         
-class ATMTableContextMenu(QMenu):
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
+        super().__init__(parent)
+        # context menu
+        self.contextMenu = AMTMainTableContextMenu(self)
+        
+class AMTArxivTable(AMTTableWidget):
+    """ 
+    Specialized table widget for the arXiv table in the Article Management Tool.
+    """
+    def __init__(self, parent: QWidget = None):
+        """
+        Initializes the AMTArxivTable widget.
+        
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
+        super().__init__(parent)
+        # context menu
+        self.contextMenu = AMTArxivTableContextMenu(self)
+        
+class AMTTableContextMenu(QMenu):
     """
     Custom context menu for the table widget.
     """
@@ -156,12 +186,46 @@ class ATMTableContextMenu(QMenu):
         """
         super().__init__(parent)
         # actions as attributes
+        # that are shared by all context menus
+        # TODO: show details
+        # self.showDetailsAction: QAction = self.addAction("Show Details")
+        
+        self.triggered.connect(self.menuAction)
+        
+class AMTMainTableContextMenu(AMTTableContextMenu):
+    """
+    Custom context menu for the main table widget.
+    """
+    def __init__(self, parent=None):
+        """
+        Initializes the custom main table widget.
+        
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
+        super().__init__(parent)
+        # add additional actions
         self.openAction: QAction = self.addAction("Open")
         self.editAction: QAction = self.addAction("Edit")
         self.deleteAction: QAction = self.addAction("Remove")
         self.manageFileAction: QAction = self.addAction("Manage File")
-        self.triggered.connect(self.menuAction)
         
+class AMTArxivTableContextMenu(AMTTableContextMenu):
+    """
+    Custom context menu for the arXiv table widget.
+    """
+    def __init__(self, parent=None):
+        """
+        Initializes the custom arXiv table widget.
         
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
+        super().__init__(parent)
+        # add additional actions
+        self.openAction: QAction = self.addAction("Open arXiv page")
+        self.openPDFAction: QAction = self.addAction("Open PDF")
+        self.addToLibAction: QAction = self.addAction("Add to library")
+        self.downloadAction: QAction = self.addAction("Add and download")
         
    

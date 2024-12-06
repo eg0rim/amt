@@ -52,7 +52,7 @@
          </widget>
         </item>
         <item>
-         <widget class="AMTTableWidget" name="tableView"/>
+         <widget class="AMTMainTable" name="tableView"/>
         </item>
        </layout>
       </widget>
@@ -296,11 +296,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>AMTTableWidget</class>
-   <extends>QTableView</extends>
-   <header>amt/views/customWidgets/amttable</header>
-  </customwidget>
-  <customwidget>
    <class>AMTSearchInput</class>
    <extends>QWidget</extends>
    <header>amt/views/customWidgets/amtinputwidgets</header>
@@ -317,6 +312,11 @@
    <extends>QWidget</extends>
    <header>amt/views/customWidgets/filemanager</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AMTMainTable</class>
+   <extends>QTableView</extends>
+   <header>amt/views/customWidgets/amttable</header>
   </customwidget>
  </customwidgets>
  <resources/>

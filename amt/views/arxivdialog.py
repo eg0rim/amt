@@ -144,8 +144,6 @@ class ArxivDialog(QDialog):
         self.ui.tableView.setModel(self.model)
         # disable sorting 
         self.ui.tableView.setSortingEnabled(False)
-        # disable context menu in the table view
-        self.ui.tableView.setContextMenuPolicy(Qt.NoContextMenu)
         # preview
         self.ui.tableView.selectionModel().selectionChanged.connect(self.onSelectionChanged)
         

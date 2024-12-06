@@ -108,7 +108,7 @@
         </widget>
        </item>
        <item>
-        <widget class="AMTTableWidget" name="tableView"/>
+        <widget class="AMTArxivTable" name="tableView"/>
        </item>
        <item>
         <widget class="QWidget" name="actionWidget" native="true">
@@ -167,15 +167,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>AMTTableWidget</class>
-   <extends>QTableView</extends>
-   <header>amt/views/customWidgets/amttable</header>
-  </customwidget>
-  <customwidget>
    <class>AMTPreviewWidget</class>
    <extends>QWidget</extends>
    <header>amt/views/customWidgets/amtpreview</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AMTArxivTable</class>
+   <extends>QTableView</extends>
+   <header>amt/views/customWidgets/amttable</header>
   </customwidget>
  </customwidgets>
  <resources/>
