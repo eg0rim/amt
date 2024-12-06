@@ -106,14 +106,10 @@ class ArxivDialog(QDialog):
         settings.beginGroup("LinkHandler")
         defLinkApp = settings.value("defLinkApp", "")
         self.linkHandler.defaultApp = defLinkApp
-        logger.debug(f"read settings for default app: {defLinkApp}")
         httpLinkApp = settings.value("httpApp", "")
-        logger.debug(f"read settings for http app: {httpLinkApp}")
         self.linkHandler.setApp('http', httpLinkApp)
         self.linkHandler.setApp('https', httpLinkApp)
         settings.endGroup()
-        logger.debug(f"current default app: {self.linkHandler.defaultApp}")
-        logger.debug(f"current apps: {self.linkHandler.apps}")
         
     def setupUi(self):
         """
