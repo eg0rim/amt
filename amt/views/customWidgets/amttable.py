@@ -28,6 +28,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QAbstractItemModel, Qt
 from PySide6.QtCore import QPoint
 
+from amt.views.detailsdialog import DetailsDialog
+
 from amt.logger import getLogger
 
 logger = getLogger(__name__)
@@ -59,9 +61,18 @@ class AMTTableWidget(QTableView):
         super().__init__(parent)
         # attributes
         # context menu
-        self.contextMenu = AMTTableContextMenu(self)
+        self.contextMenu = self.createContextMenu()
         # setup ui 
         self.setupUI()
+        
+    def createContextMenu(self) -> 'AMTTableContextMenu':
+        """
+        Create the context menu for the table widget.
+
+        Returns:
+            AMTTableContextMenu: The context menu for the table widget.
+        """
+        return AMTTableContextMenu(self)
         
     def setupUI(self):
         """
@@ -83,6 +94,8 @@ class AMTTableWidget(QTableView):
         self.setAlternatingRowColors(True) 
         # connect signal to show context menu
         self.customContextMenuRequested.connect(self.showContextMenu)   
+        # show property menu option
+        self.contextMenu.showDetailsAction.triggered.connect(self.showDetailsDialog)
         
     def showContextMenu(self, pos: QPoint):
         """
@@ -141,6 +154,24 @@ class AMTTableWidget(QTableView):
         selectedRows = [index.row() for index in selectedIndexes]
         return selectedRows
     
+    def showDetailsDialog(self):
+        """
+        Show the details dialog for the selected entry.
+        """
+        # get the selected rows
+        logger.debug("Showing details dialog.")
+        selectedRows = self.getSelectedRows()
+        if len(selectedRows) == 0:
+            logger.debug("No rows selected.")
+            return
+        # get the model
+        model = self.model()
+        # get the entry data
+        entry = model.getDataAt(selectedRows[0])
+        # show the dialog
+        dialog = DetailsDialog(entry)
+        dialog.exec_()
+    
 class AMTMainTable(AMTTableWidget):
     """ 
     Specialized table widget for the main table in the Article Management Tool.
@@ -153,8 +184,15 @@ class AMTMainTable(AMTTableWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-        # context menu
-        self.contextMenu = AMTMainTableContextMenu(self)
+        
+    def createContextMenu(self) -> 'AMTMainTableContextMenu':
+        """
+        Create the context menu for the table widget.
+
+        Returns:
+            AMTMainTableContextMenu: The context menu for the table widget.
+        """
+        return AMTMainTableContextMenu(self)
         
 class AMTArxivTable(AMTTableWidget):
     """ 
@@ -168,8 +206,15 @@ class AMTArxivTable(AMTTableWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-        # context menu
-        self.contextMenu = AMTArxivTableContextMenu(self)
+        
+    def createContextMenu(self) -> 'AMTArxivTableContextMenu':
+        """
+        Create the context menu for the table widget.
+
+        Returns:
+            AMTArxivTableContextMenu: The context menu for the table widget.
+        """
+        return AMTArxivTableContextMenu(self)
         
 class AMTTableContextMenu(QMenu):
     """
@@ -187,9 +232,7 @@ class AMTTableContextMenu(QMenu):
         super().__init__(parent)
         # actions as attributes
         # that are shared by all context menus
-        # TODO: show details
-        # self.showDetailsAction: QAction = self.addAction("Show Details")
-        
+        self.showDetailsAction: QAction = self.addAction("Show Details")
         self.triggered.connect(self.menuAction)
         
 class AMTMainTableContextMenu(AMTTableContextMenu):
